@@ -47,3 +47,4 @@ No test runner is configured in any package.
 - Node 22 is required. `start.bat` opens backend + frontend in separate `cmd` windows.
 - Do not run `seed:reset` unless data loss is intended — it DROPs all tables. The authoritative live DB is `backend/data/library.db`.
 - Historical note: the predecessor repo (`reliqLibraryOLD`) suffered an encoding-corruption disaster (double-encoded UTF-8→GBK mojibake). Any migrated text must be verified clean; `routes/index.ts`-style mojibake comments must be rewritten, not copied.
+- **Never send JSON request bodies containing CJK through PowerShell `Invoke-WebRequest -Body <string>`** — PS 5.1 encodes string bodies as ASCII, turning Chinese into `?` and corrupting the DB row (this actually happened to `floors` during a "no-op PUT" test). For write-path tests use `Invoke-RestMethod` with `-ContentType 'application/json; charset=utf-8'` + byte body, or a node script instead.
