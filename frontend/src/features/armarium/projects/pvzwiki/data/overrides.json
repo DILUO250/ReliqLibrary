@@ -1,0 +1,1480 @@
+{
+  "sunflower": {
+    "ability": [
+      "一次产出50点阳光"
+    ]
+  },
+  "peashooter": {
+    "range": "长",
+    "ability": [
+      "向前方发射豌豆子弹攻击僵尸"
+    ]
+  },
+  "wallnut": {
+    "ability": [
+      "用坚硬的身体阻挡敌人"
+    ]
+  },
+  "potatomine": {
+    "range": "本格",
+    "ability": [
+      "经过较长的准备时间，炸飞接触到它的敌人"
+    ],
+    "traits": [
+      "rooted",
+      "contact"
+    ]
+  },
+  "cabbagepult": {
+    "range": "长",
+    "ability": [
+      "跨越障碍物向敌人投掷卷心菜"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "bloomerang": {
+    "range": "长",
+    "ability": [
+      "向至多3名敌人发射回旋镖，回旋镖来回都能造成伤害"
+    ]
+  },
+  "iceburg": {
+    "range": "本格",
+    "traits": [
+      "contact"
+    ]
+  },
+  "gravebuster": {
+    "ability": [
+      "只能种植在墓碑上，缓慢地吃掉墓碑"
+    ]
+  },
+  "twinsunflower": {
+    "ability": [
+      "一次产出100阳光"
+    ]
+  },
+  "bonkchoy": {
+    "range": "短"
+  },
+  "repeater": {
+    "range": "长",
+    "ability": [
+      "发射两颗豌豆子弹攻击敌人"
+    ]
+  },
+  "iceweed": {
+    "range": "本格",
+    "introduction": "冷冻经过的僵尸，不会被啃食。",
+    "ability": [
+      "对经过的敌人造成伤害，并施加寒冷。"
+    ],
+    "traits": [
+      "rooted",
+      "lowland"
+    ]
+  },
+  "snowdrop": {
+    "range": "长",
+    "ability": [
+      "向敌人投掷寒冷的冰球与结冰的冰锥。"
+    ]
+  },
+  "squash": {
+    "range": "短",
+    "ability": [
+      "压扁靠近它的敌人。"
+    ],
+    "traits": [
+      "proximity"
+    ]
+  },
+  "dandelion": {
+    "range": "长",
+    "chat": "“看，蒲公英摇摇头说，“我才不是什么小妖精或者小精灵。要是想的话，你还可以把我的种子都吹飞，但是我就是不能实现你的愿望。我也不知道这些传闻是谁发起的。”",
+    "ability": [
+      "向身前的三行中的一行发射爆炸性蒲公英子弹。",
+      "吹风时有机会作出反应。"
+    ]
+  },
+  "pvine": {
+    "range": "长",
+    "ability": [
+      "增强豌豆植物和平射家族的植物。"
+    ],
+    "traits": [
+      "stackable"
+    ]
+  },
+  "kernelpult": {
+    "range": "长",
+    "ability": [
+      "向敌人投掷玉米粒与黄油"
+    ]
+  },
+  "snapdragon": {
+    "range": "较短",
+    "ability": [
+      "向前方的6格吐出火焰"
+    ]
+  },
+  "spikeweed": {
+    "range": "本格",
+    "ability": [
+      "对经过的僵尸造成伤害"
+    ],
+    "traits": [
+      "rooted",
+      "lowland"
+    ]
+  },
+  "coconutcannon": {
+    "range": "长",
+    "ability": [
+      "点击发射椰子炮弹，击中目标时，在中等范围内爆炸"
+    ],
+    "traits": [
+      "tap",
+      "cooldown"
+    ]
+  },
+  "cherry_bomb": {
+    "range": "3x3",
+    "ability": [
+      "对范围内僵尸造成高额灰烬伤害"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "springbean": {
+    "range": "本格",
+    "ability": [
+      "将接触的僵尸往回弹；",
+      "若附近有水则将他们弹进水里"
+    ],
+    "traits": [
+      "contact",
+      "cooldown"
+    ]
+  },
+  "spikerock": {
+    "range": "本格",
+    "ability": [
+      "对经过的僵尸快速造成伤害；",
+      "可以承受3次致命伤害"
+    ],
+    "traits": [
+      "rooted",
+      "lowland"
+    ]
+  },
+  "threepeater": {
+    "range": "长",
+    "ability": [
+      "向三行发射豌豆子弹"
+    ]
+  },
+  "buttercup": {
+    "range": "本格",
+    "ability": [
+      "受到伤害时，将黄油溅到地上"
+    ],
+    "traits": [
+      "bitten"
+    ]
+  },
+  "splitpea": {
+    "range": "长",
+    "ability": [
+      "向前后双向发射豌豆子弹"
+    ]
+  },
+  "chilibean": {
+    "ability": [
+      "吃掉他的僵尸直接死亡，并且向后释放眩晕气体"
+    ],
+    "traits": [
+      "swallowed"
+    ]
+  },
+  "lightningreed": {
+    "range": "长",
+    "ability": [
+      "向相邻行发射能传导的电弧"
+    ]
+  },
+  "tallnut": {
+    "ability": [
+      "血量很厚，能阻挡低空飞行的敌人"
+    ]
+  },
+  "jalapeno": {
+    "range": "整行",
+    "ability": [
+      "烧毁一整行的僵尸"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "peapod": {
+    "range": "长",
+    "ability": [
+      "发射豌豆子弹攻击僵尸；",
+      "可叠加种植至多5次，增加单发子弹数量"
+    ],
+    "traits": [
+      "stackable"
+    ]
+  },
+  "melonpult": {
+    "range": "长",
+    "ability": [
+      "对成群的僵尸投掷西瓜造成大量伤害"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "wintermelon": {
+    "range": "长",
+    "ability": [
+      "对成群的僵尸投掷冰冻西瓜造成大量伤害，并施加寒冷"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "imitater": {
+    "range": "变化"
+  },
+  "electricpeashooter": {
+    "range": "长",
+    "ability": [
+      "发射球状闪电豌豆，并伴随电弧产生"
+    ]
+  },
+  "sapfling": {
+    "range": "长",
+    "ability": [
+      "投掷会留在地面的树脂，走在树脂上的僵尸会被减速"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "electriccurrant": {
+    "range": "行或列",
+    "ability": [
+      "相同行或列的同类之间会产生电流线；",
+      "电流线能加强邻近的电能植物；",
+      "被打败时把僵尸击退至其他行"
+    ],
+    "traits": [
+      "swallowed"
+    ]
+  },
+  "marigold": {
+    "ability": [
+      "偶尔会出现在禅境花园"
+    ]
+  },
+  "laser_bean": {
+    "range": "整行",
+    "ability": [
+      "攻击一整行的僵尸"
+    ]
+  },
+  "blover": {
+    "traits": [
+      "single-use"
+    ]
+  },
+  "citron": {
+    "range": "长",
+    "ability": [
+      "充能片刻后，发射高伤害的等离子子弹"
+    ]
+  },
+  "empea": {
+    "range": "半径2.5的圆",
+    "ability": [
+      "使范围内机械陷入故障"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "starfruit": {
+    "range": "5个方向",
+    "ability": [
+      "向5个方向发射星星子弹"
+    ]
+  },
+  "pinkstarfruit": {
+    "range": "10个方向",
+    "ability": [
+      "根据僵尸的位置改变发射的方向，向10个方向发射星星子弹"
+    ]
+  },
+  "shootingstarfruit": {
+    "range": "全场",
+    "ability": [
+      "沿着全场5行发射星星子弹"
+    ]
+  },
+  "holonut": {
+    "ability": [
+      "血量略低，但是隔一段时间回复血量"
+    ]
+  },
+  "magnifyinggrass": {
+    "range": "长",
+    "ability": [
+      "点击消耗50阳光发射彩虹子弹"
+    ],
+    "traits": [
+      "tap"
+    ]
+  },
+  "powerplant": {
+    "ability": [
+      "原地生成一块强化瓷砖"
+    ],
+    "traits": [
+      "single-use",
+      "highcost"
+    ]
+  },
+  "applemortar": {
+    "range": "长",
+    "ability": [
+      "向相邻三行发射苹果子弹，苹果子弹带有微弱的眩晕效果"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "wasabiwhip": {
+    "range": "较短",
+    "ability": [
+      "快速抽打前方的僵尸"
+    ],
+    "traits": [
+      "warm"
+    ]
+  },
+  "solartomato": {
+    "range": "3x3",
+    "chat": "阳光番茄希望忙碌的人们时常停下来享受阳光。 “停下！”她叫嚷道，“享受一下阳光！我说了给我停下来！不许动！别动！我认真的！！！”",
+    "ability": [
+      "使范围内所有僵尸眩晕，并各自掉落50阳光"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "pumpkin": {
+    "ability": [
+      "保护其他植物；",
+      "种植于防御植物之上获得额外减伤"
+    ],
+    "traits": [
+      "stackable"
+    ]
+  },
+  "hollyknight": {
+    "range": "全场",
+    "ability": [
+      "最多3次，向目标格子发射带刺的冬青叶；",
+      "冬青叶带有反伤"
+    ],
+    "traits": [
+      "tap"
+    ]
+  },
+  "gumnut": {
+    "ability": [
+      "喷溅口香糖障碍，口香糖的强度与僵尸的强度有关"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "hypnoshroom": {
+    "ability": [
+      "魅惑吞食者，为其你而战"
+    ],
+    "traits": [
+      "swallowed"
+    ]
+  },
+  "sunshroom": {
+    "ability": [
+      "能够生长2次，阳光产量也随之增多"
+    ],
+    "traits": [
+      "growth"
+    ]
+  },
+  "puffshroom": {
+    "range": "较短",
+    "ability": [
+      "射程短，只能存活有限的时间"
+    ]
+  },
+  "fumeshroom": {
+    "range": "较短",
+    "ability": [
+      "向前方喷射气泡攻击"
+    ]
+  },
+  "sunbean": {
+    "ability": [
+      "吞食者被光芒辐射，每次受伤时产生15点阳光"
+    ],
+    "traits": [
+      "swallowed"
+    ]
+  },
+  "peanut": {
+    "range": "长",
+    "ability": [
+      "能像坚果墙一样阻挡敌人，也能像豌豆射手一样发射豌豆子弹"
+    ]
+  },
+  "poisonpeashooter": {
+    "range": "长",
+    "ability": [
+      "发射涂满黏性毒液的豌豆子弹，同时造成减速与中毒"
+    ]
+  },
+  "magnetshroom": {
+    "range": "较长"
+  },
+  "scaredyshroom": {
+    "range": "极长",
+    "ability": [
+      "远程发射孢子子弹，有僵尸在附近时停止攻击；",
+      "自身攻击时有较小的概率令僵尸小幅度后退"
+    ]
+  },
+  "plantern": {
+    "range": "周围",
+    "ability": [
+      "驱散迷雾，使隐身僵尸显现；",
+      "周围的僵尸阵亡时掉落15阳光"
+    ]
+  },
+  "vamporcini": {
+    "range": "周围",
+    "ability": [
+      "种植后立刻吸取周围所有僵尸的血量，吸取的血量用于增加自身血量"
+    ]
+  },
+  "glaciershroom": {
+    "range": "周围/全场",
+    "ability": [
+      "向周围持续释放冰雾；",
+      "点击后立刻冰冻全场的僵尸"
+    ],
+    "traits": [
+      "tap",
+      "cooldown"
+    ]
+  },
+  "doomshroom": {
+    "range": "半径3.5的圆",
+    "chat": "“你很幸运，我站在你这边，”毁灭菇说，“我能摧毁你亲近的一切，小菜一碟。”",
+    "ability": [
+      "向范围内所有僵尸造成极高灰烬伤害，并留下火坑一段时间"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "lilypad": {
+    "ability": [
+      "能让非水生植物种植在水面上"
+    ],
+    "traits": [
+      "aquatic",
+      "potted"
+    ]
+  },
+  "tanglekelp": {
+    "range": "本格",
+    "ability": [
+      "将一名接触的僵尸拖入水底"
+    ],
+    "traits": [
+      "aquatic",
+      "contact"
+    ]
+  },
+  "bowlingbulb": {
+    "range": "长",
+    "ability": [
+      "滚出可以在敌人之间来回碰撞的保龄球，不同颜色的保龄球伤害不同"
+    ]
+  },
+  "homingthistle": {
+    "range": "全场",
+    "ability": [
+      "向场地最左侧发射追踪子弹"
+    ]
+  },
+  "guacodile": {
+    "range": "长/本行",
+    "ability": [
+      "远程发射子弹，火力归零时冲出去撞击整行的僵尸"
+    ],
+    "traits": [
+      "contact",
+      "swallowed"
+    ]
+  },
+  "banana": {
+    "range": "全场",
+    "ability": [
+      "向目标格子十字范围内发射一枚爆炸性香蕉子弹"
+    ],
+    "traits": [
+      "tap",
+      "cooldown"
+    ]
+  },
+  "seashroom": {
+    "range": "较短",
+    "ability": [
+      "射程短，只能存活有限的时间;",
+      "在深海中存活时间翻倍"
+    ],
+    "traits": [
+      "aquatic"
+    ]
+  },
+  "chomper": {
+    "range": "短",
+    "ability": [
+      "可以完整地吃掉2名僵尸"
+    ],
+    "traits": [
+      "chew"
+    ]
+  },
+  "snappea": {
+    "range": "长",
+    "ability": [
+      "吃掉每行最右侧的僵尸，咀嚼后将其头颅吐向正前方"
+    ]
+  },
+  "missiletoe": {
+    "range": "全场",
+    "ability": [
+      "向目标格子1x3范围发射一发寒冰导弹"
+    ],
+    "traits": [
+      "tap",
+      "cooldown"
+    ]
+  },
+  "seashooter": {
+    "range": "长",
+    "ability": [
+      "向前发射3发豌豆子弹；",
+      "在水中时可以向全场任意3名僵尸发射海洋子弹"
+    ],
+    "traits": [
+      "amphibious"
+    ]
+  },
+  "ghostpepper": {
+    "range": "1x3/3x3",
+    "ability": [
+      "不会阻挡，惊吓路过的僵尸，一段时间后自爆；",
+      "对灵体僵尸造成双倍伤害"
+    ],
+    "traits": [
+      "floating"
+    ]
+  },
+  "parsnip": {
+    "range": "短/整行",
+    "ability": [
+      "近战夹击前方的僵尸；",
+      "被啃食后冲出去攻击整行的僵尸"
+    ],
+    "traits": [
+      "swallowed"
+    ]
+  },
+  "icebloom": {
+    "range": "全场",
+    "traits": [
+      "single-use"
+    ]
+  },
+  "hurrikale": {
+    "range": "整行",
+    "ability": [
+      "用寒冷的强风袭卷整行的僵尸，并使地面的僵尸向后退"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "hotpotato": {
+    "range": "本格",
+    "traits": [
+      "single-use"
+    ]
+  },
+  "pepperpult": {
+    "range": "长",
+    "ability": [
+      "投掷火焰甜椒攻击僵尸；",
+      "能更快地冰释周围的植物"
+    ],
+    "traits": [
+      "highland",
+      "warm"
+    ]
+  },
+  "chardguard": {
+    "range": "极短",
+    "ability": [
+      "利用坚韧的身躯与菜叶将僵尸击退，最多击退3次"
+    ]
+  },
+  "firepeashooter": {
+    "range": "长",
+    "ability": [
+      "发射火焰豌豆子弹"
+    ],
+    "traits": [
+      "warm"
+    ]
+  },
+  "stunion": {
+    "range": "短",
+    "traits": [
+      "proximity",
+      "single-use"
+    ]
+  },
+  "xshot": {
+    "range": "4个方向",
+    "ability": [
+      "向4个对角发射子弹"
+    ],
+    "traits": [
+      "floating"
+    ]
+  },
+  "pyrevine": {
+    "damage": 30,
+    "range": "短",
+    "ability": [
+      "向近距离僵尸喷火"
+    ],
+    "traits": [
+      "stackable",
+      "warm"
+    ]
+  },
+  "jackolantern": {
+    "damage": 300,
+    "range": "短",
+    "ability": [
+      "向前方喷射火焰"
+    ],
+    "traits": [
+      "cooldown",
+      "warm"
+    ]
+  },
+  "sweetpotato": {
+    "ability": [
+      "将相邻行僵尸吸引至本行"
+    ]
+  },
+  "hotdate": {
+    "range": "整行",
+    "ability": [
+      "将相邻行僵尸吸引至本行，本啃食完时灼烧整行"
+    ],
+    "traits": [
+      "swallowed",
+      "warm"
+    ]
+  },
+  "gatling": {
+    "range": "长",
+    "ability": [
+      "4连发豌豆子弹，拥有更高的射速；",
+      "使用过叶绿素大招后，攻击强化为散射"
+    ]
+  },
+  "megagatling": {
+    "range": "长",
+    "ability": [
+      "4连发豌豆子弹，有概率直接发动叶绿素大招；",
+      "使用过叶绿素大招后，攻击强化为5连发"
+    ]
+  },
+  "torchwood": {
+    "range": "极短/整行/整列",
+    "ability": [
+      "使穿过的豌豆子弹变为火焰豌豆；",
+      "灼烧靠近的僵尸，被啃食后对整行与整列僵尸造成燃烧伤害"
+    ],
+    "traits": [
+      "warm",
+      "swallowed"
+    ]
+  },
+  "lavaguava": {
+    "range": "周围",
+    "ability": [
+      "喷发时，对四周的僵尸造成伤害；随后在原地留下一滩岩浆"
+    ],
+    "traits": [
+      "warm",
+      "proximity"
+    ]
+  },
+  "redstinger": {
+    "range": "长",
+    "ability": [
+      "靠近场地左侧时集中火力发射子弹；",
+      "远离左侧则提高防御力，降低火力"
+    ]
+  },
+  "akee": {
+    "range": "长",
+    "ability": [
+      "喷射能在僵尸间弹射的投掷物"
+    ]
+  },
+  "endurian": {
+    "damage": 5,
+    "range": "极短",
+    "ability": [
+      "既能防御，也会近战攻击靠近的僵尸"
+    ]
+  },
+  "toadstool": {
+    "range": "短",
+    "ability": [
+      "咀嚼时间较短；完成咀嚼后，产出50点阳光"
+    ],
+    "traits": [
+      "chew"
+    ]
+  },
+  "stallia": {
+    "range": "周围",
+    "ability": [
+      "对周围的僵尸施加减速效果"
+    ],
+    "traits": [
+      "proximity"
+    ]
+  },
+  "goldleaf": {
+    "range": "本格",
+    "ability": [
+      "原地生成一块黄金地砖"
+    ],
+    "traits": [
+      "single-use",
+      "highcost"
+    ]
+  },
+  "zoybeanpod": {
+    "ability": [
+      "每隔一段时间成长为硕大的豆荚，并释放一只为你而战的豆腐僵尸"
+    ]
+  },
+  "aloe": {
+    "range": "短",
+    "ability": [
+      "对右侧的植物进行强大的单次治疗"
+    ]
+  },
+  "shinevine": {
+    "ability": [
+      "启明植物生成阳光时，产生额外阳光，不会促进月光花的生产；",
+      "僵尸接触时，闪烁出耀眼的光芒作为防御"
+    ],
+    "traits": [
+      "stackable",
+      "contact"
+    ]
+  },
+  "firegourd": {
+    "range": "变化",
+    "ability": [
+      "朝前方喷射火焰，蓄力时间越长，攻击距离越远；",
+      "对武器架造成额外伤害"
+    ],
+    "traits": [
+      "tap",
+      "cooldown"
+    ]
+  },
+  "snowpea": {
+    "range": "长",
+    "ability": [
+      "发射寒冰豌豆子弹与结冰冰锥"
+    ]
+  },
+  "bambooshoot": {
+    "range": "短",
+    "ability": [
+      "在地面上来回移动对经过的僵尸造成伤害，有概率造成击退"
+    ],
+    "traits": [
+      "rooted",
+      "lowland"
+    ]
+  },
+  "turnip": {
+    "ability": [
+      "稳固地扎根于地面，不会被外力造成位移"
+    ],
+    "traits": [
+      "rooted"
+    ]
+  },
+  "peach": {
+    "range": "周围",
+    "ability": [
+      "医疗周围至多3株植物，一段时间内使它们缓慢恢复血量"
+    ]
+  },
+  "powerlily": {
+    "traits": [
+      "single-use"
+    ]
+  },
+  "lychee": {
+    "range": "周围",
+    "ability": [
+      "受到伤害时向周围所有僵尸发射荔枝刺，受到的伤害越高发射的荔枝刺越多"
+    ]
+  },
+  "solarsage": {
+    "range": "本格",
+    "ability": [
+      "感化靠近的僵尸，使他们心甘情愿地离开并沿路产出阳光"
+    ],
+    "traits": [
+      "single-use",
+      "proximity"
+    ]
+  },
+  "cantaloupe": {
+    "range": "长",
+    "ability": [
+      "投掷哈密瓜炮弹，炮弹会在空中爆开，对3x3范围内的僵尸以不接触的方式造成群体伤害"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "bamboozle": {
+    "range": "全场",
+    "ability": [
+      "向目标格子发射竹竿，竹竿落地后变为能保护植物的竹篮；最多5次"
+    ],
+    "traits": [
+      "tap"
+    ]
+  },
+  "atombomb_seedling": {
+    "sunCost": 225,
+    "recharge": 20,
+    "damage": 1800,
+    "range": "5x5",
+    "chat": "记住，永远不要，千万不要切开一个水果。哦，不对，切开水果没关系，不要切开原子就行。",
+    "ability": [
+      "种下时是小种子，成长后变为石榴弹；",
+      "石榴弹对范围内所有僵尸造成灰烬伤害，并在范围内留下新的小种子"
+    ],
+    "traits": [
+      "single-use",
+      "growth",
+      "proximity"
+    ]
+  },
+  "strawburst": {
+    "range": "较长",
+    "ability": [
+      "点击发射爆裂草莓；",
+      "随着成长，草莓的伤害与伤害范围提升"
+    ],
+    "traits": [
+      "growth",
+      "tap"
+    ]
+  },
+  "cactus": {
+    "range": "长/本格",
+    "ability": [
+      "发射能穿透3只僵尸的尖刺子弹；",
+      "僵尸靠近时，躲在地下对经过的僵尸造成伤害"
+    ],
+    "traits": [
+      "rooted",
+      "proximity"
+    ]
+  },
+  "phatbeet": {
+    "range": "周围",
+    "ability": [
+      "震出音波攻击周围的僵尸"
+    ]
+  },
+  "celerystalker": {
+    "range": "短",
+    "ability": [
+      "潜伏于地下，等待僵尸走过后，从地下钻出抽打他们"
+    ],
+    "traits": [
+      "rooted"
+    ]
+  },
+  "thymewarp": {
+    "range": "全场",
+    "ability": [
+      "让全场僵尸被回溯至场地最右侧，被回溯的僵尸血量会回满"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "electricblueberry": {
+    "damage": 5000,
+    "range": "全场",
+    "ability": [
+      "每隔一段时间发射一道高伤害的雷电，电击全场随机的僵尸"
+    ],
+    "traits": [
+      "cooldown"
+    ]
+  },
+  "garlic": {
+    "ability": [
+      "被啃咬时将僵尸分散到邻近行"
+    ],
+    "traits": [
+      "bitten"
+    ]
+  },
+  "sporeshroom": {
+    "range": "长",
+    "ability": [
+      "向敌人投掷蘑菇孢子；",
+      "带有蘑菇孢子的僵尸死亡时产生新的孢子菇"
+    ]
+  },
+  "intensivecarrot": {
+    "range": "本格",
+    "ability": [
+      "将本格内上一柱死亡的植物复活"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "caulipower": {
+    "range": "全场",
+    "ability": [
+      "每隔一段时间，魅惑场上随机的僵尸"
+    ],
+    "traits": [
+      "floating",
+      "cooldown"
+    ]
+  },
+  "bloominghearts": {
+    "range": "长",
+    "ability": [
+      "投掷爱心子弹，使僵尸的防御力略微下降"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "mirrornut": {
+    "range": "整行",
+    "ability": [
+      "场上的防御植物受伤时为自身充能，消耗充能发射彩虹子弹，最多4次；",
+      "持有充能并被打败后，对整行僵尸造成伤害"
+    ]
+  },
+  "grapeshot": {
+    "range": "3x3",
+    "ability": [
+      "向范围内僵尸造成灰烬伤害，并向8个方向发射弹性葡萄子弹"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "primalpeashooter": {
+    "range": "长",
+    "ability": [
+      "发射沉重的豌豆子弹，有时能击退僵尸一段距离"
+    ]
+  },
+  "primalwallnut": {
+    "ability": [
+      "冷却时间较短，能承受3次致命攻击"
+    ]
+  },
+  "perfumeshroom": {
+    "range": "整行",
+    "ability": [
+      "魅惑整行的恐龙为你而战；",
+      "若没有恐龙则召唤1只被魅惑的迅猛龙"
+    ]
+  },
+  "coldsnapdragon": {
+    "range": "较短",
+    "ability": [
+      "向前方6格吐出冰息"
+    ]
+  },
+  "primalsunflower": {
+    "ability": [
+      "一次产出75点阳光"
+    ]
+  },
+  "primalpotatomine": {
+    "range": "3x3",
+    "ability": [
+      "经过较短的准备时间，能够炸飞范围内的所有僵尸"
+    ],
+    "traits": [
+      "rooted",
+      "contact"
+    ]
+  },
+  "shrinkingviolet": {
+    "range": "周围",
+    "ability": [
+      "使周围所有僵尸缩小"
+    ],
+    "traits": [
+      "proximity"
+    ]
+  },
+  "meteorflower": {
+    "range": "全场",
+    "ability": [
+      "召唤流星砸向僵尸，流星会在地面留下岩浆坑一段时间；",
+      "流星能够吓退恐龙"
+    ]
+  },
+  "explodeonut": {
+    "range": "周围",
+    "ability": [
+      "被啃食后自爆，炸飞范围内所有僵尸"
+    ],
+    "traits": [
+      "swallowed"
+    ]
+  },
+  "skyshooter": {
+    "range": "长",
+    "ability": [
+      "以较快的速度发射豌豆子弹；",
+      "飞行状态下，豌豆子弹能造成小幅度的击退"
+    ],
+    "traits": [
+      "floating"
+    ]
+  },
+  "pineapple": {
+    "ability": [
+      "旋转身体反射僵尸的子弹"
+    ],
+    "traits": [
+      "floating"
+    ]
+  },
+  "moonbean": {
+    "ability": [
+      "被吞食后变为太阳炸弹"
+    ],
+    "traits": [
+      "floating",
+      "swallowed"
+    ]
+  },
+  "anthurium": {
+    "range": "长",
+    "ability": [
+      "发射球状闪电，吸收周围植物身上的电荷后球状闪电伤害提升"
+    ]
+  },
+  "asparagus": {
+    "range": "3行",
+    "ability": [
+      "能攻击到相邻两行的僵尸，每发射 7 次后必须重新装填一会"
+    ],
+    "traits": [
+      "floating",
+      "cooldown"
+    ]
+  },
+  "loquat": {
+    "range": "3x3",
+    "ability": [
+      "将范围内的所有僵尸向自己拖拽"
+    ],
+    "traits": [
+      "single-use",
+      "floating"
+    ]
+  },
+  "bulbkekengi": {
+    "range": "周围",
+    "ability": [
+      "驱散迷雾，使隐身的僵尸显身"
+    ],
+    "traits": [
+      "floating"
+    ]
+  },
+  "peacommando": {
+    "range": "全场",
+    "ability": [
+      "每隔一段时间派遣3名豌豆突击兵，对最左侧僵尸发动高伤害突袭"
+    ],
+    "traits": [
+      "floating",
+      "cooldown"
+    ]
+  },
+  "floawerPot": {
+    "ability": [
+      "使得不能飞行的植物能种植于空中"
+    ],
+    "traits": [
+      "floating",
+      "potted"
+    ]
+  },
+  "moonflower": {
+    "ability": [
+      "生产阳光并在周围生成月光，月光能使暗影植物进入暗影状态；",
+      "阳光产量随着身边暗影植物增多而增多，4株时最多"
+    ]
+  },
+  "nightshade": {
+    "range": "短/长",
+    "ability": [
+      "使用叶子猛击靠近的僵尸；",
+      "暗影状态中，会重新长出叶片并远程抛出"
+    ]
+  },
+  "shadowshroom": {
+    "range": "本格",
+    "ability": [
+      "使接触者中毒；",
+      "暗影状态中，使僵尸身上的毒有传染性"
+    ],
+    "traits": [
+      "single-use",
+      "contact"
+    ]
+  },
+  "dusklobber": {
+    "range": "长",
+    "ability": [
+      "向前方投掷花蕾，花蕾在空中炸裂以非接触的方式命中3x3范围内的僵尸；",
+      "暗影状态中，能沿着三行投掷花蕾"
+    ],
+    "traits": [
+      "highland"
+    ]
+  },
+  "grimrose": {
+    "range": "长",
+    "ability": [
+      "暗影状态中，能将 3 只僵尸拖入地底"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "goldbloom": {
+    "ability": [
+      "爆裂出大量的阳光"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "escaperoot": {
+    "range": "全场",
+    "ability": [
+      "点击后能与场上任意一株植物替换位置；",
+      "僵尸接触时变为随机的爆裂植物"
+    ],
+    "traits": [
+      "rooted",
+      "contact",
+      "tap"
+    ]
+  },
+  "murkadamia": {
+    "ability": [
+      "暗影状态中，生成能自动恢复的胶体荆棘，荆棘会造成反伤"
+    ]
+  },
+  "shadowpeashooter": {
+    "range": "长",
+    "ability": [
+      "暗影状态中，发射穿透的、减速效果的暗影光束；",
+      "能隐蔽自身并吞噬靠近的僵尸"
+    ],
+    "traits": [
+      "proximity"
+    ]
+  },
+  "noctarine": {
+    "range": "3x3",
+    "ability": [
+      "爆裂并在范围内生成月光与毒雾"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "gloomvine": {
+    "range": "周围",
+    "ability": [
+      "自带月光激活本格的暗影植物；",
+      "向周围发射孢子攻击"
+    ],
+    "traits": [
+      "stackable"
+    ]
+  },
+  "gloomshroom": {
+    "damage": 80,
+    "range": "周围",
+    "ability": [
+      "向周围发射孢子攻击；",
+      "暗影状态中，攻击对追加额外的中毒伤害，且在地面上留下临时的月光"
+    ]
+  },
+  "umbrellaleaf": {
+    "range": "周围",
+    "ability": [
+      "弹飞范围内飞来的弹射物；",
+      "将空降的僵尸弹回到最右边"
+    ]
+  },
+  "cranjelly": {
+    "damage": 65,
+    "range": "整行",
+    "ability": [
+      "从本行左侧冲出碾压整行僵尸，碰到僵尸时在地面留下果冻"
+    ],
+    "traits": [
+      "single-use",
+      "contact"
+    ]
+  },
+  "darkmatterdragonfruit": {
+    "range": "长",
+    "ability": [
+      "发射爆炸性吐息，吐息造成溅射伤害；",
+      "暗影状态中，吐息会额外施加沉重效果"
+    ]
+  },
+  "appeasemint": {
+    "range": "全场",
+    "ability": [
+      "发射一打能分裂的巨型豌豆子弹；",
+      "在场时，所有平射家族的植物攻击力与攻击速度增加"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "enlightenmint": {
+    "range": "全场",
+    "ability": [
+      "生成一沓阳光；",
+      "在场时，所有启明家族的生产间隔缩短、产量增加"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "reinforcemint": {
+    "range": "全场",
+    "ability": [
+      "击退全场僵尸；",
+      "在场时，所有防御家族的植物临时进入叶绿素大招状态"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "bombardmint": {
+    "range": "全场",
+    "ability": [
+      "在全场引起几发爆炸；",
+      "在场时，所有爆裂家族的植物射程范围增加"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "armamint": {
+    "range": "全场",
+    "ability": [
+      "向全场僵尸投掷眩晕子弹；",
+      "在场时，所有军械家族的植物冷却时间与休息时间大幅缩短"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "spearmint": {
+    "range": "全场",
+    "ability": [
+      "产生一整列锋利的圆锯；",
+      "在场时，所有锋利家族的植物穿透能力与攻击速度增加"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "wintermint": {
+    "range": "全场",
+    "ability": [
+      "冷冻全场僵尸一段时间；",
+      "在场时，所有寒冰家族的植物攻击速度大幅增加"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "enforcemint": {
+    "range": "全场",
+    "ability": [
+      "缩小全场数名僵尸；",
+      "在场时，所有健壮家族的植物攻击力增加、受到的伤害降低"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "peppermint": {
+    "range": "全场",
+    "ability": [
+      "让全场燃起火焰；",
+      "在场时，所有燃烧家族的植物攻击力大幅增加"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "ailmint": {
+    "range": "全场",
+    "ability": [
+      "令全场僵尸中毒；",
+      "在场时，所有毒性家族的植物冷却时间大幅缩短"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "filamint": {
+    "range": "全场",
+    "ability": [
+      "电击全场所有僵尸；",
+      "在场时，所有电能家族的植物攻击力与控制能力增加"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "enchantmint": {
+    "range": "全场",
+    "ability": [
+      "魅惑全场数名僵尸；",
+      "在场时，所有魔法家族的植物特殊能力冷却与种子包冷却缩短"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "concealmint": {
+    "range": "全场",
+    "ability": [
+      "将全场数名僵尸拖入地下；",
+      "在场时，所有暗影家族的植物进入暗影状态，暗影能力被增幅"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "containmint": {
+    "range": "全场",
+    "ability": [
+      "眩晕全场数名僵尸；",
+      "在场时，所有滞缓家族的植物阳光消耗与冷却时间减少"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "chillypepper": {
+    "range": "3行",
+    "ability": [
+      "对本行僵尸造成高额灰烬伤害，并使邻近行僵尸寒冷减速"
+    ],
+    "traits": [
+      "single-use"
+    ]
+  },
+  "witchhazel": {
+    "range": "全场",
+    "ability": [
+      "每隔一段时间，将场上随机僵尸变为小喷菇，有较低的概率变成大喷菇"
+    ],
+    "traits": [
+      "cooldown"
+    ]
+  },
+  "inferno": {
+    "range": "长",
+    "ability": [
+      "卷起热浪，灼烧僵尸的同时将其击退"
+    ]
+  },
+  "slingpea": {
+    "range": "全场",
+    "family": "军械家族",
+    "ability": [
+      "向全场离底线最近的5名僵尸投掷豌豆子弹；",
+      "僵尸离底线越近，伤害越高"
+    ],
+    "traits": [
+      "highland"
+    ]
+  }
+}

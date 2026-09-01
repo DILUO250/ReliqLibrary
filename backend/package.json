@@ -1,0 +1,30 @@
+{
+  "name": "@rtl/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "type-check": "tsc --noEmit",
+    "seed:reset": "tsx src/scripts/seed.ts --reset",
+    "audit:art": "tsx src/scripts/auditArt.ts",
+    "import:terms": "tsx src/scripts/importTerms.ts",
+    "import:pvz": "tsx src/scripts/importPvz.ts"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.29.8",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/multipart": "^9.4.0",
+    "@rtl/shared": "*",
+    "better-sqlite3": "^11.8.0",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "~5.7.2"
+  }
+}

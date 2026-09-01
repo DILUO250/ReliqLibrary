@@ -1,0 +1,18 @@
+[
+  {
+    "codename": "angry_peashooter",
+    "numericId": 213,
+    "name": "红温射手",
+    "englishName": "Angry peashooter",
+    "image": "",
+    "world": "frontyard",
+    "family": {
+      "code": "Peashooter",
+      "name": "平射家族",
+      "icon": "/projects/pvz/assets/wikicon/Appease-mint_familyicon.webp"
+    },
+    "summary": "准头不好脾气还差",
+    "path": "",
+    "custom": true
+  }
+]

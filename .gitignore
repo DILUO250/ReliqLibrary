@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+.idea/
+.workbuddy/
+*.local
+backend/data/*.db-shm
+backend/data/*.db-wal
+references/
+
+*.log

@@ -1,0 +1,22 @@
+{
+  "name": "reliq-library",
+  "version": "0.1.0",
+  "private": true,
+  "description": "遗迹图书馆 · Reliquiarum to Library 全栈设定展示项目",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "shared"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace backend",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build:frontend": "npm run build --workspace frontend",
+    "build:backend": "npm run build --workspace backend",
+    "type-check": "npm run type-check --workspace frontend && npm run type-check --workspace backend",
+    "seed:reset": "npm run seed:reset --workspace backend",
+    "audit:art": "npm run audit:art --workspace backend",
+    "import:terms": "npm run import:terms --workspace backend",
+    "import:pvz": "npm run import:pvz --workspace backend"
+  }
+}
