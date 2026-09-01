@@ -12,6 +12,13 @@ export function getDb(): Database.Database {
   db = new Database(DB_PATH)
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
+  // 归一化 WAL：把日志落盘回收（TRUNCATE），清掉上个进程强杀残留的 -wal/-shm 状态。
+  // Windows 上残留的共享内存会让后续读取触发恢复，极端时导致原生崩溃（词典页打开即崩的教训）。
+  try {
+    db.pragma('wal_checkpoint(TRUNCATE)')
+  } catch {
+    // 被其它进程占用时静默跳过，不影响正常服务
+  }
   migrate(db)
   return db
 }
