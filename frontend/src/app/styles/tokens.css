@@ -21,6 +21,12 @@
   --danger: #c0503a;
   --error: #d4694f;
 
+  /* 三大部门 + 馆长层分区主题色（主页导览树边框/高亮、卡片色系） */
+  --director: #e0b564;
+  --turris: #c04a32;
+  --armarium: #4a7fc4;
+  --collegium: #55a05f;
+
   /* 布局 */
   --header-h: 52px;
   --radius: 8px;
