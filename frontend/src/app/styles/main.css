@@ -164,14 +164,26 @@ a:hover {
 
 .module-shell[data-theme='armarium'] {
   background: linear-gradient(180deg, rgba(74, 127, 196, 0.08), transparent 40%);
+  --accent: var(--armarium);
+  --color-accent: var(--armarium);
+  --color-gold: var(--armarium);
+  --color-line: color-mix(in srgb, var(--armarium) 32%, rgba(233, 221, 198, 0.16));
 }
 
 .module-shell[data-theme='turris'] {
   background: linear-gradient(180deg, rgba(192, 74, 50, 0.09), transparent 40%);
+  --accent: var(--turris);
+  --color-accent: var(--turris);
+  --color-gold: var(--turris);
+  --color-line: color-mix(in srgb, var(--turris) 32%, rgba(233, 221, 198, 0.16));
 }
 
 .module-shell[data-theme='collegium'] {
   background: linear-gradient(180deg, rgba(85, 160, 95, 0.09), transparent 40%);
+  --accent: var(--collegium);
+  --color-accent: var(--collegium);
+  --color-gold: var(--collegium);
+  --color-line: color-mix(in srgb, var(--collegium) 32%, rgba(233, 221, 198, 0.16));
 }
 
 .module-shell__inner {

@@ -31,5 +31,9 @@ import Toast from '@pvzwiki/components/Toast.vue'
   color: #3c3c43;
   font-family: pvzgeFontEN, pvzgFont, 'Noto Sans SC', sans-serif;
   min-height: calc(100vh - var(--header-h));
+  /* 藏书阁主题色联动（模块内全局 token 随 armarium 蓝色系走） */
+  --accent: var(--armarium);
+  --color-accent: var(--armarium);
+  --color-gold: var(--armarium);
 }
 </style>

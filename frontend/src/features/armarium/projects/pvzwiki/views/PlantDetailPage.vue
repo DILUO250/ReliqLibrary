@@ -22,7 +22,7 @@ import {
 import { removeCustomPlant, PLANT_PLACEHOLDER_IMAGE } from '@pvzwiki/store/customPlants'
 import { ui } from '@pvzwiki/store/ui'
 import { isEditableTarget } from '@pvzwiki/utils/keyboard'
-import { pvzAsset } from '@pvzwiki/asset'
+import { pvzAsset, pvzImagePath } from '@pvzwiki/asset'
 import PlantEditor from '@pvzwiki/components/PlantEditor.vue'
 import PlantImageEditor from '@pvzwiki/components/PlantImageEditor.vue'
 import PlantCreateDialog from '@pvzwiki/components/PlantCreateDialog.vue'
@@ -138,12 +138,12 @@ interface StatRow {
 const stats = computed<StatRow[]>(() => {
   const d = detail.value
   return [
-    { label: '阳光消耗', icon: pvzAsset('/assets/wikicon/Sun_Cost2I.webp'), value: d?.sunCost != null ? String(d.sunCost) : '—' },
-    { label: '冷却时间', icon: pvzAsset('/assets/wikicon/Recharge2I.webp'), value: d?.recharge != null ? String(d.recharge) : '—' },
-    { label: '血量', icon: pvzAsset('/assets/wikicon/Toughness2I.webp'), value: d?.toughness != null ? String(d.toughness) : '—' },
-    { label: '伤害', icon: pvzAsset('/assets/wikicon/Damage2I.webp'), value: d?.damage != null ? String(d.damage) : '—' },
-    { label: '射程', icon: pvzAsset('/assets/wikicon/Range2I.webp'), value: d?.range != null ? String(d.range) : '—' },
-    { label: '家族', icon: pvzAsset('/assets/wikicon/Family2I.webp'), value: d?.family ?? '—' },
+    { label: '阳光消耗', icon: pvzImagePath('/assets/wikicon/Sun_Cost2I.webp'), value: d?.sunCost != null ? String(d.sunCost) : '—' },
+    { label: '冷却时间', icon: pvzImagePath('/assets/wikicon/Recharge2I.webp'), value: d?.recharge != null ? String(d.recharge) : '—' },
+    { label: '血量', icon: pvzImagePath('/assets/wikicon/Toughness2I.webp'), value: d?.toughness != null ? String(d.toughness) : '—' },
+    { label: '伤害', icon: pvzImagePath('/assets/wikicon/Damage2I.webp'), value: d?.damage != null ? String(d.damage) : '—' },
+    { label: '射程', icon: pvzImagePath('/assets/wikicon/Range2I.webp'), value: d?.range != null ? String(d.range) : '—' },
+    { label: '家族', icon: pvzImagePath('/assets/wikicon/Family2I.webp'), value: d?.family ?? '—' },
   ]
 })
 

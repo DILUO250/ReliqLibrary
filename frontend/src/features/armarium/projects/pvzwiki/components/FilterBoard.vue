@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { WorldInfo, FamilyInfo } from '@pvzwiki/types/plant'
-import { pvzAsset } from '@pvzwiki/asset'
+import { pvzImagePath } from '@pvzwiki/asset'
 
-const allFamilyIcon = pvzAsset('/assets/wikicon/All_familyicon.webp')
+const allFamilyIcon = pvzImagePath('/assets/wikicon/All_familyicon.webp')
 
 defineProps<{
   searchQuery: string

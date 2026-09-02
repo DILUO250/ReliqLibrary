@@ -1,14 +1,27 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useTermsStore } from '@/features/turris/store/terms'
 import { TAG_STYLES } from '@/features/turris/terms/tagStyles'
 import { readableColor, formatToCss, mergedFormat } from '@/features/turris/terms/format'
+import TermEditModal from '@/features/turris/terms/TermEditModal.vue'
 import type { DictEntry } from '@/features/turris/store/terms'
 
 const termsStore = useTermsStore()
 
 // 仅展示可见分区（隐藏区如"基础数值"不出现）
 const sections = computed(() => termsStore.visibleSections)
+
+const editOpen = ref(false)
+const editingEntry = ref<DictEntry | null>(null)
+
+function openEdit(e: DictEntry): void {
+  editingEntry.value = e
+  editOpen.value = true
+}
+
+async function onSaved(): Promise<void> {
+  await termsStore.reload()
+}
 
 onMounted(() => {
   void termsStore.load()
@@ -84,7 +97,7 @@ function groupColor(title: string): string {
                 {{ g.title }}
               </h3>
               <div class="dict-grid">
-                <article v-for="e in g.entries" :key="e.name" class="entry">
+                <article v-for="e in g.entries" :key="e.id" class="entry">
                   <div class="entry__head">
                     <h4 class="entry__name" :style="formatToCss(mergedFormat(e))">{{ e.name }}</h4>
                     <div v-if="e.tags.length" class="entry__tags">
@@ -97,6 +110,14 @@ function groupColor(title: string): string {
                         {{ t }}
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      class="entry__edit"
+                      title="编辑词条（名称 / 字体格式 / 标签 / 描述）"
+                      @click="openEdit(e)"
+                    >
+                      编辑
+                    </button>
                   </div>
                   <p class="entry__desc">{{ e.desc }}</p>
                 </article>
@@ -106,6 +127,8 @@ function groupColor(title: string): string {
         </section>
       </template>
     </main>
+
+    <TermEditModal :open="editOpen" :entry="editingEntry" @close="editOpen = false" @saved="onSaved" />
   </div>
 </template>
 
@@ -249,6 +272,23 @@ function groupColor(title: string): string {
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+.entry__edit {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  line-height: 1;
+  padding: 4px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.entry__edit:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .entry__name {
   margin: 0;
