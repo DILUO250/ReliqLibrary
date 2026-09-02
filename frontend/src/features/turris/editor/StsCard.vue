@@ -56,7 +56,7 @@ const PREFIX_THEME: Record<
   },
   'SHM.': {
     from: '#8B7500',
-    to: '#FBBF24',
+    to: '#E8A317',
     border: '#a8801f',
     glow: '#FBBF24',
     tint: 'rgba(251,191,36,0.16)',
@@ -119,7 +119,10 @@ const hasEffects = computed(
           <span class="shi-hop__sep">|</span>
           <span class="shi-hop__val">{{ card.hope.cost }}</span>
           <span class="shi-hop__sep">|</span>
-          <span class="shi-hop__val">{{ card.hope.effect }}</span>
+          <span class="shi-hop__val">
+            <RenderedText v-if="renderTerms" :text="card.hope.effect" :private-terms="privateTerms" />
+            <template v-else>{{ card.hope.effect }}</template>
+          </span>
         </div>
 
         <div v-if="hasDice" class="sts-card__dice">
