@@ -4,7 +4,7 @@ import { keywords } from '@pvzwiki/data/keywords'
 import { getEffectiveDetail } from '@pvzwiki/data/plant-details'
 import { saveEdit, type PlantEditData } from '@pvzwiki/store/plantEditor'
 import { isEditableTarget } from '@pvzwiki/utils/keyboard'
-import { showToast } from '@pvzwiki/store/toast'
+import { showToast } from '@/app/stores/toast'
 import { plants, getFamilies } from '@pvzwiki/data/plants'
 
 const props = defineProps<{ codename: string }>()

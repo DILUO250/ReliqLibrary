@@ -2,7 +2,6 @@
 import { RouterView } from 'vue-router'
 import KeywordDictionary from '@pvzwiki/components/KeywordDictionary.vue'
 import SyncPanel from '@pvzwiki/components/SyncPanel.vue'
-import Toast from '@pvzwiki/components/Toast.vue'
 </script>
 
 <template>
@@ -10,7 +9,6 @@ import Toast from '@pvzwiki/components/Toast.vue'
     <RouterView />
     <SyncPanel hide-trigger />
     <KeywordDictionary hide-trigger />
-    <Toast />
   </div>
 </template>
 

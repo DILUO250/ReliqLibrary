@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toast } from '@pvzwiki/store/toast'
+import { toast } from '@/app/stores/toast'
 </script>
 
 <template>
@@ -14,14 +14,14 @@ import { toast } from '@pvzwiki/store/toast'
   top: 1.25rem;
   left: 50%;
   z-index: 9999;
-  color: #fff;
-  background: #2e7d32;
-  border: 2px solid #1b5e20;
+  color: var(--color-ink);
+  background: rgba(24, 19, 13, 0.94);
+  border: 1px solid var(--accent);
   border-radius: 8px;
   padding: 0.65rem 1.4rem;
   font-family: inherit;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
   transform: translate(-50%, 0);

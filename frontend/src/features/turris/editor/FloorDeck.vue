@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import type { Floor, Librarian, LibrarianSheet, BattleSystemId } from '@rtl/shared'
 import { BATTLE_SYSTEMS, parseSheet, toRoman } from '@rtl/shared'
 import { api } from '@/app/services/api'
+import { showToast } from '@/app/stores/toast'
 import cardIcon from '@/features/turris/assets/cardIcon.png'
 import FloorEditorModal from './FloorEditorModal.vue'
 import LibrarianEditorModal from './LibrarianEditorModal.vue'
@@ -126,6 +127,7 @@ async function saveFloor(payload: Record<string, unknown>): Promise<void> {
     } else {
       await api.create('floors', payload)
     }
+    showToast(floorModal.value.floor ? '楼层已保存' : '楼层已创建')
     await load()
     floorModal.value = { open: false, floor: null }
   } catch (e) {
@@ -164,6 +166,7 @@ async function saveLibrarian(payload: Record<string, unknown>): Promise<void> {
       const withOrder = { ...payload, sortOrder: raw ?? order }
       await api.create('librarians', withOrder)
     }
+    showToast(libModal.value.librarian ? '司书已保存' : '司书已创建')
     await load()
     libModal.value = { open: false, librarian: null, floorId: null }
   } catch (e) {

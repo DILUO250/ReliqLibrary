@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import type { TermFormat } from '@rtl/shared'
 import { api } from '@/app/services/api'
+import { showToast } from '@/app/stores/toast'
 import Modal from '@/features/turris/editor/Modal.vue'
 import FormatEditor from '@/features/turris/editor/FormatEditor.vue'
 import type { DictEntry } from '@/features/turris/store/terms'
@@ -69,6 +70,7 @@ async function save(): Promise<void> {
       tagFormats: JSON.stringify(form.tagFormats),
       format: JSON.stringify(form.format),
     })
+    showToast('词条已保存')
     emit('saved')
     emit('close')
   } catch (e) {

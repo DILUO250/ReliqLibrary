@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import ImageCropper from '@pvzwiki/components/ImageCropper.vue'
 import { uploadCard } from '@pvzwiki/store/plantImage'
-import { showToast } from '@pvzwiki/store/toast'
+import { showToast } from '@/app/stores/toast'
 
 // 植物卡片图生成器：
 //   1. 以 220x220 正方形裁剪植物高清图 → 缩略图

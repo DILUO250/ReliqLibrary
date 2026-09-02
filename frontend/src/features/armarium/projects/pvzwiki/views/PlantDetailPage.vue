@@ -26,7 +26,7 @@ import { pvzAsset, pvzImagePath } from '@pvzwiki/asset'
 import PlantEditor from '@pvzwiki/components/PlantEditor.vue'
 import PlantImageEditor from '@pvzwiki/components/PlantImageEditor.vue'
 import PlantCreateDialog from '@pvzwiki/components/PlantCreateDialog.vue'
-import { showToast } from '@pvzwiki/store/toast'
+import { showToast } from '@/app/stores/toast'
 
 const route = useRoute()
 const router = useRouter()

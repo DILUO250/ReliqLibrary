@@ -14,7 +14,7 @@ import {
   restoreBg,
   hasBgBackup,
 } from '@pvzwiki/store/plantImage'
-import { showToast } from '@pvzwiki/store/toast'
+import { showToast } from '@/app/stores/toast'
 import CardGenerator from '@pvzwiki/components/CardGenerator.vue'
 
 interface BgItem {

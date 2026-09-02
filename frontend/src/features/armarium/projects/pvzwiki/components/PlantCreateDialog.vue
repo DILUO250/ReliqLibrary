@@ -9,7 +9,7 @@ import {
   isCodenameTaken,
   nextNumericId,
 } from '@pvzwiki/store/customPlants'
-import { showToast } from '@pvzwiki/store/toast'
+import { showToast } from '@/app/stores/toast'
 
 const props = defineProps<{
   open: boolean
