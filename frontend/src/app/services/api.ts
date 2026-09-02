@@ -22,15 +22,18 @@ export const api = {
     request<T>(`/${resource}/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (resource: string, id: number | string) =>
     request<void>(`/${resource}/${id}`, { method: 'DELETE' }),
-  uploadImage: async (file: File): Promise<{ url: string }> => {
+  uploadImage: async (
+    file: File,
+    kind: 'portrait' | 'preview' | 'floor',
+  ): Promise<{ url: string }> => {
     const fd = new FormData()
     fd.append('file', file)
-    const res = await fetch(`${BASE}/upload`, { method: 'POST', body: fd })
+    const res = await fetch(`${BASE}/turris/upload?kind=${kind}`, { method: 'POST', body: fd })
     if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
     return (await res.json()) as { url: string }
   },
-  generateArt: (prompt: string) =>
-    request<{ url: string; raw?: string; model?: string }>('/art/generate', {
+  generateArt: (prompt: string, kind: 'portrait' | 'floor') =>
+    request<{ url: string; raw?: string; model?: string }>(`/turris/art/generate?kind=${kind}`, {
       method: 'POST',
       body: JSON.stringify({ prompt }),
     }),

@@ -72,7 +72,7 @@ async function onFilePicked(event: Event): Promise<void> {
   if (!file) return
   saveError.value = null
   try {
-    const res = await api.uploadImage(file)
+    const res = await api.uploadImage(file, 'floor')
     form.artwork = res.url
   } catch (e) {
     saveError.value = `上传失败：${e instanceof Error ? e.message : String(e)}`
@@ -82,7 +82,7 @@ async function generateArt(): Promise<void> {
   saveError.value = null
   const prompt = `遗迹图书馆迎书楼楼层背景图，${form.name || form.designation || '未命名'}，${form.theme || ''}，${form.description || '宏伟的图书馆内部'}，电影级构图，史诗氛围`.trim()
   try {
-    const res = await api.generateArt(prompt)
+    const res = await api.generateArt(prompt, 'floor')
     form.artwork = res.url
   } catch (e) {
     saveError.value = `生成失败：${e instanceof Error ? e.message : String(e)}`

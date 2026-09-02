@@ -95,11 +95,25 @@ Vue 视图 (features/*/views, features/*/components)
 
 > 这是历史问题的第一道防线：旧版本上传立绘只新增文件不改旧文件，孤儿资源越积越多。
 
-凡表含 `/art/` 图片 URL 列，其 PUT（替换/清空）与 DELETE（删行）**必须**走 `trashArt()` 回收旧文件到 `ART_DIR/_trash/{timestamp}_{name}`，**禁止**让旧文件留在 `art/` 成孤儿。
+凡表含 `/art/` 图片 URL 列，其 PUT（替换/清空）与 DELETE（删行）**必须**走 `trashArt()` 回收旧文件，**禁止**让旧文件留在 `art/` 成孤儿。
 
+**`art/` 目录按模块分治（对齐 features/ 逻辑）**：
+
+```
+art/
+├─ turris/
+│  ├─ librarian-portraits/   # 司书全图（上传 + AI 生成）
+│  ├─ librarian-previews/    # 司书缩略图（裁剪产物）
+│  ├─ floors/                # 楼层背景图
+│  └─ _trash/                # turris 素材回收站
+├─ armarium/                 # PVZ 用户素材（plants/cards/backgrounds）+ _trash/
+└─ _trash/                   # 通用回收站
+```
+
+- 上传端点按 feature 归属：`POST /api/turris/upload?kind=portrait|preview|floor`（features/turris/artRoutes.ts）、`/api/pvz/*`（features/armarium/artRoutes.ts）。**禁止**新开往 art/ 顶层平铺的通道
 - 图片列登记在 `routes/index.ts` 的 `IMAGE_COLUMNS` 常量：`{ floors: ['artwork'], librarians: ['portrait','portraitPreview'] }`。**新表有图片列就往这里加，漏登记 = 孤儿资源回归。**
-- PVZ 用户素材（立绘/卡图/背景）的替换与删除统一走 `features/armarium/artRoutes.ts` 的 `pvzTrash()` → `art/pvz/_trash/`。
-- `trashArt`/`pvzTrash` 只改名不删除，失败时静默保留原文件（防丢）。`_trash/` 下的文件由人工定期清理。
+- PVZ 用户素材（立绘/卡图/背景）的替换与删除统一走 `features/armarium/artRoutes.ts` 的 `pvzTrash()` → `art/armarium/_trash/`
+- `trashArt()` 回收目标跟随素材所属模块（URL 含模块段 → `art/<模块>/_trash/`，否则全局 `art/_trash/`）；只改名不删除，失败时静默保留原文件（防丢）。`_trash/` 由人工定期清理
 
 ### 3.2 现存孤儿处置（人工，禁止自动删）
 

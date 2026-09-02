@@ -163,7 +163,7 @@ async function confirm(): Promise<void> {
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
     if (!blob) throw new Error('裁剪失败')
     const file = new File([blob], `portrait-preview-${Date.now()}.png`, { type: 'image/png' })
-    const res = await api.uploadImage(file)
+    const res = await api.uploadImage(file, 'preview')
     emit('confirm', res.url)
   } catch (e) {
     status.value = 'ready'

@@ -120,7 +120,7 @@ async function onFilePicked(event: Event): Promise<void> {
   if (!file) return
   saveError.value = null
   try {
-    const res = await api.uploadImage(file)
+    const res = await api.uploadImage(file, 'portrait')
     form.portrait = res.url
     form.portraitPreview = ''
     cropSource.value = res.url
@@ -133,7 +133,7 @@ async function generatePortrait(): Promise<void> {
   saveError.value = null
   const prompt = `遗迹图书馆迎书楼司书立绘，${form.name}，${form.title}，(${form.affiliation}) 战斗司书，3:4 竖版全身立绘，精美`
   try {
-    const res = await api.generateArt(prompt)
+    const res = await api.generateArt(prompt, 'portrait')
     form.portrait = res.url
     form.portraitPreview = ''
     cropSource.value = res.url

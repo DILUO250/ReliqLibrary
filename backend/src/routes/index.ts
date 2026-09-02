@@ -1,17 +1,9 @@
 import type { FastifyInstance } from 'fastify'
-import { execFile } from 'node:child_process'
-import { createWriteStream, existsSync, mkdirSync } from 'node:fs'
-import { basename, extname, join } from 'node:path'
-import { promisify } from 'node:util'
 import { getDb } from '../db/index.js'
-import { ART_DIR } from '../config/index.js'
 import { TABLES, type TableName } from '../db/schema.js'
 import { trashArt } from './artTrash.js'
 import { registerPvzArtRoutes } from '../features/armarium/artRoutes.js'
-
-const execFileP = promisify(execFile)
-
-const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif'])
+import { registerTurrisArtRoutes } from '../features/turris/artRoutes.js'
 
 type IdParams = { id: string }
 
@@ -79,7 +71,7 @@ const DELETE_NULLIFY_HOOKS: Record<string, { table: string; fk: string }> = {
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/health', async () => ({ ok: true }))
 
-  await registerArtRoutes(app)
+  await registerTurrisArtRoutes(app)
   await registerPvzArtRoutes(app)
 
   for (const table of TABLES) {
@@ -171,98 +163,13 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       librarians: count('librarians'),
       anomalies: count('anomalies'),
       spaces: count('supernatural_spaces'),
-      books: count('books'),
+      // 馆藏 = 馆藏书目 + PVZ 图鉴植物（每株植物计 1 馆藏）
+      books: count('books') + count('pvz_plants'),
       repositories: count('repositories'),
       guests: count('guests'),
       stations: count('rail_stations'),
       energyTotal: energy.s,
       entries: count('pvz_plants'),
-    }
-  })
-}
-
-function ensureArtDir(): void {
-  if (!existsSync(ART_DIR)) mkdirSync(ART_DIR, { recursive: true })
-}
-
-function slugify(input: string): string {
-  return (
-    input
-      .replace(/[^\w\u4e00-\u9fa5-]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40) || 'asset'
-  )
-}
-
-function runArk(args: string[]): Promise<string> {
-  return execFileP('arkcli', args, {
-    shell: 'powershell.exe',
-    windowsHide: true,
-    maxBuffer: 10 * 1024 * 1024,
-  }).then((r) => r.stdout)
-}
-
-async function registerArtRoutes(app: FastifyInstance): Promise<void> {
-  // 通用图片上传：写入 ART_DIR 顶层，返回 /art/<name> URL
-  app.post('/api/upload', async (req, reply) => {
-    ensureArtDir()
-    const parts = req.parts()
-    for await (const part of parts) {
-      if (part.type !== 'file') continue
-      const ext = extname(part.filename ?? '').toLowerCase()
-      if (!IMAGE_EXT.has(ext)) {
-        return reply.code(400).send({ error: `unsupported image type ${ext || '(none)'}` })
-      }
-      const name = `${Date.now()}-${slugify(basename(part.filename ?? '', ext))}${ext}`
-      const dest = join(ART_DIR, name)
-      await new Promise<void>((resolve, reject) => {
-        const ws = createWriteStream(dest)
-        part.file.on('error', reject)
-        ws.on('error', reject)
-        ws.on('finish', resolve)
-        part.file.pipe(ws)
-      })
-      return { url: `/art/${name}` }
-    }
-    return reply.code(400).send({ error: 'no file uploaded' })
-  })
-
-  // AI 生成图：调用 arkcli 选默认图片模型，产出落盘 ART_DIR
-  app.post('/api/art/generate', async (req, reply) => {
-    const body = (req.body ?? {}) as { prompt?: string }
-    const prompt = body.prompt?.trim()
-    if (!prompt) return reply.code(400).send({ error: 'prompt is required' })
-    ensureArtDir()
-    try {
-      const listRaw = await runArk(['resources', 'list', '--modality', 'image'])
-      const list = JSON.parse(listRaw) as {
-        items?: Array<{ id: string; is_default?: boolean }>
-      }
-      const model =
-        list.items?.find((i) => i.is_default)?.id ?? list.items?.[0]?.id
-      if (!model) {
-        return reply.code(502).send({ error: 'no image model available from arkcli' })
-      }
-      const out = await runArk([
-        '+gen',
-        '--model',
-        model,
-        '--save-to',
-        ART_DIR,
-        prompt,
-      ])
-      const gen = JSON.parse(out) as { local_path?: string; output_url?: string }
-      const file = gen.local_path ?? gen.output_url
-      if (!file) return reply.code(502).send({ error: 'arkcli returned no asset' })
-      const name = basename(file)
-      return {
-        url: `/art/${name}`,
-        raw: file,
-        model,
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e)
-      return reply.code(500).send({ error: `ark generation failed: ${msg}` })
     }
   })
 }

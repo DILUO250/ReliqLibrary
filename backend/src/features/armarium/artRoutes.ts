@@ -4,7 +4,7 @@ import { basename, extname, join } from 'node:path'
 import { ART_DIR } from '../../config/index.js'
 import { pvzSyncApply, pvzSyncCheck } from './pvzSync.js'
 
-const pvzArtDir = join(ART_DIR, 'pvz')
+const pvzArtDir = join(ART_DIR, 'armarium')
 const pvzAssetDir = join(ART_DIR, '..', 'features', 'armarium', 'projects', 'pvzwiki', 'assets')
 const pvzImageExts = ['png', 'jpg', 'jpeg', 'webp'] as const
 
@@ -45,7 +45,7 @@ function registerPvzImageRoutes(
   subdir: string,
 ): void {
   const dir = join(pvzArtDir, subdir)
-  const urlPrefix = `/art/pvz/${subdir}`
+  const urlPrefix = `/art/armarium/${subdir}`
 
   app.get(`/api/pvz/${kind}`, async (req) => {
     const code = pvzCode((req.query as { codename?: string }).codename)
