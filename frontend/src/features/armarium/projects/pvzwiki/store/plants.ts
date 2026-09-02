@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import type { PlantEntity, PlantFamily, WorldInfo, FamilyInfo, PlantDetail } from '@pvzwiki/types/plant'
 import { WORLD_NAMES } from '@pvzwiki/types/plant'
 import type { Keyword } from '@pvzwiki/types/keyword'
-import { pvzImagePath } from '@pvzwiki/asset'
+import { pvzImagePath, toRawIcon } from '@pvzwiki/asset'
 import { customVersion } from '@pvzwiki/store/plantImage'
 import { api } from '@/app/services/api'
 
@@ -213,7 +213,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       world: input.world,
       familyCode: input.family?.code ?? '',
       familyName: input.family?.name ?? '',
-      familyIcon: input.family?.icon ?? '',
+      familyIcon: input.family ? toRawIcon(input.family.icon) : '',
       summary: input.summary,
       path: '',
       isCustom: 1,
@@ -231,7 +231,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       world: input.world,
       familyCode: input.family?.code ?? '',
       familyName: input.family?.name ?? '',
-      familyIcon: input.family?.icon ?? '',
+      familyIcon: input.family ? toRawIcon(input.family.icon) : '',
       summary: input.summary,
       path: '',
       isCustom: 1,
@@ -282,7 +282,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
     if (patch.family !== undefined) {
       body.familyCode = patch.family?.code ?? ''
       body.familyName = patch.family?.name ?? ''
-      body.familyIcon = patch.family?.icon ?? ''
+      body.familyIcon = patch.family ? toRawIcon(patch.family.icon) : ''
     }
     if (patch.summary !== undefined) body.summary = patch.summary
     await api.update('pvz_plants', r.id, body)
@@ -292,7 +292,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
         ? {
             familyCode: patch.family?.code ?? '',
             familyName: patch.family?.name ?? '',
-            familyIcon: patch.family?.icon ?? '',
+            familyIcon: patch.family ? toRawIcon(patch.family.icon) : '',
           }
         : {}),
     })

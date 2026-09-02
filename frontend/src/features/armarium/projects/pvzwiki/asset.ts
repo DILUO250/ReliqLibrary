@@ -28,3 +28,18 @@ export function pvzImagePath(path: string): string {
   }
   return pvzAsset(path)
 }
+
+/** 把（可能已被映射过的）图标 URL 还原为 DB 规范存储形态 /assets/wikicon/...。
+ *  自建植物创建/编辑时 UI 传入的是映射后的图标，入库前须经此还原，
+ *  与官方条目的存储约定保持一致（历史数据曾混入 /projects/pvz/assets 旧前缀）。 */
+export function toRawIcon(icon: string): string {
+  const iconPrefix = `${PVZ_ASSET_PREFIX}/image/plants/icon/`
+  if (icon.startsWith(iconPrefix)) {
+    return `/assets/wikicon/${icon.slice(iconPrefix.length)}`
+  }
+  const legacyPrefix = '/projects/pvz/assets/'
+  if (icon.startsWith(legacyPrefix)) {
+    return `/assets/${icon.slice(legacyPrefix.length)}`
+  }
+  return icon
+}
