@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { Floor, Librarian, LibrarianSheet, BattleSystemId } from '@rtl/shared'
 import { BATTLE_SYSTEMS, emptySheet, parseSheet, defaultSpeedPassive } from '@rtl/shared'
 import { api } from '@/app/services/api'
@@ -56,6 +56,47 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const cropOpen = ref(false)
 const cropSource = ref('')
 
+// 待上传文件在本地暂存（objectURL 供预览/裁剪），点「保存」时才真正上传——
+// 取消编辑即不留任何服务器文件，杜绝孤儿资源。
+interface PendingFile {
+  file: File
+  objectUrl: string
+}
+const pendingPortrait = ref<PendingFile | null>(null)
+const pendingPreview = ref<PendingFile | null>(null)
+
+// 展示源：本地暂存优先于已落库 URL
+const portraitSrc = computed(() => pendingPortrait.value?.objectUrl ?? form.portrait)
+const previewSrc = computed(() => pendingPreview.value?.objectUrl ?? form.portraitPreview)
+
+function discardPending(): void {
+  if (pendingPortrait.value) {
+    URL.revokeObjectURL(pendingPortrait.value.objectUrl)
+    pendingPortrait.value = null
+  }
+  if (pendingPreview.value) {
+    URL.revokeObjectURL(pendingPreview.value.objectUrl)
+    pendingPreview.value = null
+  }
+}
+onBeforeUnmount(discardPending)
+
+function dataUrlToFile(dataUrl: string): File {
+  const [meta = '', b64 = ''] = dataUrl.split(',')
+  const mime = /data:(.*?);/.exec(meta)?.[1] ?? 'image/png'
+  const bin = atob(b64)
+  const bytes = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
+  return new File([bytes], `portrait-preview-${Date.now()}.png`, { type: mime })
+}
+
+/** 裁剪确认：暂存 dataURL 为本地待上传文件，不上传 */
+function setPendingPreview(dataUrl: string): void {
+  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value.objectUrl)
+  const file = dataUrlToFile(dataUrl)
+  pendingPreview.value = { file, objectUrl: URL.createObjectURL(file) }
+}
+
 const floorOptions = computed(() => [...props.floors].sort((a, b) => a.sortOrder - b.sortOrder))
 const systemOptions = computed(() =>
   Object.values(BATTLE_SYSTEMS).map((s) => ({ value: s.id, label: `${s.zh}(${s.code})` })),
@@ -87,12 +128,26 @@ watch(
   (sys) => resetFirstPassive(sys),
 )
 
-function submit(): void {
+async function submit(): Promise<void> {
   if (!form.name.trim()) {
     saveError.value = '司书名称不能为空'
     return
   }
   saveError.value = null
+  // 先上传本地暂存的立绘/裁剪图（此刻才落盘），再提交整行
+  try {
+    if (pendingPortrait.value) {
+      const res = await api.uploadImage(pendingPortrait.value.file, 'portrait')
+      form.portrait = res.url
+    }
+    if (pendingPreview.value) {
+      const res = await api.uploadImage(pendingPreview.value.file, 'preview')
+      form.portraitPreview = res.url
+    }
+  } catch (e) {
+    saveError.value = `立绘上传失败：${e instanceof Error ? e.message : String(e)}`
+    return
+  }
   form.sheet.name = form.name
   form.sheet.romanNum = ''
   // 关键词（keyword）暂存于 description 字段
@@ -108,31 +163,36 @@ function submit(): void {
     portrait: form.portrait,
     portraitPreview: form.portraitPreview,
   })
+  discardPending()
 }
 
 function triggerUpload(): void {
   fileInput.value?.click()
 }
-async function onFilePicked(event: Event): Promise<void> {
+function onFilePicked(event: Event): void {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
   saveError.value = null
-  try {
-    const res = await api.uploadImage(file, 'portrait')
-    form.portrait = res.url
-    form.portraitPreview = ''
-    cropSource.value = res.url
-    cropOpen.value = true
-  } catch (e) {
-    saveError.value = `上传失败：${e instanceof Error ? e.message : String(e)}`
+  // 只暂存到本地，不上传；新立绘使旧的待上传裁剪图失效
+  if (pendingPortrait.value) URL.revokeObjectURL(pendingPortrait.value.objectUrl)
+  if (pendingPreview.value) {
+    URL.revokeObjectURL(pendingPreview.value.objectUrl)
+    pendingPreview.value = null
   }
+  pendingPortrait.value = { file, objectUrl: URL.createObjectURL(file) }
+  cropSource.value = pendingPortrait.value.objectUrl
+  cropOpen.value = true
 }
 async function generatePortrait(): Promise<void> {
   saveError.value = null
   const prompt = `遗迹图书馆迎书楼司书立绘，${form.name}，${form.title}，(${form.affiliation}) 战斗司书，3:4 竖版全身立绘，精美`
   try {
+    // AI 生成是服务端行为，产物即时落盘（若最终取消编辑会成为孤儿，
+    // 由 audit:art 报告人工处置）；本地暂存的待上传文件随之作废
+    if (pendingPortrait.value) URL.revokeObjectURL(pendingPortrait.value.objectUrl)
+    pendingPortrait.value = null
     const res = await api.generateArt(prompt, 'portrait')
     form.portrait = res.url
     form.portraitPreview = ''
@@ -143,11 +203,12 @@ async function generatePortrait(): Promise<void> {
   }
 }
 function reopenCrop(): void {
-  if (!form.portrait) return
-  cropSource.value = form.portrait
+  if (!portraitSrc.value) return
+  cropSource.value = portraitSrc.value
   cropOpen.value = true
 }
 function removePortrait(): void {
+  discardPending()
   form.portrait = ''
   form.portraitPreview = ''
 }
@@ -185,23 +246,23 @@ function removePortrait(): void {
     <label class="fullline">立绘</label>
     <div class="art">
       <div class="art__preview">
-        <img v-if="form.portraitPreview" :src="form.portraitPreview" alt="预览立绘" />
-        <img v-else-if="form.portrait" :src="form.portrait" alt="立绘" />
+        <img v-if="previewSrc" :src="previewSrc" alt="预览立绘" />
+        <img v-else-if="portraitSrc" :src="portraitSrc" alt="立绘" />
         <span v-else class="ph">暂无立绘</span>
-        <span v-if="form.portrait" class="art__badge">{{ form.portraitPreview ? '预览' : '原图' }}</span>
+        <span v-if="portraitSrc" class="art__badge">{{ previewSrc ? '预览' : '原图' }}</span>
       </div>
       <div class="art__actions">
         <button type="button" class="btn" @click="triggerUpload">上传立绘</button>
         <button type="button" class="btn" @click="generatePortrait">AI 生成</button>
-        <button v-if="form.portrait" type="button" class="btn" @click="reopenCrop">
-          {{ form.portraitPreview ? '重新裁剪' : '裁剪预览立绘' }}
+        <button v-if="portraitSrc" type="button" class="btn" @click="reopenCrop">
+          {{ previewSrc ? '重新裁剪' : '裁剪预览立绘' }}
         </button>
-        <button v-if="form.portrait" type="button" class="btn btn--danger" @click="removePortrait">移除</button>
+        <button v-if="portraitSrc" type="button" class="btn btn--danger" @click="removePortrait">移除</button>
         <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none" @change="onFilePicked" />
       </div>
       <div class="art__note">
-        <p class="hint">最多 1 张 · 建议 3:4 高清全身立绘。上传/AI 生成后拖动裁剪框，选择一部分作为「预览立绘」用于网页展示；完整立绘在详情页展示。</p>
-        <a v-if="form.portrait" class="art__full" :href="form.portrait" target="_blank" rel="noopener">查看完整立绘</a>
+        <p class="hint">最多 1 张 · 建议 3:4 高清全身立绘。上传/AI 生成后拖动裁剪框，选择一部分作为「预览立绘」用于网页展示；完整立绘在详情页展示。立绘与裁剪图在点击「保存司书」时才会上传。</p>
+        <a v-if="portraitSrc" class="art__full" :href="portraitSrc" target="_blank" rel="noopener">查看完整立绘</a>
       </div>
     </div>
 
@@ -210,7 +271,7 @@ function removePortrait(): void {
     <PortraitCropModal
       v-if="cropOpen"
       :image-url="cropSource"
-      @confirm="(url) => { form.portraitPreview = url; cropOpen = false }"
+      @confirm="(dataUrl) => { setPendingPreview(dataUrl); cropOpen = false }"
       @cancel="cropOpen = false"
     />
 

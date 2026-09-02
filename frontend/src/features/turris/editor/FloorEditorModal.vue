@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import type { Floor, BattleSystemId } from '@rtl/shared'
 import { BATTLE_SYSTEMS } from '@rtl/shared'
 import { api } from '@/app/services/api'
@@ -38,17 +38,38 @@ const form = reactive<Draft>({
 const saveError = ref<string | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
 
+// 待上传的楼层背景图在本地暂存，点「保存」时才上传——取消编辑不留服务器文件
+const pendingArtwork = ref<{ file: File; objectUrl: string } | null>(null)
+const artworkSrc = computed(() => pendingArtwork.value?.objectUrl ?? form.artwork)
+
+function discardPendingArtwork(): void {
+  if (pendingArtwork.value) {
+    URL.revokeObjectURL(pendingArtwork.value.objectUrl)
+    pendingArtwork.value = null
+  }
+}
+onBeforeUnmount(discardPendingArtwork)
+
 const systemOptions = computed(() =>
   Object.values(BATTLE_SYSTEMS).map((s) => ({ value: s.id, label: `${s.zh}(${s.code})` })),
 )
 const currentSystem = computed(() => BATTLE_SYSTEMS[form.battleSystem])
 
-function submit(): void {
+async function submit(): Promise<void> {
   if (!form.name.trim()) {
     saveError.value = '楼层名称不能为空'
     return
   }
   saveError.value = null
+  if (pendingArtwork.value) {
+    try {
+      const res = await api.uploadImage(pendingArtwork.value.file, 'floor')
+      form.artwork = res.url
+    } catch (e) {
+      saveError.value = `背景图上传失败：${e instanceof Error ? e.message : String(e)}`
+      return
+    }
+  }
   emit('save', {
     name: form.name,
     latinName: form.latinName,
@@ -60,29 +81,27 @@ function submit(): void {
     sortOrder: form.sortOrder,
     artwork: form.artwork,
   })
+  discardPendingArtwork()
 }
 
 function triggerUpload(): void {
   fileInput.value?.click()
 }
-async function onFilePicked(event: Event): Promise<void> {
+function onFilePicked(event: Event): void {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
   if (!file) return
   saveError.value = null
-  try {
-    const res = await api.uploadImage(file, 'floor')
-    form.artwork = res.url
-  } catch (e) {
-    saveError.value = `上传失败：${e instanceof Error ? e.message : String(e)}`
-  }
+  discardPendingArtwork()
+  pendingArtwork.value = { file, objectUrl: URL.createObjectURL(file) }
 }
 async function generateArt(): Promise<void> {
   saveError.value = null
   const prompt = `遗迹图书馆迎书楼楼层背景图，${form.name || form.designation || '未命名'}，${form.theme || ''}，${form.description || '宏伟的图书馆内部'}，电影级构图，史诗氛围`.trim()
   try {
     const res = await api.generateArt(prompt, 'floor')
+    discardPendingArtwork()
     form.artwork = res.url
   } catch (e) {
     saveError.value = `生成失败：${e instanceof Error ? e.message : String(e)}`
@@ -130,13 +149,18 @@ async function generateArt(): Promise<void> {
     <label class="fullline">背景图</label>
     <div class="art">
       <div class="art__preview">
-        <img v-if="form.artwork" :src="form.artwork" alt="背景图" />
+        <img v-if="artworkSrc" :src="artworkSrc" alt="背景图" />
         <span v-else class="ph">暂无背景图</span>
       </div>
       <div class="art__actions">
         <button type="button" class="btn" @click="triggerUpload">上传图片</button>
         <button type="button" class="btn" @click="generateArt">AI 生成</button>
-        <button v-if="form.artwork" type="button" class="btn btn--danger" @click="form.artwork = ''">移除</button>
+        <button
+          v-if="artworkSrc"
+          type="button"
+          class="btn btn--danger"
+          @click="(() => { discardPendingArtwork(); form.artwork = '' })()"
+        >移除</button>
         <input ref="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="display: none" @change="onFilePicked" />
       </div>
     </div>

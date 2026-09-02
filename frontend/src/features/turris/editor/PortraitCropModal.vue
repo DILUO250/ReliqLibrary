@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { api } from '@/app/services/api'
 import Modal from './Modal.vue'
 
 const props = defineProps<{ imageUrl: string }>()
-const emit = defineEmits<{ (e: 'confirm', previewUrl: string): void; (e: 'cancel'): void }>()
+const emit = defineEmits<{ (e: 'confirm', dataUrl: string): void; (e: 'cancel'): void }>()
 
 const RATIO = 3 / 4 // width : height
 const MAX_AREA = { w: 460, h: 580 }
@@ -149,8 +148,7 @@ function onUp(): void {
   window.removeEventListener('mouseup', onUp)
 }
 
-async function confirm(): Promise<void> {
-  status.value = 'busy'
+function confirm(): void {
   try {
     const outW = 720
     const outH = Math.round(outW / RATIO)
@@ -160,11 +158,10 @@ async function confirm(): Promise<void> {
     const ctx = canvas.getContext('2d')!
     ctx.imageSmoothingQuality = 'high'
     ctx.drawImage(imgEl.value!, rx.value, ry.value, rw.value, rh(), 0, 0, outW, outH)
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
-    if (!blob) throw new Error('裁剪失败')
-    const file = new File([blob], `portrait-preview-${Date.now()}.png`, { type: 'image/png' })
-    const res = await api.uploadImage(file, 'preview')
-    emit('confirm', res.url)
+    // 只产出 dataURL，不做任何上传 —— 由调用方在「保存」时统一上传，
+    // 避免用户最终取消编辑时在服务器留下孤儿文件。
+    const dataUrl = canvas.toDataURL('image/png')
+    emit('confirm', dataUrl)
   } catch (e) {
     status.value = 'ready'
     window.alert(`裁剪失败：${e instanceof Error ? e.message : String(e)}`)

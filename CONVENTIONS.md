@@ -111,6 +111,7 @@ art/
 ```
 
 - 上传端点按 feature 归属：`POST /api/turris/upload?kind=portrait|preview|floor`（features/turris/artRoutes.ts）、`/api/pvz/*`（features/armarium/artRoutes.ts）。**禁止**新开往 art/ 顶层平铺的通道
+- **文件在「保存」时才上传**（延迟上传）：选文件/裁剪只在本地暂存（File + objectURL），取消编辑即零服务器文件。服务端即时产出的通道（如 AI 生成）例外，其取消产生的孤儿由 `audit:art` 报告人工处置
 - 图片列登记在 `routes/index.ts` 的 `IMAGE_COLUMNS` 常量：`{ floors: ['artwork'], librarians: ['portrait','portraitPreview'] }`。**新表有图片列就往这里加，漏登记 = 孤儿资源回归。**
 - PVZ 用户素材（立绘/卡图/背景）的替换与删除统一走 `features/armarium/artRoutes.ts` 的 `pvzTrash()` → `art/armarium/_trash/`
 - `trashArt()` 回收目标跟随素材所属模块（URL 含模块段 → `art/<模块>/_trash/`，否则全局 `art/_trash/`）；只改名不删除，失败时静默保留原文件（防丢）。`_trash/` 由人工定期清理
