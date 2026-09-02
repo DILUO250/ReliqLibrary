@@ -5,8 +5,11 @@ import { fileURLToPath } from 'node:url'
 import { getDb } from '../../db/index.js'
 
 const CLOUD_BASE = 'https://pvzge.com'
+// 云端植物图落地到 card/ 子目录 —— 必须与前端 pvzImagePath 的映射
+// （/assets/image/plants/<file> → assets/image/plants/card/<file>）保持一致，
+// 否则同步进来的植物在图鉴网格中会 404。
 const IMAGE_DIR = fileURLToPath(
-  new URL('../../../frontend/public/features/armarium/projects/pvzwiki/assets/image/plants', import.meta.url),
+  new URL('../../../frontend/public/features/armarium/projects/pvzwiki/assets/image/plants/card', import.meta.url),
 )
 
 interface CloudSnapshot {
