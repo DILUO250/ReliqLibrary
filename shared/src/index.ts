@@ -139,6 +139,119 @@ export interface MindBuff {
   format?: TermFormat
 }
 
+/* ============================================================
+ * 情感书页（LOB 系统楼层专属，与楼层绑定）
+ * 结构：<异常实体> → 1~9 张情感书页 → EGO卡牌（含 EGO被动）
+ * 书页/EGO 以 JSON 存于 emotion_entities.sheet 列（见 CONVENTIONS §1.3）。
+ * ========================================================== */
+
+/** 一张情感书页。cost 为自由文本（如「正面Ⅰ」「负面Ⅱ」「正面Ⅱ/负面Ⅱ」）。 */
+export interface EmotionPage {
+  name: string
+  cost: string
+  effect: string
+  /** ▪️ 特殊机制（0~n 条）：与司书 Mechanism 同构，机制名纳入实体私人词典参与渲染。 */
+  mechanisms: Mechanism[]
+}
+
+/** EGO被动：每张 EGO 卡牌各带一条。 */
+export interface EgoPassive {
+  name: string
+  effect: string
+}
+
+/** EGO卡牌：格式与常规战斗卡牌一致，额外补充 EGO被动。 */
+export interface EgoCard extends BattleCard {
+  egoPassive?: EgoPassive
+}
+
+export interface EmotionSheet {
+  pages: EmotionPage[]
+  egoCards: EgoCard[]
+}
+
+export const EMOTION_PAGE_MAX = 9
+
+export function emptyEmotionSheet(): EmotionSheet {
+  return {
+    pages: [{ name: '', cost: '', effect: '', mechanisms: [] }],
+    egoCards: [
+      {
+        name: '',
+        cost: 0,
+        type: '',
+        tags: [],
+        effects: [],
+        dice: [],
+        egoPassive: { name: '', effect: '' },
+      },
+    ],
+  }
+}
+
+export function emptyEmotionPage(): EmotionPage {
+  return { name: '', cost: '', effect: '', mechanisms: [] }
+}
+
+export function emptyEgoCard(): EgoCard {
+  return {
+    name: '',
+    cost: 0,
+    type: '',
+    tags: [],
+    effects: [],
+    dice: [],
+    egoPassive: { name: '', effect: '' },
+  }
+}
+
+/** 容错解析 emotion_entities.sheet JSON；空/坏数据返回 null。 */
+export function parseEmotionSheet(raw?: string | null): EmotionSheet | null {
+  if (!raw) return null
+  try {
+    const s = JSON.parse(raw) as Partial<EmotionSheet>
+    const pages = (Array.isArray(s.pages) ? s.pages : []).map(
+      (p): EmotionPage => ({
+        name: p?.name ?? '',
+        cost: p?.cost ?? '',
+        effect: p?.effect ?? '',
+        // 兼容旧版 string[] 机制：迁移为 Mechanism 结构
+        mechanisms: (Array.isArray(p?.mechanisms) ? p.mechanisms : []).map((m): Mechanism =>
+          typeof m === 'string'
+            ? { name: '', stack: '', type: '', desc: m }
+            : {
+                name: m?.name ?? '',
+                stack: m?.stack ?? '',
+                type: m?.type ?? '',
+                desc: m?.desc ?? '',
+                format: m?.format,
+              },
+        ),
+      }),
+    )
+    const egoCards = (Array.isArray(s.egoCards) ? s.egoCards : []).map((c): EgoCard => ({
+      ...c,
+      tags: Array.isArray(c?.tags) ? c.tags : [],
+      effects: Array.isArray(c?.effects) ? c.effects : [],
+      dice: Array.isArray(c?.dice) ? c.dice : [],
+      egoPassive: c?.egoPassive ?? { name: '', effect: '' },
+    }))
+    for (const c of egoCards) normalizeCard(c)
+    return { pages, egoCards }
+  } catch {
+    return null
+  }
+}
+
+/** 情感书页数量标签（如「书页 3 · EGO 1」用）。 */
+export function emotionPageCount(entity: { sheet: string }): number {
+  return parseEmotionSheet(entity.sheet)?.pages.length ?? 0
+}
+
+export function emotionEgoCount(entity: { sheet: string }): number {
+  return parseEmotionSheet(entity.sheet)?.egoCards.length ?? 0
+}
+
 export interface LibrarianSystemData {
   hasSanity?: boolean
   hasEgo?: boolean
@@ -343,6 +456,11 @@ export type LibrarianRole =
   | 'internal'
   | 'director'
 
+/** 附加角色的稀有度前缀；'' 表示常规司书。 */
+export type LibrarianRarity = '' | 'N' | 'R' | 'SR' | 'SSR' | 'RR' | 'UR'
+
+export const RARITIES: ReadonlyArray<Exclude<LibrarianRarity, ''>> = ['N', 'R', 'SR', 'SSR', 'RR', 'UR']
+
 export interface Floor {
   id: number
   name: string
@@ -356,6 +474,19 @@ export interface Floor {
   artwork: string
 }
 
+/** 情感实体：异常实体名称 + 书页/EGO（JSON）+ 实体编号，隶属楼层。 */
+export interface EmotionEntity {
+  id: number
+  floorId: number | null
+  /** 实体编号，如 SCL-88889（可留空）。 */
+  code: string
+  /** 异常实体名称，如 欢乐泰迪。 */
+  name: string
+  /** EmotionSheet 的 JSON 字符串。 */
+  sheet: string
+  sortOrder: number
+}
+
 export interface Librarian {
   id: number
   name: string
@@ -363,6 +494,8 @@ export interface Librarian {
   department: DepartmentId
   role: LibrarianRole
   floorId: number | null
+  /** 附加角色稀有度前缀（'' = 常规司书）。 */
+  rarity: string
   coreColor: CorePageColor
   affiliation: string
   status: string
@@ -649,6 +782,15 @@ export const LABELS = {
     internal: '内务司书',
     director: '馆长',
   } as Record<LibrarianRole, string>,
+  librarianRarity: {
+    '': '常规司书',
+    N: 'N',
+    R: 'R',
+    SR: 'SR',
+    SSR: 'SSR',
+    RR: 'RR',
+    UR: 'UR',
+  } as Record<string, string>,
   coreColor: {
     red: '红',
     blue: '蓝',

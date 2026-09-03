@@ -1,6 +1,7 @@
 import type {
   Floor,
   Librarian,
+  EmotionEntity,
   CorePage,
   CombatPage,
   Book,
@@ -19,9 +20,183 @@ import type {
   LoreEntry,
 } from '@rtl/shared'
 
+/* ============================================================
+ * 情感书页 / 附加角色 示例数据（参考样例，编辑器产生的正式数据存于 SQLite）。
+ * sheet 为 EmotionSheet 的 JSON 字符串；结构见 shared/src/index.ts。
+ * ========================================================== */
+
+const teddySheet = JSON.stringify({
+  pages: [
+    {
+      name: '思念的拥抱',
+      cost: '正面Ⅰ',
+      effect: '【选择一名司书】该司书拼点胜利时将有20%的概率追加等同于骰子最终值的混乱伤害',
+      mechanisms: [],
+    },
+    {
+      name: '幸福的记忆',
+      cost: '正面Ⅰ',
+      effect:
+        '【选择一名司书】应用时，从该司书手中随机选择1张费用最高的卡牌赋予其及其同名卡牌“幸福标记”',
+      // 特殊机制与司书 Mechanism 同构：名称纳入实体私人词典，desc 参与术语渲染
+      mechanisms: [
+        {
+          name: '幸福标记',
+          stack: '',
+          type: '正面状态',
+          desc: '该司书使用“幸福卡牌”时将使卡组中所有“幸福卡牌”费用-1',
+          format: { color: '#f5c26b', bold: false, italic: false, underline: 'thin' },
+        },
+      ],
+    },
+    {
+      name: '表达爱意',
+      cost: '负面Ⅰ',
+      effect: '【选择一名司书】该司书拼点时将使自身的骰子威力+1~2。单方面攻击时将使自身骰子威力-1~2',
+      mechanisms: [],
+    },
+  ],
+  egoCards: [
+    {
+      prefix: 'EGO.',
+      name: '忘却',
+      cost: 3,
+      type: '近战',
+      tags: [],
+      effects: [],
+      dice: [
+        {
+          baseType: '打击',
+          specialType: '',
+          effects: ['拼点胜利 摧毁目标当前卡牌的所有骰子'],
+          rangeMin: 12,
+          rangeMax: 25,
+        },
+      ],
+      egoPassive: { name: '涌出的爱意', effect: '卡牌降低的费用可以跨舞台继承' },
+    },
+  ],
+})
+
+const scorchGirlSheet = JSON.stringify({
+  pages: [
+    {
+      name: '余烬',
+      cost: '正面Ⅰ',
+      effect: '【选择一名司书】该司书击中目标时将使其增加1~2层“烧伤”，该司书被击中时将使攻击方增加2~3层“烧伤”',
+      mechanisms: [],
+    },
+    {
+      name: '脚步',
+      cost: '负面Ⅱ',
+      effect:
+        '【影响所有司书】所有司书所受“烧伤”伤害减少25%。司书每次击中烧伤层数最高的来宾时，将对除自身外所有单位施加2~4层“烧伤”',
+      mechanisms: [],
+    },
+    {
+      name: '残光',
+      cost: '负面Ⅰ',
+      effect:
+        '【选择一名司书】该司书投掷进攻型骰子时将对双方施加1~2层“烧伤”。该司书每有4层“烧伤”则使自身的进攻型骰子最大值+1(至多+3)',
+      mechanisms: [],
+    },
+  ],
+  egoCards: [
+    {
+      prefix: 'EGO.',
+      name: '终末火柴之光',
+      cost: 5,
+      type: '群体攻击',
+      tags: ['清算'],
+      effects: ['使用后 若击杀目标则下一回合获得2层“强壮”'],
+      dice: [
+        {
+          baseType: '斩击',
+          specialType: '',
+          effects: ['命中时 立刻施加10层“烧伤” · 最大值命中时 立刻施加10层“烧伤”'],
+          rangeMin: 22,
+          rangeMax: 40,
+        },
+      ],
+      egoPassive: { name: '第七根火柴', effect: '每使用的第七张卡牌施加的“烧伤”层数+3' },
+    },
+  ],
+})
+
+const cryingChildSheet = JSON.stringify({
+  battleSystem: 'lob',
+  romanNum: '',
+  name: '哭泣之子',
+  hp: 80,
+  stagger: 40,
+  sanity: 0,
+  speedMin: 1,
+  speedMax: 4,
+  resist: {
+    physic: { slash: 1.0, pierce: 1.0, strike: 1.0 },
+    chaos: { slash: 1.0, pierce: 1.0, strike: 1.0 },
+  },
+  factions: [],
+  faction: '',
+  passives: [
+    { name: '速战速决LOB', effect: '速度骰子+1' },
+    {
+      name: '交融之心',
+      effect: '继承原主的伤害抗性、体力和混乱抗性(体力上限至多80点，混乱抗性上限至多40点)',
+    },
+    { name: '剥离之心', effect: '优先以友方单位为攻击目标' },
+    { name: '心神不宁', effect: '受到的烧伤伤害-20%' },
+  ],
+  mechanisms: [],
+  cards: {
+    combat: [
+      {
+        name: '喁喁细语',
+        cost: 1,
+        type: '近战',
+        tags: [],
+        effects: ['使用时 恢复2点光芒，抽取1张卡牌'],
+        dice: [
+          { baseType: '招架', specialType: '', effects: [], rangeMin: 2, rangeMax: 5 },
+          { baseType: '斩击', specialType: '', effects: ['命中时 下一回合施加2层“束缚”'], rangeMin: 3, rangeMax: 6 },
+          { baseType: '打击', specialType: '', effects: [], rangeMin: 2, rangeMax: 4 },
+        ],
+      },
+      {
+        name: '秽翼抽打',
+        cost: 1,
+        type: '近战',
+        tags: [],
+        effects: ['使用时 恢复2点光芒'],
+        dice: [
+          { baseType: '突刺', specialType: '', effects: [], rangeMin: 3, rangeMax: 6 },
+          { baseType: '闪避', specialType: '', effects: [], rangeMin: 3, rangeMax: 7 },
+          { baseType: '斩击', specialType: '', effects: ['命中时 下一回合施加1层“束缚”'], rangeMin: 3, rangeMax: 6 },
+        ],
+      },
+      {
+        name: '无尽折磨',
+        cost: 1,
+        type: '近战',
+        tags: [],
+        effects: ['使用时 抽取2张卡牌'],
+        dice: [
+          { baseType: '打击', specialType: '', effects: ['命中时 下一回合施加1层“破绽”'], rangeMin: 3, rangeMax: 6 },
+          { baseType: '闪避', specialType: '', effects: [], rangeMin: 4, rangeMax: 8 },
+          { baseType: '打击', specialType: '', effects: ['命中时 下一回合施加1层“虚弱”'], rangeMin: 5, rangeMax: 9 },
+        ],
+      },
+    ],
+    special: [],
+    ego: [],
+  },
+  systemData: { hasSanity: false, hasEgo: false, hasMind: false },
+})
+
 export interface SeedData {
   floors: Floor[]
   librarians: Librarian[]
+  emotion_entities: EmotionEntity[]
   core_pages: CorePage[]
   combat_pages: CombatPage[]
   books: Book[]
@@ -62,6 +237,7 @@ export const seedData: SeedData = {
       title: "光芒照耀的历史层总管之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【脑叶公司】【世界之翼】",
@@ -78,6 +254,7 @@ export const seedData: SeedData = {
       title: "控制部制式EGO::红艳煞之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【脑叶公司】【世界之翼】",
@@ -94,6 +271,7 @@ export const seedData: SeedData = {
       title: "控制部制式EGO::蓝铃花冠之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【脑叶公司】【世界之翼】",
@@ -110,6 +288,7 @@ export const seedData: SeedData = {
       title: "刘夜之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【寒昼事务所】【收尾人】",
@@ -126,6 +305,7 @@ export const seedData: SeedData = {
       title: "邵之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【六协会】【协会】【收尾人】",
@@ -142,6 +322,7 @@ export const seedData: SeedData = {
       title: "罗威尔之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【六协会】【协会】【收尾人】",
@@ -158,6 +339,7 @@ export const seedData: SeedData = {
       title: "梅之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【六协会】【协会】【收尾人】",
@@ -174,6 +356,7 @@ export const seedData: SeedData = {
       title: "塞希尔之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【六协会】【协会】【收尾人】",
@@ -190,6 +373,7 @@ export const seedData: SeedData = {
       title: "菲利普之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【黎明事务所】【残响乐团】【收尾人】【扭曲】",
@@ -206,6 +390,7 @@ export const seedData: SeedData = {
       title: "黎明事务所四阶收尾人之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【黎明事务所】【收尾人】",
@@ -222,6 +407,7 @@ export const seedData: SeedData = {
       title: "黎明事务所三阶收尾人之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【黎明事务所】【收尾人】",
@@ -238,6 +424,7 @@ export const seedData: SeedData = {
       title: "绝枪战士之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【？？？】",
@@ -254,6 +441,7 @@ export const seedData: SeedData = {
       title: "艾瑞安之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【灼火骑士团】【教徒】",
@@ -270,6 +458,7 @@ export const seedData: SeedData = {
       title: "控制部制式EGO::终末火柴之光之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【脑叶公司】【世界之翼】",
@@ -286,6 +475,7 @@ export const seedData: SeedData = {
       title: "炎拳事务所幸存者之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【炎拳事务所】【收尾人】",
@@ -302,6 +492,7 @@ export const seedData: SeedData = {
       title: "Cinq协会东部3科收尾人之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【Cinq协会】【协会】【收尾人】",
@@ -318,6 +509,7 @@ export const seedData: SeedData = {
       title: "拇指东部指挥官IIII之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "neutral",
       affiliation: "【拇指】【小指】【帮派】",
@@ -334,6 +526,7 @@ export const seedData: SeedData = {
       title: "蜘蛛巢拇指父辈之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【拇指】【蜘蛛巢】【帮派】",
@@ -350,6 +543,7 @@ export const seedData: SeedData = {
       title: "蜘蛛巢拇指子辈之页",
       department: "turris",
       role: "curator",
+      rarity: "",
       floorId: 1,
       coreColor: "red",
       affiliation: "【拇指】【蜘蛛巢】【帮派】",
@@ -359,6 +553,42 @@ export const seedData: SeedData = {
       portrait: "",
       portraitPreview: "",
       sortOrder: 19,
+    },
+    {
+      // 附加角色示例：稀有度前缀 SR，其余字段与常规司书完全一致
+      id: 20,
+      name: "哭泣之子",
+      title: "哭泣之子之页",
+      department: "turris",
+      role: "curator",
+      floorId: 1,
+      rarity: "SR",
+      coreColor: "neutral",
+      affiliation: "【扭曲】【衍生物】",
+      status: "在任",
+      description: "关键词：衍生物，束缚，烧伤",
+      sheet: cryingChildSheet,
+      portrait: "",
+      portraitPreview: "",
+      sortOrder: 20,
+    },
+  ],
+  emotion_entities: [
+    {
+      id: 1,
+      floorId: 1,
+      code: "SCL-88892",
+      name: "欢乐泰迪",
+      sheet: teddySheet,
+      sortOrder: 0,
+    },
+    {
+      id: 2,
+      floorId: 1,
+      code: "SCL-88889",
+      name: "焦化少女",
+      sheet: scorchGirlSheet,
+      sortOrder: 1,
     },
   ],
   core_pages: [],

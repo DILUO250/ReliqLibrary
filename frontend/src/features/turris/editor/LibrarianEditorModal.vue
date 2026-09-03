@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue'
 import type { Floor, Librarian, LibrarianSheet, BattleSystemId } from '@rtl/shared'
-import { BATTLE_SYSTEMS, emptySheet, parseSheet, defaultSpeedPassive } from '@rtl/shared'
+import { BATTLE_SYSTEMS, RARITIES, emptySheet, parseSheet, defaultSpeedPassive } from '@rtl/shared'
 import { api } from '@/app/services/api'
 import Modal from './Modal.vue'
 import LibrarianSheetEditor from './LibrarianSheetEditor.vue'
@@ -12,6 +12,7 @@ const props = defineProps<{
   floors: Floor[]
   defaultFloorId: number | null
   defaultSystem: BattleSystemId
+  defaultRarity?: string
   roman: string
   saving?: boolean
 }>()
@@ -44,6 +45,7 @@ const form = reactive({
   floorId: props.librarian?.floorId ?? props.defaultFloorId,
   name: props.librarian?.name ?? '',
   title: props.librarian?.title ?? '',
+  rarity: props.librarian?.rarity ?? props.defaultRarity ?? '',
   affiliation: props.librarian?.affiliation ?? '',
   description: props.librarian?.description ?? '',
   portrait: props.librarian?.portrait ?? '',
@@ -157,6 +159,7 @@ async function submit(): Promise<void> {
     department: 'turris',
     role: 'curator',
     floorId: form.floorId,
+    rarity: form.rarity,
     affiliation: form.affiliation,
     description: form.description,
     sheet: JSON.stringify(form.sheet),
@@ -228,6 +231,11 @@ function removePortrait(): void {
       <input v-model="form.name" placeholder="如：Malkuth" />
       <label>核心书页</label>
       <input v-model="form.title" placeholder="如：光芒照耀的历史层总管之页" />
+      <label>稀有度</label>
+      <select v-model="form.rarity">
+        <option value="">常规司书</option>
+        <option v-for="r in RARITIES" :key="r" :value="r">{{ r }} · 附加角色</option>
+      </select>
       <label>战斗系统</label>
       <select v-model="form.sheet.battleSystem">
         <option v-for="s in systemOptions" :key="s.value" :value="s.value">{{ s.label }}</option>

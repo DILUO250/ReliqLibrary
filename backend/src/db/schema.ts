@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS librarians (
   department TEXT DEFAULT 'armarium',
   role TEXT DEFAULT 'librarian',
   floorId INTEGER DEFAULT NULL,
+  rarity TEXT DEFAULT '',
   coreColor TEXT DEFAULT 'neutral',
   affiliation TEXT DEFAULT '',
   status TEXT DEFAULT '在任',
@@ -29,6 +30,16 @@ CREATE TABLE IF NOT EXISTS librarians (
   sheet TEXT DEFAULT '',
   portrait TEXT DEFAULT '',
   portraitPreview TEXT DEFAULT '',
+  sortOrder INTEGER DEFAULT 0
+);
+
+-- 情感实体（LOB 楼层专属，与楼层绑定）：异常实体名称 + 书页/EGO 的 JSON。
+CREATE TABLE IF NOT EXISTS emotion_entities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  floorId INTEGER DEFAULT NULL,
+  code TEXT DEFAULT '',
+  name TEXT DEFAULT '',
+  sheet TEXT DEFAULT '',
   sortOrder INTEGER DEFAULT 0
 );
 
@@ -276,11 +287,13 @@ export function migrate(db: Database.Database): void {
   ensureColumn(db, 'librarians', 'portrait', "TEXT DEFAULT ''")
   ensureColumn(db, 'librarians', 'portraitPreview', "TEXT DEFAULT ''")
   ensureColumn(db, 'librarians', 'sortOrder', 'INTEGER DEFAULT 0')
+  ensureColumn(db, 'librarians', 'rarity', "TEXT DEFAULT ''")
 }
 
 export const TABLES = [
   'floors',
   'librarians',
+  'emotion_entities',
   'core_pages',
   'combat_pages',
   'books',

@@ -64,8 +64,11 @@ function trashRowImages(table: string, id: number | string): void {
 
 // DELETE 级联置空钩子表：删除上级记录时，将子表外键置空（保留子数据，归入"未分配"区）。
 // 需要"连带删除子数据"的场景应当改用 DB 外键 ON DELETE CASCADE，并在提交说明中明确理由。
-const DELETE_NULLIFY_HOOKS: Record<string, { table: string; fk: string }> = {
-  floors: { table: 'librarians', fk: 'floorId' },
+const DELETE_NULLIFY_HOOKS: Record<string, Array<{ table: string; fk: string }>> = {
+  floors: [
+    { table: 'librarians', fk: 'floorId' },
+    { table: 'emotion_entities', fk: 'floorId' },
+  ],
 }
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -118,8 +121,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
     app.delete(`${route}/:id`, async (req, reply) => {
       const { id } = req.params as IdParams
-      const hook = DELETE_NULLIFY_HOOKS[table]
-      if (hook) {
+      for (const hook of DELETE_NULLIFY_HOOKS[table] ?? []) {
         getDb().prepare(`UPDATE ${hook.table} SET ${hook.fk} = NULL WHERE ${hook.fk} = ?`).run(id)
       }
       trashRowImages(table, id)
@@ -130,7 +132,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   }
 
   // 批量重排序：单事务内更新一批行的 sortOrder，避免前端 N 次串行 PUT。
-  for (const table of ['floors', 'librarians'] as const) {
+  for (const table of ['floors', 'librarians', 'emotion_entities'] as const) {
     app.post(`/api/${table}/reorder`, async (req, reply) => {
       const body = req.body as Array<{ id: number | string; sortOrder: number }>
       if (!Array.isArray(body)) return reply.code(400).send({ error: 'expected an array' })
