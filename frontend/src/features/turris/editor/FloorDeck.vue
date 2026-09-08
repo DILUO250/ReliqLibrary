@@ -85,7 +85,7 @@ const regLibsByFloor = computed<Map<number, Librarian[]>>(() => {
   return map
 })
 
-/** 附加角色（带稀有度前缀）。 */
+/** 附加单位（带稀有度前缀）。 */
 const extraLibsByFloor = computed<Map<number, Librarian[]>>(() => {
   const map = new Map<number, Librarian[]>()
   for (const [floorId, arr] of libsByFloor.value) {
@@ -113,37 +113,62 @@ const entitiesByFloor = computed<Map<number, EmotionEntity[]>>(() => {
 
 const romanMap = computed<Map<number, string>>(() => {
   const map = new Map<number, string>()
-  let n = 0
-  const assign = (arr: Librarian[]) => {
+  // 每楼层独立计数（orphan 区用 -1 作为楼层键）；附加单位不占编号
+  const counters = new Map<number, number>()
+  const assign = (floorId: number, arr: Librarian[]) => {
     for (const l of arr) {
-      // 附加角色不占罗马编号，仅常规司书参与编号
       if (l.rarity) continue
-      n += 1
-      map.set(l.id, toRoman(n))
+      const next = (counters.get(floorId) ?? 0) + 1
+      counters.set(floorId, next)
+      map.set(l.id, toRoman(next))
     }
   }
-  for (const f of floorsSorted.value) assign(libsByFloor.value.get(f.id) ?? [])
-  assign(orphanLibs.value)
+  for (const f of floorsSorted.value) assign(f.id, libsByFloor.value.get(f.id) ?? [])
+  assign(-1, orphanLibs.value)
   return map
 })
 
+/* ---------- 解析缓存：同一份 sheet 文本只解析一次，行数据未变则直接复用 ---------- */
+interface MemoEntry<T> {
+  raw: string
+  parsed: T
+}
+const libSheetMemo = new Map<number, MemoEntry<LibrarianSheet | null>>()
+const entSheetMemo = new Map<number, MemoEntry<EmotionSheet | null>>()
+const privateTermsMemo = new Map<number, MemoEntry<PrivateTerm[]>>()
+
+function memoized<T>(store: Map<number, MemoEntry<T>>, id: number, raw: string, parse: () => T): T {
+  const hit = store.get(id)
+  if (hit && hit.raw === raw) return hit.parsed
+  const parsed = parse()
+  store.set(id, { raw, parsed })
+  return parsed
+}
+
+/** 清理已删除行的缓存项（load 成功后调用；Map 迭代中删除当前项是安全的）。 */
+function pruneMemos<T>(store: Map<number, MemoEntry<T>>, ids: Set<number>): void {
+  for (const id of store.keys()) if (!ids.has(id)) store.delete(id)
+}
+
 function sheetOf(row: Librarian): LibrarianSheet | null {
-  return parseSheet(row.sheet)
+  return memoized(libSheetMemo, row.id, row.sheet, () => parseSheet(row.sheet))
 }
 
 function emotionSheetOf(e: EmotionEntity) {
-  return parseEmotionSheet(e.sheet)
+  return memoized(entSheetMemo, e.id, e.sheet, () => parseEmotionSheet(e.sheet))
 }
 
 /** 实体私人词典：全部书页的特殊机制名+字体格式（渲染时优先于通用词典）。 */
 function privateTermsOf(e: EmotionEntity): PrivateTerm[] {
-  const list: PrivateTerm[] = []
-  for (const p of emotionSheetOf(e)?.pages ?? []) {
-    for (const m of p.mechanisms) {
-      if (m.name && m.format) list.push({ name: m.name, format: m.format })
+  return memoized(privateTermsMemo, e.id, e.sheet, () => {
+    const list: PrivateTerm[] = []
+    for (const p of emotionSheetOf(e)?.pages ?? []) {
+      for (const m of p.mechanisms) {
+        if (m.name && m.format) list.push({ name: m.name, format: m.format })
+      }
     }
-  }
-  return list
+    return list
+  })
 }
 
 /** 机制名的展示样式（无 format 时回退默认金色）。 */
@@ -195,6 +220,11 @@ async function load(): Promise<void> {
     floors.value = fl
     librarians.value = lib
     emotions.value = ent
+    // 清理已删除行的缓存项
+    pruneMemos(libSheetMemo, new Set(lib.map((l) => l.id)))
+    const entIds = new Set(ent.map((x) => x.id))
+    pruneMemos(entSheetMemo, entIds)
+    pruneMemos(privateTermsMemo, entIds)
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -385,52 +415,12 @@ function onLibDrop(id: number): void {
   dragLibId.value = null
 }
 
-const nextRoman = computed(() => toRoman(librarians.value.length + 1))
-
-/* ---------- 展开动画（height + opacity） ---------- */
-function finishOnTransition(el: HTMLElement, done: () => void): void {
-  let ended = false
-  let timer = 0
-  const end = () => {
-    if (ended) return
-    ended = true
-    clearTimeout(timer)
-    el.removeEventListener('transitionend', end)
-    done()
-  }
-  el.addEventListener('transitionend', end)
-  timer = window.setTimeout(end, 380)
-}
-function slideEnter(el: Element, done: () => void): void {
-  const e = el as HTMLElement
-  e.style.overflow = 'hidden'
-  e.style.height = '0px'
-  e.style.opacity = '0'
-  e.style.transition = 'height 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease'
-  requestAnimationFrame(() => {
-    e.style.height = `${e.scrollHeight}px`
-    e.style.opacity = '1'
-  })
-  finishOnTransition(e, done)
-}
-function slideAfterEnter(el: Element): void {
-  const e = el as HTMLElement
-  e.style.height = ''
-  e.style.opacity = ''
-  e.style.overflow = ''
-  e.style.transition = ''
-}
-function slideLeave(el: Element, done: () => void): void {
-  const e = el as HTMLElement
-  e.style.overflow = 'hidden'
-  e.style.height = `${e.scrollHeight}px`
-  e.style.opacity = '1'
-  e.offsetHeight
-  e.style.transition = 'height 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease'
-  e.style.height = '0px'
-  e.style.opacity = '0'
-  finishOnTransition(e, done)
-}
+/* 新建司书时的默认编号：目标楼层现有常规司书数 + 1（未分配楼层同样独立计数）。 */
+const nextRoman = computed(() => {
+  const floorId = libModal.value.floorId
+  const list = floorId == null ? orphanLibs.value : (libsByFloor.value.get(floorId) ?? [])
+  return toRoman(list.filter((l) => !l.rarity).length + 1)
+})
 
 onMounted(load)
 </script>
@@ -447,7 +437,6 @@ onMounted(load)
 
     <div class="toolbar">
       <button class="btn btn--primary" @click="openFloorCreate">＋ 新建楼层</button>
-      <span v-if="loading" class="hint">加载中…</span>
       <span v-if="error" class="error">{{ error }}</span>
     </div>
 
@@ -458,7 +447,19 @@ onMounted(load)
       <p class="kai" style="font-size: 13px">点击「新建楼层」开始录入。</p>
     </div>
 
-    <div class="floors">
+    <!-- 加载骨架屏：形状与楼层卡一致，加载完成后由真实列表替换 -->
+    <div v-if="loading && floorsSorted.length === 0" class="floors" aria-hidden="true">
+      <div v-for="i in 4" :key="i" class="floor-skel">
+        <div class="floor-skel__art skel-shimmer"></div>
+        <div class="floor-skel__body">
+          <div class="skel-shimmer floor-skel__chip"></div>
+          <div class="skel-shimmer floor-skel__chip floor-skel__chip--sm"></div>
+          <div class="skel-shimmer floor-skel__line"></div>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="floors">
       <section v-for="f in floorsSorted" :key="f.id" class="floor" :class="{ 'is-open': expandedId === f.id }">
         <article
           class="floor-card"
@@ -485,7 +486,7 @@ onMounted(load)
               <span class="chip chip--accent">{{ f.code || '未编号' }}</span>
               <span class="chip">{{ BATTLE_SYSTEMS[f.battleSystem]?.code ?? f.battleSystem }}</span>
               <span class="chip">司书 {{ regLibsByFloor.get(f.id)?.length ?? 0 }}</span>
-              <span class="chip">附加角色 {{ extraLibsByFloor.get(f.id)?.length ?? 0 }}</span>
+              <span class="chip">附加单位 {{ extraLibsByFloor.get(f.id)?.length ?? 0 }}</span>
               <span class="chip">情感实体 {{ entitiesByFloor.get(f.id)?.length ?? 0 }}</span>
             </div>
             <h2 class="floor-card__name">{{ f.designation || f.name }}</h2>
@@ -496,12 +497,7 @@ onMounted(load)
           </button>
         </article>
 
-        <Transition
-          :css="false"
-          @enter="slideEnter"
-          @after-enter="slideAfterEnter"
-          @leave="slideLeave"
-        >
+        <Transition name="fd-fade">
           <div
             v-if="expandedId === f.id"
             class="floor-detail"
@@ -580,11 +576,11 @@ onMounted(load)
                 </div>
               </div>
 
-              <!-- ===== 二级菜单 2：附加角色 ===== -->
+              <!-- ===== 二级菜单 2：附加单位 ===== -->
               <div class="submenu submenu--extra">
                 <button type="button" class="submenu__head" @click="togglePanel(`extra-${f.id}`)">
                   <span class="submenu__icon">⭐</span>
-                  <span class="submenu__title">附加角色</span>
+                  <span class="submenu__title">附加单位</span>
                   <span class="submenu__count">
                     <span class="chip">{{ extraLibsByFloor.get(f.id)?.length ?? 0 }}</span>
                     <span class="submenu__arrow">{{ openPanels.has(`extra-${f.id}`) ? '▼' : '▶' }}</span>
@@ -592,11 +588,11 @@ onMounted(load)
                 </button>
                 <div v-show="openPanels.has(`extra-${f.id}`)" class="submenu__body">
                   <div class="submenu__actions">
-                    <button class="btn btn--primary btn--sm" @click="openLibCreate(f.id, 'RR')">＋ 添加附加角色</button>
+                    <button class="btn btn--primary btn--sm" @click="openLibCreate(f.id, 'RR')">＋ 添加附加单位</button>
                     <span class="submenu__note">带稀有度前缀的司书 · 被动/机制/卡组编辑与常规司书完全一致</span>
                   </div>
                   <div v-if="(extraLibsByFloor.get(f.id)?.length ?? 0) === 0" class="empty-state empty-state--sm">
-                    <div class="empty-state__title">本楼层暂无附加角色</div>
+                    <div class="empty-state__title">本楼层暂无附加单位</div>
                   </div>
                   <div v-else class="lib-grid">
                     <article v-for="l in extraLibsByFloor.get(f.id)" :key="l.id" class="lib-card lib-card--extra">
@@ -727,12 +723,7 @@ onMounted(load)
             {{ expandedId === -1 ? '▲' : '▼' }}
           </button>
         </article>
-        <Transition
-          :css="false"
-          @enter="slideEnter"
-          @after-enter="slideAfterEnter"
-          @leave="slideLeave"
-        >
+        <Transition name="fd-fade">
           <div v-if="expandedId === -1" class="floor-detail">
             <div class="floor-actions">
               <button class="btn btn--primary" @click="openLibCreate(null)">＋ 添加司书</button>
@@ -852,6 +843,80 @@ onMounted(load)
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+/* ---------- 骨架屏 ---------- */
+.floor-skel {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  min-height: 130px;
+  border: 1px solid var(--color-line);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.floor-skel__art {
+  width: 240px;
+  flex-shrink: 0;
+  min-height: 130px;
+}
+.floor-skel__body {
+  flex: 1;
+  padding: 24px 12px 24px 0;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.floor-skel__chip {
+  height: 20px;
+  width: 45%;
+  border-radius: 999px;
+}
+.floor-skel__chip--sm {
+  width: 28%;
+}
+.floor-skel__line {
+  height: 26px;
+  width: 62%;
+  border-radius: 6px;
+}
+.skel-shimmer {
+  position: relative;
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+.skel-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(233, 221, 198, 0.08), transparent);
+  animation: skel-sweep 1.4s ease-in-out infinite;
+}
+@keyframes skel-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel-shimmer::after {
+    animation: none;
+  }
+}
+/* ---------- 展开面板淡入（纯 CSS，不再逐帧测高） ---------- */
+.fd-fade-enter-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.fd-fade-leave-active {
+  transition: opacity 0.14s ease;
+}
+.fd-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.fd-fade-leave-to {
+  opacity: 0;
 }
 .floor {
   border: 1px solid var(--color-line);
@@ -1056,7 +1121,7 @@ onMounted(load)
   font-family: var(--font-kai);
 }
 
-/* --- 附加角色：鲜明血红主题 --- */
+/* --- 附加单位：鲜明血红主题 --- */
 .submenu--extra {
   border: 1.5px solid rgba(224, 58, 32, 0.55);
 }
@@ -1282,13 +1347,19 @@ onMounted(load)
 }
 .epage__effect {
   margin: 2px 0 0;
+  /* 悬挂缩进：首行顶格，第二行起缩进 2 字符（与司书预览对齐） */
+  padding-left: 2em;
+  text-indent: -2em;
+  white-space: pre-wrap;
   font-size: 13px;
   font-family: var(--font-kai);
   color: #e8e4da;
 }
 .epage__mech {
   margin: 5px 0 0;
-  padding-left: 10px;
+  /* 竖线缩进 10px + 悬挂缩进：首行贴竖线，第二行起再缩 2 字符 */
+  padding-left: calc(10px + 2em);
+  text-indent: -2em;
   border-left: 2px solid rgba(240, 199, 94, 0.5);
   font-size: 12.5px;
   color: #b8b2a4;
@@ -1302,13 +1373,20 @@ onMounted(load)
   margin-right: 4px;
 }
 .ego-wrap {
+  /* EGO 卡牌在右侧容器内水平居中；EGO被动条保持全宽 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 10px;
+}
+.ego-wrap .ego-passive {
+  align-self: stretch;
+  margin-top: 6px;
 }
 .ego-passive {
   display: flex;
   gap: 8px;
   align-items: baseline;
-  margin-top: 6px;
   padding: 8px 12px;
   border: 1px solid #f0c75e;
   border-radius: var(--radius);
@@ -1329,6 +1407,9 @@ onMounted(load)
   color: #ffffff;
 }
 .ego-passive__desc {
+  display: block;
+  flex: 1;
+  min-width: 0;
   color: #d8d2c2;
   font-family: var(--font-kai);
 }

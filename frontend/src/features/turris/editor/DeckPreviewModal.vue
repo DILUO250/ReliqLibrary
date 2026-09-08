@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import type { Librarian, Mechanism } from '@rtl/shared'
 import { parseSheet, BATTLE_SYSTEMS } from '@rtl/shared'
 import Modal from './Modal.vue'
@@ -77,11 +77,35 @@ const privateTerms = computed<PrivateTerm[]>(() => {
   if (mind?.name && mind.format) list.push({ name: mind.name, format: mind.format })
   return list
 })
+
+/* 大内容延迟渲染：先显示骨架占位，两帧后再挂载完整卡面，避免弹窗动画被阻塞。 */
+const ready = ref(false)
+let raf1 = 0
+let raf2 = 0
+onMounted(() => {
+  raf1 = requestAnimationFrame(() => {
+    raf2 = requestAnimationFrame(() => {
+      ready.value = true
+    })
+  })
+})
+onBeforeUnmount(() => {
+  cancelAnimationFrame(raf1)
+  cancelAnimationFrame(raf2)
+})
 </script>
 
 <template>
   <Modal :title="`司书预览 · ${librarian.name}`" wide @close="emit('close')">
-    <template v-if="sheet">
+    <template v-if="sheet && !ready">
+      <div class="pv-skel" aria-hidden="true">
+        <div class="pv-skel__col">
+          <div v-for="i in 4" :key="i" class="skel-shimmer pv-skel__block"></div>
+        </div>
+        <div class="pv-skel__side skel-shimmer"></div>
+      </div>
+    </template>
+    <template v-else-if="sheet">
       <div class="detail-layout">
         <aside class="detail-info">
           <section class="block banner">
@@ -236,6 +260,61 @@ const privateTerms = computed<PrivateTerm[]>(() => {
 </template>
 
 <style scoped>
+/* ---------- 骨架占位 ---------- */
+.pv-skel {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+.pv-skel__col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pv-skel__block {
+  height: 120px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+}
+.pv-skel__block:nth-child(2) {
+  height: 90px;
+}
+.pv-skel__block:nth-child(3) {
+  height: 160px;
+}
+.pv-skel__side {
+  flex: 0 0 34%;
+  max-width: 360px;
+  min-width: 240px;
+  min-height: 380px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+}
+.skel-shimmer {
+  position: relative;
+  background: var(--color-surface-2);
+  overflow: hidden;
+}
+.skel-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(233, 221, 198, 0.08), transparent);
+  animation: skel-sweep 1.4s ease-in-out infinite;
+}
+@keyframes skel-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel-shimmer::after {
+    animation: none;
+  }
+}
 .detail-layout {
   display: flex;
   gap: 20px;

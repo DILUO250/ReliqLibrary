@@ -234,7 +234,7 @@ function removePortrait(): void {
       <label>稀有度</label>
       <select v-model="form.rarity">
         <option value="">常规司书</option>
-        <option v-for="r in RARITIES" :key="r" :value="r">{{ r }} · 附加角色</option>
+        <option v-for="r in RARITIES" :key="r" :value="r">{{ r }} · 附加单位</option>
       </select>
       <label>战斗系统</label>
       <select v-model="form.sheet.battleSystem">

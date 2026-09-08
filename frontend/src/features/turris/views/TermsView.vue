@@ -4,6 +4,7 @@ import { useTermsStore } from '@/features/turris/store/terms'
 import { TAG_STYLES } from '@/features/turris/terms/tagStyles'
 import { readableColor, formatToCss, mergedFormat } from '@/features/turris/terms/format'
 import TermEditModal from '@/features/turris/terms/TermEditModal.vue'
+import RenderedText from '@/features/turris/terms/RenderedText.vue'
 import type { DictEntry } from '@/features/turris/store/terms'
 
 const termsStore = useTermsStore()
@@ -119,7 +120,7 @@ function groupColor(title: string): string {
                       编辑
                     </button>
                   </div>
-                  <p class="entry__desc">{{ e.desc }}</p>
+                  <p class="entry__desc"><RenderedText :text="e.desc" unknown-plain /></p>
                 </article>
               </div>
             </div>

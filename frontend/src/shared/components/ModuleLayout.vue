@@ -24,9 +24,9 @@ const meta = {
     latin: 'Turris Librorum Adventantium',
     desc: '战斗司书 · 驻守图书馆最前线，迎击挑战者与入侵者。',
     tabs: [
-      { to: '/turris', label: '总览' },
-      { to: '/turris/floors', label: '楼层与司书' },
+      { to: '/turris/floors', label: '总览' },
       { to: '/turris/dictionary', label: '术语字典' },
+      { to: '/turris/systems', label: '战斗系统' },
       { to: '/turris/invitations', label: '邀请函与来宾' },
     ],
   },

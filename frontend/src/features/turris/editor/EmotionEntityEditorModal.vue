@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { nextTick, onMounted, reactive } from 'vue'
 import type { EmotionEntity, EmotionSheet, EgoCard, Mechanism, TermFormat } from '@rtl/shared'
 import {
   EMOTION_PAGE_MAX,
@@ -15,6 +15,7 @@ import CardEditor from './CardEditor.vue'
 import FormatEditor from './FormatEditor.vue'
 import TermInserter from './TermInserter.vue'
 import { formatToCss } from '@/features/turris/terms/format'
+import type { PrivateTerm } from '@/features/turris/terms/renderer'
 
 const props = defineProps<{
   entity: EmotionEntity | null
@@ -66,6 +67,29 @@ function movePage(i: number, dir: -1 | 1): void {
 }
 /* ---------- 特殊机制（与司书 Mechanism 同构；机制名纳入实体私人词典） ---------- */
 const mechTypes = statusTags.map((t) => t.name)
+
+/** 实体私人词典：全部书页机制名+格式，EGO 卡牌预览渲染时优先于通用词典。 */
+function editorPrivateTerms(): PrivateTerm[] {
+  const list: PrivateTerm[] = []
+  for (const p of form.sheet.pages) {
+    for (const m of p.mechanisms) {
+      if (m.name && m.format) list.push({ name: m.name, format: m.format })
+    }
+  }
+  return list
+}
+
+/* ---------- textarea 自动增高（与司书编辑器对齐）：打开时按已有内容初始化，输入时实时撑高 ---------- */
+function autoGrow(target: Event | HTMLTextAreaElement): void {
+  const el = target instanceof HTMLTextAreaElement ? target : (target.target as HTMLTextAreaElement)
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+onMounted(() => {
+  void nextTick(() => {
+    document.querySelectorAll<HTMLTextAreaElement>('.modal .auto-grow').forEach((el) => autoGrow(el))
+  })
+})
 
 function addMechanism(i: number): void {
   form.sheet.pages[i]?.mechanisms.push({ name: '', stack: '', type: '', desc: '' })
@@ -178,7 +202,7 @@ function submit(): void {
         </div>
         <div class="effect-field">
           <label>效果</label>
-          <textarea v-model="p.effect" rows="2" placeholder="【选择一名司书】…"></textarea>
+          <textarea v-model="p.effect" rows="2" class="auto-grow" placeholder="【选择一名司书】…" @input="autoGrow"></textarea>
           <TermInserter @insert="(t: string) => insertAtPageEffect(i, t)" />
         </div>
         <div class="mech-field">
@@ -198,7 +222,7 @@ function submit(): void {
               <button type="button" class="x" @click="removeMechanism(i, mi)">×</button>
             </div>
             <div class="mech-item__desc">
-              <textarea v-model="m.desc" rows="2" placeholder="机制描述（可用「插入术语」）"></textarea>
+              <textarea v-model="m.desc" rows="2" class="auto-grow" placeholder="机制描述（可用「插入术语」）" @input="autoGrow"></textarea>
               <TermInserter @insert="(t: string) => insertAtMechanismDesc(i, mi, t)" />
             </div>
             <div class="mech-item__format">
@@ -222,7 +246,7 @@ function submit(): void {
         <div class="ego-block__head">
           <span class="ego-block__no">EGO {{ i + 1 }}</span>
         </div>
-        <CardEditor :card="c" @duplicate="duplicateEgo(i)" @remove="removeEgo(i)" />
+        <CardEditor :card="c" :render-terms="true" :private-terms="editorPrivateTerms()" @duplicate="duplicateEgo(i)" @remove="removeEgo(i)" />
         <div class="passive-block">
           <div class="passive-grid">
             <label>EGO被动 · 名称</label>
@@ -374,7 +398,7 @@ function submit(): void {
 .effect-field textarea {
   flex: 1;
   min-width: 260px;
-  resize: vertical;
+  overflow-y: hidden;
   line-height: 1.6;
 }
 .mech-field {
@@ -448,8 +472,12 @@ function submit(): void {
 .mech-item__desc textarea {
   flex: 1;
   min-width: 240px;
-  resize: vertical;
+  overflow-y: hidden;
   line-height: 1.6;
+}
+/* 自动增高文本域（与司书编辑器同款）：高度由 JS 按内容撑开 */
+.auto-grow {
+  resize: none;
 }
 .mech-item__format {
   display: flex;

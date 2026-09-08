@@ -431,6 +431,22 @@ export function toRoman(n: number): string {
   return out
 }
 
+/** 系统六维属性评分（1~5，用于战斗系统页雷达图）。 */
+export interface BattleSystemMetrics {
+  /** 进攻性 */
+  offense: number
+  /** 防守性 */
+  defense: number
+  /** 速度线 */
+  speed: number
+  /** 资源循环 */
+  resource: number
+  /** 成长上限 */
+  growth: number
+  /** 上手门槛（1=极易上手，5=门槛高） */
+  learning: number
+}
+
 export interface BattleSystemInfo {
   id: BattleSystemId
   zh: string
@@ -444,6 +460,16 @@ export interface BattleSystemInfo {
   draw: number
   deckLimit: number
   keepHand: boolean
+  /** 额外卡牌区描述（如 LOB 的 EGO 栏）；缺省表示未录入。 */
+  extraDeckZone?: string
+  /** 队伍容量（单场接待的常规上阵人数）。 */
+  teamCapacity?: string
+  /** 六维属性评分（雷达图数据）。 */
+  metrics?: BattleSystemMetrics
+  /** 系统优势描述。 */
+  pros?: string
+  /** 系统劣势描述。 */
+  cons?: string
   /** 系统固定被动「速战速决」的模板变体（第 1 条被动）。未定义时回退为单条默认。 */
   speedPassives?: Passive[]
 }
@@ -456,7 +482,7 @@ export type LibrarianRole =
   | 'internal'
   | 'director'
 
-/** 附加角色的稀有度前缀；'' 表示常规司书。 */
+/** 附加单位的稀有度前缀；'' 表示常规司书。 */
 export type LibrarianRarity = '' | 'N' | 'R' | 'SR' | 'SSR' | 'RR' | 'UR'
 
 export const RARITIES: ReadonlyArray<Exclude<LibrarianRarity, ''>> = ['N', 'R', 'SR', 'SSR', 'RR', 'UR']
@@ -494,7 +520,7 @@ export interface Librarian {
   department: DepartmentId
   role: LibrarianRole
   floorId: number | null
-  /** 附加角色稀有度前缀（'' = 常规司书）。 */
+  /** 附加单位稀有度前缀（'' = 常规司书）。 */
   rarity: string
   coreColor: CorePageColor
   affiliation: string
@@ -701,6 +727,11 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     draw: 2,
     deckLimit: 12,
     keepHand: false,
+    extraDeckZone: '无',
+    teamCapacity: '4',
+    metrics: { offense: 3, defense: 3, speed: 2, resource: 4, growth: 1, learning: 1 },
+    pros: '泛用性强，无特殊机制，任何单位可直接入队；费用充沛、回转快，容错稳定。',
+    cons: '上限低，缺乏随机应变能力，没有成长体系与特殊形态。',
   },
   lob: {
     id: 'lob',
@@ -715,6 +746,11 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     draw: 1,
     deckLimit: 9,
     keepHand: true,
+    extraDeckZone: '1（EGO 栏）',
+    teamCapacity: '6',
+    metrics: { offense: 5, defense: 2, speed: 4, resource: 2, growth: 5, learning: 3 },
+    pros: '以强大的力量碾压目标，人均攻击性强；情感等级带来全系统最高的成长上限，EGO 一锤定音。',
+    cons: '不擅长持久战，缺乏回转和恢复手段；成长依赖战斗行为，逆风局难以滚雪球。',
     speedPassives: [
       { name: '速战速决LOB', effect: '速度骰子+1' },
       { name: '速战速决LOB2', effect: '速度骰子+2' },

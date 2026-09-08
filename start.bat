@@ -30,6 +30,8 @@ echo.
 echo 「遗迹图书馆」已启动（窗口最小化在任务栏，点击还原可查看日志）：
 echo   前端  http://localhost:4290
 echo   后端  http://127.0.0.1:3000
+echo   LAN address(es):
+powershell -NoProfile -Command "$c = Get-NetIPConfiguration | Where-Object { $_.IPv4DefaultGateway }; if ($c) { $c | ForEach-Object { Write-Host ('  http://' + $_.IPv4Address.IPAddress + ':4290') } } else { Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -ne '127.0.0.1' -and $_.IPAddress -notlike '169.*' } | ForEach-Object { Write-Host ('  http://' + $_.IPAddress + ':4290') } }"
 echo.
 echo 本窗口将在 30 秒后自动关闭。
 echo.

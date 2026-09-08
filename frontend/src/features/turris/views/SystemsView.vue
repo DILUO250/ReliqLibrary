@@ -1,0 +1,325 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { BATTLE_SYSTEMS, type BattleSystemId, type BattleSystemMetrics } from '@rtl/shared'
+import SystemRadar from '../components/SystemRadar.vue'
+
+/** 展示顺序：BASE 默认，随后 LOB；RHD/PKM 待录入。 */
+const ORDER: BattleSystemId[] = ['base', 'lob', 'rhd', 'pkm']
+
+/** 六维图例的固定顺序与中文标签（与雷达轴一致）。 */
+const METRIC_DIMS: Array<{ key: keyof BattleSystemMetrics; label: string }> = [
+  { key: 'offense', label: '进攻性' },
+  { key: 'defense', label: '防守性' },
+  { key: 'speed', label: '速度线' },
+  { key: 'resource', label: '资源循环' },
+  { key: 'growth', label: '成长上限' },
+  { key: 'learning', label: '上手门槛' },
+]
+
+const selected = ref<BattleSystemId>('base')
+
+const info = computed(() => BATTLE_SYSTEMS[selected.value])
+
+const hasData = computed(() => !!info.value.metrics)
+
+const readySystems = computed(() =>
+  ORDER.map((id) => ({ id, info: BATTLE_SYSTEMS[id], ready: !!BATTLE_SYSTEMS[id].metrics })),
+)
+
+/** 数值表：严格按 设计文档 顺序。 */
+const paramRows = computed(() => {
+  const s = info.value
+  return [
+    { label: '起始费用上限', value: `${s.costCap} 点${s.costLabel}` },
+    { label: '自动回费量', value: `${s.regen} 点/回合` },
+    { label: '起始手牌上限', value: `${s.handLimit} 张` },
+    { label: '自动抽牌数', value: `${s.draw} 张/回合` },
+    { label: '牌组容量', value: `${s.deckLimit} 张` },
+    { label: '手牌保留规则', value: s.keepHand ? '不自动弃牌' : '自动弃牌' },
+    { label: '额外卡牌区', value: s.extraDeckZone ?? '—' },
+    { label: '起始速度骰子', value: `${s.speedDice} 颗` },
+    { label: '队伍容量', value: s.teamCapacity ?? '—' },
+  ]
+})
+</script>
+
+<template>
+  <div class="sys">
+    <header class="page-header">
+      <div class="page-header__eyebrow latin">Systema Pugnae</div>
+      <h1 class="page-header__title">战斗系统</h1>
+      <p class="page-header__desc">
+        迎书楼各楼层采用的战斗体系总览。选择一个系统查看六维属性、优势劣势与开局数值；各系统的专属机制描述将在后续补充。
+      </p>
+    </header>
+
+    <!-- 系统切换 -->
+    <nav class="sys-switch">
+      <button
+        v-for="s in readySystems"
+        :key="s.id"
+        type="button"
+        class="sys-switch__btn"
+        :class="{ 'is-active': selected === s.id }"
+        @click="selected = s.id"
+      >
+        <span class="sys-switch__code">{{ s.info.code }}</span>
+        <span class="sys-switch__zh">{{ s.info.zh }}</span>
+        <span v-if="!s.ready" class="sys-switch__soon">整理中</span>
+      </button>
+    </nav>
+
+    <!-- 数据整理中占位 -->
+    <div v-if="!hasData" class="sys-empty">
+      <p class="sys-empty__title">《{{ info.zh }}》详细数据整理中</p>
+      <p class="sys-empty__desc">该系统的六维评分、优劣势与开局数值尚未录入，敬请期待。</p>
+    </div>
+
+    <template v-else>
+      <!-- 六维雷达 -->
+      <section class="sys-block">
+        <h2 class="sys-block__title">六维属性</h2>
+        <div class="sys-radar-wrap">
+          <SystemRadar :metrics="info.metrics!" :size="340" />
+          <ul class="sys-legend">
+            <li v-for="dim in METRIC_DIMS" :key="dim.key" class="sys-legend__item">
+              <span class="sys-legend__label">{{ dim.label }}</span>
+              <span class="sys-legend__dots"><i v-for="n in 5" :key="n" :class="{ on: n <= (info.metrics![dim.key] ?? 0) }" /></span>
+              <span class="sys-legend__val">{{ info.metrics![dim.key] }} / 5</span>
+            </li>
+          </ul>
+        </div>
+        <p class="sys-note">上手门槛：1 分最易上手，5 分门槛最高。</p>
+      </section>
+
+      <!-- 优势 / 劣势 -->
+      <section class="sys-block">
+        <h2 class="sys-block__title">优势与劣势</h2>
+        <div class="sys-pc">
+          <div class="sys-pc__card sys-pc__card--pro">
+            <h3>优势</h3>
+            <p>{{ info.pros }}</p>
+          </div>
+          <div class="sys-pc__card sys-pc__card--con">
+            <h3>劣势</h3>
+            <p>{{ info.cons }}</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 开局数值 -->
+      <section class="sys-block">
+        <h2 class="sys-block__title">开局数值</h2>
+        <table class="sys-table">
+          <tbody>
+            <tr v-for="row in paramRows" :key="row.label">
+              <th>{{ row.label }}</th>
+              <td>{{ row.value }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </template>
+  </div>
+</template>
+
+<style scoped>
+.sys {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.sys-switch {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sys-switch__btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 96px;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.sys-switch__btn:hover {
+  border-color: var(--accent);
+}
+.sys-switch__btn.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--color-surface));
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.sys-switch__code {
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+.sys-switch__zh {
+  font-size: 12px;
+  color: var(--color-ink-dim);
+}
+.sys-switch__soon {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 10px;
+  color: var(--color-ink-faint);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0 5px;
+}
+.sys-empty {
+  border: 1px dashed var(--color-line);
+  border-radius: calc(var(--radius) + 4px);
+  padding: 48px 24px;
+  text-align: center;
+}
+.sys-empty__title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: var(--color-ink);
+}
+.sys-empty__desc {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-ink-faint);
+}
+.sys-block {
+  border: 1px solid var(--color-line);
+  border-radius: calc(var(--radius) + 4px);
+  background: var(--color-surface);
+  padding: 18px;
+}
+.sys-block__title {
+  margin: 0 0 14px;
+  font-size: 16px;
+  color: var(--accent);
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+}
+.sys-radar-wrap {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.sys-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 180px;
+}
+.sys-legend__item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-ink-dim);
+}
+.sys-legend__label {
+  color: var(--color-ink-dim);
+}
+.sys-legend__dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.sys-legend__dots i {
+  width: 14px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--color-line);
+}
+.sys-legend__dots i.on {
+  background: var(--accent);
+}
+.sys-legend__val {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+.sys-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--color-ink-faint);
+}
+.sys-pc {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.sys-pc__card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.sys-pc__card h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.sys-pc__card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.9;
+  color: var(--color-ink-dim);
+}
+.sys-pc__card--pro h3 {
+  color: #e0b564;
+}
+.sys-pc__card--pro {
+  border-color: rgba(224, 181, 100, 0.35);
+}
+.sys-pc__card--con h3 {
+  color: #d9766a;
+}
+.sys-pc__card--con {
+  border-color: rgba(217, 118, 106, 0.35);
+}
+.sys-table {
+  width: min(620px, 100%);
+  margin: 0 auto;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: 14px;
+}
+.sys-table th,
+.sys-table td {
+  border-bottom: 1px solid var(--color-line);
+  padding: 10px 16px;
+  text-align: left;
+}
+.sys-table tr:last-child th,
+.sys-table tr:last-child td {
+  border-bottom: none;
+}
+.sys-table th {
+  width: 46%;
+  font-weight: 600;
+  color: var(--color-ink-dim);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.sys-table td {
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 720px) {
+  .sys-pc {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ensureTermIndex, termIndexReady, renderTermText, type PrivateTerm } from './renderer'
 import { formatToCss } from './format'
 
-const props = defineProps<{ text: string; privateTerms?: PrivateTerm[]; onLight?: boolean }>()
+const props = defineProps<{ text: string; privateTerms?: PrivateTerm[]; onLight?: boolean; unknownPlain?: boolean }>()
 
 const ready = ref(termIndexReady())
 
@@ -37,7 +37,11 @@ onUnmounted(() => window.clearTimeout(retryTimer))
   <span class="rt">
     <template v-for="(s, i) in segs" :key="i">
       <span v-if="s.type === 'term'" class="rt-term" :style="formatToCss(s.format, onLight)">{{ s.text }}</span>
-      <span v-else-if="s.type === 'unknown'" class="rt-unknown" :title="ready ? '未收录于词典' : ''">{{ s.text }}</span>
+      <span
+        v-else-if="s.type === 'unknown' && !unknownPlain"
+        class="rt-unknown"
+        :title="ready ? '未收录于词典' : ''"
+      >{{ s.text }}</span>
       <template v-else>{{ s.text }}</template>
     </template>
   </span>

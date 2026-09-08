@@ -49,7 +49,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'turris',
-        component: () => import('@/features/turris/views/TurrisView.vue'),
+        redirect: '/turris/floors',
       },
       {
         path: 'floors',
@@ -60,6 +60,11 @@ const routes: RouteRecordRaw[] = [
         path: 'dictionary',
         name: 'turris-dictionary',
         component: () => import('@/features/turris/views/TermsView.vue'),
+      },
+      {
+        path: 'systems',
+        name: 'turris-systems',
+        component: () => import('@/features/turris/views/SystemsView.vue'),
       },
       {
         path: 'invitations',
