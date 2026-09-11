@@ -1,35 +1,56 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import SectionPlaceholder from '@/shared/components/SectionPlaceholder.vue'
+import { api } from '@/app/services/api'
+import type { ArmariumProject } from '@rtl/shared'
 
+// 藏书阁五 Tab（CONVENTIONS §5 结构规范，2026-09 Tab 重构）：
+// 总览 / 异常实体库 / 超自然空间库 / 研究项目 / 书库管理员。
+// Tab 内容与路由一一对应（/armarium/<id>），共用本容器组件。
+type TabId = 'overview' | 'entities' | 'spaces' | 'projects' | 'librarians'
+
+const TABS: Array<{ id: TabId; label: string }> = [
+  { id: 'overview', label: '总览' },
+  { id: 'entities', label: '异常实体库' },
+  { id: 'spaces', label: '超自然空间库' },
+  { id: 'projects', label: '研究项目' },
+  { id: 'librarians', label: '书库管理员' },
+]
+
+const route = useRoute()
 const router = useRouter()
 
-type ProjectOpenMode = 'tab' | 'spa'
+const active = computed<TabId>(() => {
+  const name = String(route.name ?? '')
+  if (name.startsWith('armarium-')) {
+    const id = name.replace('armarium-', '') as TabId
+    if (TABS.some((t) => t.id === id)) return id
+  }
+  return 'overview'
+})
 
-interface ArmariumProject {
-  id: string
-  title: string
-  latin: string
-  repository: string
-  summary: string
-  status: string
-  openMode: ProjectOpenMode
-  path: string
-  cover?: string
+function switchTab(id: TabId): void {
+  void router.push(id === 'overview' ? '/armarium' : `/armarium/${id}`)
 }
 
-const projects: ArmariumProject[] = [
-  {
-    id: 'pvz',
-    title: '植物大战僵尸百科',
-    latin: 'Plants vs. Zombies Almanac',
-    repository: '生命自然研究书库',
-    summary: '对泡沫世界植物样本的系统化归档，记录其生态谱系、世界来源与战术特征。',
-    status: '已收容 · 可访问',
-    openMode: 'tab',
-    path: '/armarium/project/pvz',
-    cover: '/features/armarium/projects/pvzwiki/assets/pvzg_nav.webp',
-  },
-]
+/* ---------- Tab4 研究项目：armarium_projects 表（DB 权威，禁止再硬编码项目数组） ---------- */
+
+const projects = ref<ArmariumProject[]>([])
+const loadingProjects = ref(false)
+
+async function loadProjects(): Promise<void> {
+  loadingProjects.value = true
+  try {
+    projects.value = await api.list<ArmariumProject>('armarium_projects')
+  } finally {
+    loadingProjects.value = false
+  }
+}
+
+onMounted(() => {
+  void loadProjects()
+})
 
 function openProject(project: ArmariumProject): void {
   const url = router.resolve(project.path).href
@@ -42,54 +63,135 @@ function openProject(project: ArmariumProject): void {
 </script>
 
 <template>
-  <div class="armarium-overview">
-    <header class="page-header">
-      <div class="page-header__eyebrow latin">Armarium Absconditorum</div>
-      <h1 class="page-header__title">藏书阁项目总览</h1>
-      <p class="page-header__desc">
-        研究司书的项目档案。大型项目以独立标签页展开，简单项目可在主站内以 SPA 形式继续浏览。
-      </p>
-    </header>
+  <div class="armarium-page">
+    <nav class="arm-tabs" aria-label="藏书阁分区">
+      <button
+        v-for="t in TABS"
+        :key="t.id"
+        type="button"
+        class="arm-tabs__btn"
+        :class="{ 'is-active': t.id === active }"
+        @click="switchTab(t.id)"
+      >
+        {{ t.label }}
+      </button>
+    </nav>
 
-    <section class="project-register" aria-labelledby="project-register-title">
-      <div class="project-register__heading">
-        <div>
-          <span class="project-register__eyebrow latin">Research Registry</span>
-          <h2 id="project-register-title">研究项目</h2>
+    <!-- Tab1 总览（UI 待规划） -->
+    <SectionPlaceholder
+      v-if="active === 'overview'"
+      title="藏书阁总览"
+      latin="Conspectus"
+      desc="藏书阁的总体概览页。"
+      note="总览页 UI 待规划"
+    />
+
+    <!-- Tab2 异常实体库（anomalies 表已就绪，UI 待建） -->
+    <SectionPlaceholder
+      v-else-if="active === 'entities'"
+      title="异常实体档案"
+      latin="Entitas Anomala"
+      desc="藏书阁研究的主要异常对象之一。主要产物：知识，生木髓，情感书页，EGO书页。"
+      note="异常实体档案数据待录入"
+    />
+
+    <!-- Tab3 超自然空间库（supernatural_spaces 表已就绪，UI 待建） -->
+    <SectionPlaceholder
+      v-else-if="active === 'spaces'"
+      title="超自然空间"
+      latin="Spatium Supernaturale"
+      desc="遗迹图书馆研究的异常对象之一。主要产物：知识，丰富资源，异常实体。"
+      note="超自然空间档案数据待录入"
+    />
+
+    <!-- Tab5 书库管理员（librarians 表 department='armarium' 子集，UI 待建） -->
+    <SectionPlaceholder
+      v-else-if="active === 'librarians'"
+      title="书库管理员"
+      latin="Librarii Repositoriorum"
+      desc="藏书阁司书 · 书记官。展示 department 为 armarium 的司书档案。"
+      note="书库管理员数据待录入"
+    />
+
+    <!-- Tab4 研究项目 -->
+    <template v-else>
+      <section class="project-register" aria-labelledby="project-register-title">
+        <div class="project-register__heading">
+          <div>
+            <span class="project-register__eyebrow latin">Research Registry</span>
+            <h2 id="project-register-title">研究项目</h2>
+          </div>
+          <span class="project-register__count">{{ projects.length }} 项目</span>
         </div>
-        <span class="project-register__count">{{ projects.length }} 项目</span>
-      </div>
 
-      <div class="project-rail">
-        <article v-for="project in projects" :key="project.id" class="project-card">
-          <div class="project-card__cover" :class="{ 'project-card__cover--empty': !project.cover }">
-            <img v-if="project.cover" :src="project.cover" :alt="`${project.title}封面`" />
-            <span v-else class="latin">ARCHIVE</span>
-            <span class="project-card__status">{{ project.status }}</span>
-          </div>
-          <div class="project-card__body">
-            <div class="project-card__code latin">PROJECT // {{ project.id.toUpperCase() }}</div>
-            <h3>{{ project.title }}</h3>
-            <p class="project-card__latin latin">{{ project.latin }}</p>
-            <p class="project-card__summary">{{ project.summary }}</p>
-            <div class="project-card__meta">
-              <span>{{ project.repository }}</span>
-              <span>{{ project.openMode === 'tab' ? '独立标签页' : '站内页面' }}</span>
+        <p v-if="loadingProjects" class="project-loading">读取项目档案中…</p>
+        <div v-else-if="projects.length" class="project-rail">
+          <article v-for="project in projects" :key="project.id" class="project-card">
+            <div class="project-card__cover" :class="{ 'project-card__cover--empty': !project.cover }">
+              <img v-if="project.cover" :src="project.cover" :alt="`${project.title}封面`" />
+              <span v-else class="latin">ARCHIVE</span>
+              <span class="project-card__status">{{ project.status }}</span>
             </div>
-            <button type="button" class="project-card__open" @click="openProject(project)">
-              <span>打开项目</span>
-              <span aria-hidden="true">↗</span>
-            </button>
-          </div>
-        </article>
-      </div>
-    </section>
+            <div class="project-card__body">
+              <div class="project-card__body-code latin">PROJECT // {{ project.id }}</div>
+              <h3>{{ project.title }}</h3>
+              <p class="project-card__latin latin">{{ project.latinName }}</p>
+              <p class="project-card__summary">{{ project.summary }}</p>
+              <div class="project-card__meta">
+                <span>{{ project.repository }}</span>
+                <span>{{ project.openMode === 'tab' ? '独立标签页' : '站内页面' }}</span>
+              </div>
+              <button type="button" class="project-card__open" @click="openProject(project)">
+                <span>打开项目</span>
+                <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+          </article>
+        </div>
+        <p v-else class="project-loading">暂无研究项目档案。</p>
+      </section>
+    </template>
   </div>
 </template>
 
 <style scoped>
-.armarium-overview {
+.armarium-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
   min-width: 0;
+}
+
+.arm-tabs {
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 10px;
+}
+
+.arm-tabs__btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--color-ink-dim);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 7px 16px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.arm-tabs__btn:hover {
+  color: var(--color-ink);
+}
+
+.arm-tabs__btn.is-active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--color-ink);
 }
 
 .project-register {
@@ -119,6 +221,11 @@ function openProject(project: ArmariumProject): void {
 }
 
 .project-register__count {
+  color: var(--color-ink-faint);
+  font-size: 13px;
+}
+
+.project-loading {
   color: var(--color-ink-faint);
   font-size: 13px;
 }
@@ -189,7 +296,7 @@ function openProject(project: ArmariumProject): void {
   padding: 22px 20px 18px;
 }
 
-.project-card__code,
+.project-card__body-code,
 .project-card__latin {
   color: var(--color-ink-faint);
   font-size: 10px;

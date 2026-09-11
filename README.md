@@ -85,22 +85,24 @@ backend\src\
 ├─ config\index.ts      # 配置：路径、端口、环境变量
 ├─ db\
 │  ├─ schema.ts         # 建表语句（DDL）+ TABLES 白名单 —— ★ 想加新表先来这里
-│  └─ index.ts          # 数据库连接（better-sqlite3，WAL 模式，启动时自动迁移建表）
+│  ├─ index.ts          # 数据库连接（better-sqlite3，WAL 模式，启动时自动迁移建表）
+│  ├─ seedExport.ts     # 全表快照 + 术语生成种子的导出实现（backupScheduler 调用）
+│  └─ backupScheduler.ts# 写后自动备份调度（防抖、失败静默重试）
 ├─ routes\index.ts      # ★ 核心：generic CRUD —— 按 TABLES 白名单给每张表自动生成
-│                       #   增/删/改/查/排序 五套接口，还有图片回收钩子
+│                       #   增/删/改/查/排序 五套接口 + 写操作 token 门 + 图片回收钩子
 ├─ features\
 │  ├─ turris\artRoutes.ts    # 迎书楼专属接口：图片上传 + AI 立绘生成
 │  ├─ armarium\artRoutes.ts  # 藏书阁专属接口：PVZ 素材上传 + 云端同步
 │  └─ armarium\pvzSync.ts    # PVZ 云端同步逻辑
 ├─ scripts\
-│  ├─ importTerms.ts    # 把前端术语种子灌进数据库（npm run import:terms）
-│  ├─ importPvz.ts      # 把 PVZ 植物种子灌进数据库（npm run import:pvz）
-│  ├─ importCT2.ts / importCT34.ts  # 迎书楼历史数据导入脚本
-│  └─ auditArt.ts       # 只读扫描孤儿图片（npm run audit:art）
-└─ seed\data.ts         # 首次建库时的种子数据（npm run seed:reset 会用它重建）
+│  ├─ exportSeed.ts      # 手动触发一次全表快照 + 术语种子重生成（npm run export:snapshot）
+│  ├─ seed.ts            # seed:reset = 清库后从自动快照无损恢复（无旗标运行会拒绝）
+│  ├─ importTerms.ts     # 术语恢复/新机引导（合并模式，npm run import:terms）
+│  └─ auditArt.ts        # 只读扫描孤儿图片（npm run audit:art）
+└─ （无种子文件——备份即种子：db-snapshot.json 随每次写操作自动更新）
 ```
 
-数据库文件本体在 `backend\data\library.db` —— **这是全项目最值钱的文件，别删它**。旁边的 `*.db-wal` / `*.db-shm` 是运行时临时文件，别手工碰。
+数据库文件本体在 `backend\data\library.db` —— **这是全项目最值钱的文件，别删它**。旁边的 `*.db-wal` / `*.db-shm` 是运行时临时文件，别手工碰；`db-snapshot.json` 是写操作后自动生成的全表快照（恢复/搬家就靠它）。
 
 ### 4.2 数据库表 = 数据的"抽屉"
 
@@ -273,23 +275,23 @@ npm run type-check           # 类型检查，零报错
 npm run lint --workspace frontend   # 风格检查，零告警
 
 # 数据运维
-npm run import:terms         # 术种子 → 数据库（幂等，随便跑）
-npm run import:pvz           # PVZ 植物 → 数据库（幂等）
-npm run audit:art            # 只读扫描孤儿图片（不删任何文件）
-npm run seed:reset           # ⚠️ 清空全部数据库重建！除非确认要丢数据，永远别跑
+npm run export:snapshot       # 手动取一份新鲜全表快照（平时写操作后 2 秒自动生成）
+npm run import:terms          # 术语恢复/新机引导（合并模式，绝不覆盖库内修改）
+npm run audit:art             # 只读扫描孤儿图片（不删任何文件）
+npm run seed:reset            # 清库后从自动快照无损恢复（= 回到最后一次保存的状态；无旗标会拒绝）
 ```
 
 ---
 
 ## 8. 新手必读的坑（每一条都真实发生过）
 
-1. **不要跑 `npm run seed:reset`**，除非你想清空全部数据。数据库 `backend\data\library.db` 才是真正的家当。
+1. **写操作要带 `x-rtl-key` 请求头**（默认值 `reliq-2026`，改法见 `AGENTS.md`）。GET 不需要。没带头会收到 401。
 2. **含中文的数据不要用 PowerShell 的 `Invoke-WebRequest` 直接发**——Windows PowerShell 5.1 会把中文变成 `?` 存进数据库。测试接口用 node 脚本，或 `Invoke-RestMethod` + `charset=utf-8` 字节体。
 3. **`.bat` 文件必须是 GBK 编码 + CRLF 换行**（Windows 命令行按系统编码解析），别用现代编辑器顺手保存成 UTF-8。
 4. **后端本地 import 必须带 `.js` 后缀**，即使是引用 `.ts` 文件也要写 `./config/index.js`——NodeNext ESM 的规矩，漏了直接报错。
 5. **前端文本文件一律 UTF-8 无 BOM**。历史版本曾因编码错乱整个报废过。
 6. **图片替换必须进回收站**：界面上的"删除/替换图片"逻辑会自动把旧图挪进 `_trash\`，新写类似功能必须遵守（详见 `CONVENTIONS.md` §3.1）。
-7. **数据直改库，禁止补丁层**：编辑一律 PUT 落库，禁止搞"覆盖文件/补丁脚本"这种二次修正机制。
+7. **数据直改库，禁止补丁层**：编辑一律 PUT 落库，禁止搞"覆盖文件/补丁脚本"这种二次修正机制。**"种子"只是库的自动备份产物，禁止手改**（`termSeed.generated.ts` 是生成文件，手改会被下一次备份覆盖）。
 8. **不要用 git 管理 `backend\data\` 里的数据库文件**（已在 .gitignore），也不要把 `_trash\` 里的东西删了又加回来。
 9. **切图片地址时注意**：Vite 开发服务器只代理 `/api`，不代理 `/art`；但 `public\` 目录下的静态文件可以直接按 `/art/...` 路径访问，二者不冲突。
 10. **模块之间禁止互相 import**：turris 的代码不许 import armarium 的东西，反之亦然。

@@ -2,14 +2,9 @@ import { closeDb, getDb } from '../db/index.js'
 import { existsSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { ART_DIR, DATA_DIR } from '../config/index.js'
+import { IMAGE_COLUMNS } from '../routes/index.js'
 
 const ART_PREFIX = '/art/'
-
-// 各表可能存放 /art/ 图片 URL 的列（与 routes/index.ts 中 IMAGE_COLUMNS 对齐）。
-const IMAGE_COLUMNS: Record<string, string[]> = {
-  floors: ['artwork'],
-  librarians: ['portrait', 'portraitPreview'],
-}
 
 function isImageFile(name: string): boolean {
   return /\.(?:png|jpe?g|webp|gif|avif)$/i.test(name)

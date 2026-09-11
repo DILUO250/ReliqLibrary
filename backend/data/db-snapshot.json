@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-11T07:25:58.356Z",
-  "version": 1789111558357,
+  "generatedAt": "2026-09-11T07:28:10.639Z",
+  "version": 1789111690639,
   "tables": {
     "floors": [
       {
@@ -2280,6 +2280,20 @@
     "literary_worlds": [],
     "supernatural_spaces": [],
     "repositories": [],
+    "armarium_projects": [
+      {
+        "id": 1,
+        "title": "植物大战僵尸百科",
+        "latinName": "Plants vs. Zombies Almanac",
+        "repository": "生命自然研究书库",
+        "summary": "对泡沫世界植物样本的系统化归档，记录其生态谱系、世界来源与战术特征。",
+        "status": "已收容 · 可访问",
+        "openMode": "tab",
+        "path": "/armarium/project/pvz",
+        "cover": "/features/armarium/projects/pvzwiki/assets/pvzg_nav.webp",
+        "sortOrder": 0
+      }
+    ],
     "invitations": [],
     "guests": [],
     "page_packs": [],

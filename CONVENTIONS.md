@@ -36,7 +36,7 @@ Vue 视图 (features/*/views, features/*/components)
 
 - **领域数据必须落库**：凡是会被运营/玩家读到、且需要运行时编辑的内容（词条、楼层、司书、卡牌、植物……），**禁止**以前端 `.ts`/`.json` 静态文件为权威源。
 - **前端只做消费**：视图通过 `api.list/get/create/update/remove` 拿数据，经 Pinia store 缓存后渲染。前端**不得**直接 `import` 任何领域数据 JSON/TS 作为展示源。
-- **种子源例外**：`frontend/src/features/turris/terms/data/{terms,internalTerms,specialDiceTerms,termOverrides,paletteTerms}.ts` 与 `features/armarium/projects/pvzwiki/data/*.json` 等历史静态文件**仅作为** `backend/src/scripts/importTerms.ts` / `importPvz.ts` 的导入种子源保留。前端业务代码**禁止**再 import 它们（`turris/terms/data/*` 仅被导入脚本经动态 import 加载；`pvzwiki/data/*.ts` 兼容层只做 store 形态适配、不含数据本体）。新模块若需类似一次性导入，把种子文件放在对应 feature 的 `data/` 下，并在导入脚本里用 `new Function('p','return import(p)')` 动态加载（避免 backend tsc 的 rootDir 报错）。
+- **历史种子源已全部退役（2026-09 二次收敛）**：手写术语种子 → `_trash/seed-terms-2026-09/`；`seed/data.ts`/`syncSeed.ts`/`importPvz.ts`/`importCT2/34.ts`/`pvzwiki/data/*.json` → git 历史（见 `_trash/README.txt`）。现行体系：**一切数据落库，备份自动跟随**（§2.3 快照 + `termSeed.generated.ts`）；`frontend/.../pvzwiki/data/*.ts` 例外保留——它们是纯 store 形态适配层（≤28 行转发壳），不含数据本体。若确需新的一次性导入脚本，把种子文件放对应 feature 的 `data/` 下并用 `new Function('p','return import(p)')` 动态加载（避免 backend tsc rootDir 报错），**导入完必须退役**，禁止"跑完即弃"的注释骗人。
 
 ### 1.2 表与类型（应当）
 
@@ -96,9 +96,9 @@ Vue 视图 (features/*/views, features/*/components)
 - 全量重灌（清空重建）必须显式 `--reset` 旗标 + 强制先自动备份；没有旗标 = 合并模式。
 - 纯初始化表（首次建库的种子数据）可保留 DELETE+重灌语义（如 `seed.ts --reset`），但它**必须**被明确标注为"清库重建"命令。
 
-### 2.4 Seed 数据（必须）
+### 2.4 数据库重建（必须）
 
-`backend/src/seed/data.ts` 的 `SeedData` 接口 key **必须**与 `TABLES` 中的 snake_case 表名完全一致（`core_pages` 而非 `corePages`）。`seed.ts` 直接拿 key 当表名拼 SQL，key 与真实表名不符会在填数据时 throw。
+**没有可编辑的种子文件**——`seed/data.ts`（一次性迁移化石）已于 2026-09 删除。`seed:reset` 的唯一合法语义：**事务内清空全部表 → 从 `backend/data/db-snapshot.json` 无损恢复**（快照由自动备份实时维护，永远与库同步，所以这是无损操作）；不带 `--reset` 旗标运行必须拒绝执行。首条记录类数据（如 PVZ 项目行）直接通过 API/词典页写入库，随快照固化——**禁止**再为"引导数据"新建手写种子文件。
 
 ---
 

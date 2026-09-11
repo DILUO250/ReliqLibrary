@@ -26,9 +26,10 @@ function insertColumns(body: Record<string, unknown>, cols: string[]): string[] 
 // 各表可能存放 /art/ 图片 URL 的列。PUT 更新 / DELETE 整行时，
 // 旧文件将被移入 _trash（而不是永久删除），供人工复核后决定去留。
 // 新表若含图片列，必须在此登记 —— 替换即回收，禁止让旧图变成孤儿资源。
-const IMAGE_COLUMNS: Record<string, string[]> = {
+export const IMAGE_COLUMNS: Record<string, string[]> = {
   floors: ['artwork'],
   librarians: ['portrait', 'portraitPreview'],
+  armarium_projects: ['cover'],
 }
 
 function imageColumnsOf(table: string): string[] {

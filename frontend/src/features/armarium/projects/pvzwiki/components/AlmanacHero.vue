@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// 僵尸图鉴是空壳（无 pvz_zombies 表），2026-09 退役僵尸切换链接；
+// 将来僵尸数据入库后在此恢复 kind 分支与切换导航。
 defineProps<{
   kind: 'plant' | 'zombie'
 }>()
@@ -13,16 +15,6 @@ defineProps<{
         浏览植物卡包，查看属性、能力和角色资料。
       </p>
     </div>
-    <nav class="species-switch" aria-label="Gardendless 在线图鉴">
-      <a
-        href="/armarium/project/pvz/plants"
-        class="active"
-        :aria-current="kind === 'plant' ? 'page' : undefined"
-      >
-        植物
-      </a>
-      <a href="/armarium/project/pvz/zombies">僵尸</a>
-    </nav>
   </header>
 </template>
 
@@ -77,46 +69,11 @@ defineProps<{
   line-height: 1.55;
 }
 
-.species-switch {
-  z-index: 1;
-  border: 2px solid var(--almanac-wood-dark);
-  background: #2f2219;
-  border-radius: 12px;
-  flex: none;
-  gap: 0.35rem;
-  padding: 0.35rem;
-  display: inline-flex;
-}
-
-.species-switch a {
-  color: #d9ccb0;
-  text-align: center;
-  border-radius: 8px;
-  min-width: 5rem;
-  padding: 0.55rem 0.85rem;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.species-switch a.active {
-  color: #fff;
-  background: var(--almanac-accent);
-  box-shadow: inset 0 -3px 0 var(--almanac-accent-dark);
-}
-
-.species-switch a:focus-visible {
-  outline-offset: 3px;
-  outline: 3px solid #e1a83a;
-}
-
 @media (max-width: 820px) {
   .almanac-hero {
     flex-direction: column;
     align-items: stretch;
     gap: 1rem;
-  }
-  .species-switch {
-    align-self: flex-start;
   }
 }
 
@@ -124,13 +81,6 @@ defineProps<{
   .almanac-hero {
     border-width: 3px;
     padding: 1.2rem 1rem 1rem;
-  }
-  .species-switch {
-    box-sizing: border-box;
-    width: 100%;
-  }
-  .species-switch a {
-    flex: 1;
   }
 }
 </style>

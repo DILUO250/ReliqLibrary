@@ -723,6 +723,22 @@ export interface Repository {
   sortOrder: number
 }
 
+/** 藏书阁 Tab4「研究项目」注册表（armarium_projects 表的镜像）。 */
+export interface ArmariumProject {
+  id: number
+  title: string
+  latinName: string
+  /** 所属书库：自由文本（repositories 表空置期间的临时决定，见 CONVENTIONS §2.3 讨论）。 */
+  repository: string
+  summary: string
+  status: string
+  /** tab = 新窗口打开独立应用；spa = 站内路由跳转。 */
+  openMode: 'tab' | 'spa'
+  path: string
+  cover: string
+  sortOrder: number
+}
+
 export interface Invitation {
   id: number
   receiverName: string

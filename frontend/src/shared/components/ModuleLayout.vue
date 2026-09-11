@@ -14,10 +14,10 @@ const meta = {
     desc: '研究司书 · 专注于对馆藏书籍进行深度解析与知识挖掘。',
     tabs: [
       { to: '/armarium', label: '总览' },
-      { to: '/armarium/entities', label: '异常实体' },
-      { to: '/armarium/spaces', label: '超自然空间' },
-      { to: '/armarium/books', label: '馆藏书库' },
-      { to: '/armarium/repositories', label: '书库体系' },
+      { to: '/armarium/entities', label: '异常实体库' },
+      { to: '/armarium/spaces', label: '超自然空间库' },
+      { to: '/armarium/projects', label: '研究项目' },
+      { to: '/armarium/librarians', label: '书库管理员' },
     ],
   },
   turris: {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import AlmanacHero from '@pvzwiki/components/AlmanacHero.vue'
 import FilterBoard from '@pvzwiki/components/FilterBoard.vue'
 import PlantCard from '@pvzwiki/components/PlantCard.vue'
@@ -9,9 +9,9 @@ import Toolbar from '@pvzwiki/components/Toolbar.vue'
 import type { WorldInfo, FamilyInfo, PlantEntity } from '@pvzwiki/types/plant'
 import { plants, getWorlds, getFamilies, filterPlants } from '@pvzwiki/data/plants'
 
-const route = useRoute()
 const router = useRouter()
-const kind = computed<'plant' | 'zombie'>(() => (route.path.includes('zombies') ? 'zombie' : 'plant'))
+// 仅植物图鉴（僵尸页是无数据的空壳路由，2026-09 退役；将来有 pvz_zombies 表再恢复 kind 分支）
+const kind = 'plant' as const
 
 const searchQuery = ref('')
 const familyCode = ref('')
@@ -19,7 +19,7 @@ const worldCode = ref('')
 
 const createOpen = ref(false)
 
-const currentPlants = computed(() => (kind.value === 'plant' ? plants : []))
+const currentPlants = computed(() => plants)
 
 const worlds = computed<WorldInfo[]>(() => getWorlds(currentPlants.value))
 const families = computed<FamilyInfo[]>(() => getFamilies(currentPlants.value))
@@ -32,12 +32,6 @@ function onPlantCreated(entity: PlantEntity): void {
   createOpen.value = false
   void router.push(`/armarium/project/pvz/plants/${entity.codename}`)
 }
-
-watch(kind, () => {
-  searchQuery.value = ''
-  familyCode.value = ''
-  worldCode.value = ''
-})
 </script>
 
 <template>

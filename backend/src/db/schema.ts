@@ -124,6 +124,21 @@ CREATE TABLE IF NOT EXISTS repositories (
   sortOrder INTEGER DEFAULT 0
 );
 
+-- 研究项目注册表（藏书阁 Tab4）：PVZ 百科这类小库的登记处；
+-- 每个项目一个入口卡片，点击跳 path（openMode=tab 新窗口 / spa 站内）。
+CREATE TABLE IF NOT EXISTS armarium_projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  latinName TEXT DEFAULT '',
+  repository TEXT DEFAULT '',
+  summary TEXT DEFAULT '',
+  status TEXT DEFAULT '',
+  openMode TEXT DEFAULT 'spa',
+  path TEXT DEFAULT '',
+  cover TEXT DEFAULT '',
+  sortOrder INTEGER DEFAULT 0
+);
+
 CREATE TABLE IF NOT EXISTS invitations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   receiverName TEXT NOT NULL,
@@ -302,6 +317,7 @@ export const TABLES = [
   'literary_worlds',
   'supernatural_spaces',
   'repositories',
+  'armarium_projects',
   'invitations',
   'guests',
   'page_packs',
