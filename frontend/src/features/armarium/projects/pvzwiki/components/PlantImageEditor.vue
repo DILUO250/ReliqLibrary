@@ -45,19 +45,21 @@ async function loadBackgrounds(): Promise<void> {
 
 async function refreshCurrent(): Promise<void> {
   const plant = getPlantByCodename(props.codename)
+  // 文件名直接取 URL 末段——不假设任何固定前缀（URL 体系已统一为 /art/armarium/projects/pvz/）
+  const fileName = (url: string): string => url.split('/').pop() ?? url
   const customUrl = await resolveImageUrl(props.codename)
   if (customUrl) {
     portraitPreviewSrc.value = customUrl
-    portraitCurrentName.value = customUrl.replace('/assets/image/plants/', '')
+    portraitCurrentName.value = fileName(customUrl)
   } else {
     const wiki = getWikiImage(props.codename)
-    const src = wiki?.full ?? wiki?.thumb ?? plant?.image ?? ''
+    const src = wiki?.full ?? plant?.image ?? ''
     portraitPreviewSrc.value = src
-    portraitCurrentName.value = src.replace('/assets/image/plants/', '') || '—'
+    portraitCurrentName.value = src ? fileName(src) : '—'
   }
   const bgUrl = await resolveBgUrl(props.codename)
   if (bgUrl) {
-    bgCurrentName.value = bgUrl.replace('/assets/image/almanac/backgrounds/', '')
+    bgCurrentName.value = fileName(bgUrl)
   } else {
     const code = WORLD_BG_MAP[plant?.world ?? ''] ?? 'default'
     bgCurrentName.value = `${code}.webp`

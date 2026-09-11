@@ -1,16 +1,36 @@
 import { parse } from '@babel/parser'
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { basename, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { extname, join } from 'node:path'
+import { ART_DIR } from '../../config/index.js'
 import { getDb } from '../../db/index.js'
 
 const CLOUD_BASE = 'https://pvzge.com'
-// 云端植物图落地到 card/ 子目录 —— 必须与前端 pvzImagePath 的映射
-// （/assets/image/plants/<file> → assets/image/plants/card/<file>）保持一致，
-// 否则同步进来的植物在图鉴网格中会 404。
-const IMAGE_DIR = fileURLToPath(
-  new URL('../../../frontend/public/features/armarium/projects/pvzwiki/assets/image/plants/card', import.meta.url),
-)
+// PVZ 项目资产分支（CONVENTIONS §5 / 2026-09 资产迁家）：
+// 云端快照的图统一下载到 plants/card/，DB 写本地规范 URL（/art/armarium/projects/pvz/...），
+// 云端的 /assets/... 旧前缀不再入库——前端没有任何翻译层，库里必须直接存可显示路径。
+const PROJECT_DIR = join(ART_DIR, 'armarium', 'projects', 'pvz')
+const CARD_DIR = join(PROJECT_DIR, 'plants', 'card')
+const ICON_DIR = join(PROJECT_DIR, 'plants', 'icon')
+
+/** 云端 pvzge 图 URL（/assets/image/plants/<file>）→ 本地 { file, url }（plants/card/<名>）。 */
+function cloudImageToLocal(url: string): { file: string; url: string } | null {
+  if (!url.startsWith('/assets/image/plants/')) return null
+  const base = url.slice('/assets/image/plants/'.length)
+  const ext = extname(base)
+  const stem = base.slice(0, base.length - ext.length)
+  // 我们的命名规范：<codename>.<ext>（剥离 pvzge 的 plants_ 前缀与 _c 卡图后缀）
+  const code = stem.replace(/^plants_/, '').replace(/_c$/, '')
+  const name = `${code || stem}${ext}`
+  return { file: name, url: `/art/armarium/projects/pvz/plants/card/${name}` }
+}
+
+/** 云端家族图标（/assets/wikicon/<F>_familyicon.webp）→ 本地 { file, url }（plants/icon/<F>.webp）。 */
+function cloudIconToLocal(url: string): { file: string; url: string } | null {
+  if (!url.startsWith('/assets/wikicon/')) return null
+  const base = url.slice('/assets/wikicon/'.length)
+  const name = base.replace(/_familyicon(\.[a-z0-9]+)$/i, '$1')
+  return { file: name, url: `/art/armarium/projects/pvz/plants/icon/${name}` }
+}
 
 interface CloudSnapshot {
   entities: any[]
@@ -223,16 +243,51 @@ export async function pvzSyncApply(add: string[], remove: string[]): Promise<{ a
     const entity = cloud.entities.find((item) => item.codename === code)
     if (!entity) continue
     const detail = buildDetail(entity, cloud.almanac[code], cloud.props[code])
+
+    // 云 URL → 本地规范 URL + 落图（失败只降级为空图，不阻断数据更新）
+    const img = cloudImageToLocal(String(entity.image ?? ''))
+    let imageUrl = ''
+    if (img) {
+      imageUrl = img.url
+      try {
+        const response = await fetch(`${CLOUD_BASE}${entity.image}`)
+        if (response.ok) {
+          mkdirSync(CARD_DIR, { recursive: true })
+          writeFileSync(join(CARD_DIR, img.file), Buffer.from(await response.arrayBuffer()))
+        } else {
+          imageUrl = ''
+        }
+      } catch {
+        // Image download failure does not invalidate the data update.
+      }
+    }
+    let iconUrl = ''
+    const icon = cloudIconToLocal(String(entity.family?.icon ?? ''))
+    if (icon) {
+      iconUrl = icon.url
+      try {
+        const response = await fetch(`${CLOUD_BASE}${entity.family?.icon}`)
+        if (response.ok) {
+          mkdirSync(ICON_DIR, { recursive: true })
+          writeFileSync(join(ICON_DIR, icon.file), Buffer.from(await response.arrayBuffer()))
+        } else {
+          iconUrl = ''
+        }
+      } catch {
+        // 同上：图标下载失败不影响数据行
+      }
+    }
+
     insertStmt.run(
       code,
       entity.numericId ?? 0,
       entity.name ?? '',
       entity.englishName ?? '',
-      entity.image ?? '',
+      imageUrl,
       entity.world ?? '',
       entity.family?.code ?? '',
       entity.family?.name ?? '',
-      entity.family?.icon ?? '',
+      iconUrl,
       entity.summary ?? '',
       entity.path ?? '',
       detail.sunCost,
@@ -247,17 +302,6 @@ export async function pvzSyncApply(add: string[], remove: string[]): Promise<{ a
       JSON.stringify(detail.traits ?? []),
       nextOrder++,
     )
-    if (entity.image) {
-      try {
-        const response = await fetch(`${CLOUD_BASE}${entity.image}`)
-        if (response.ok) {
-          mkdirSync(IMAGE_DIR, { recursive: true })
-          writeFileSync(join(IMAGE_DIR, basename(entity.image)), Buffer.from(await response.arrayBuffer()))
-        }
-      } catch {
-        // Image download failure does not invalidate the data update.
-      }
-    }
     added++
   }
 

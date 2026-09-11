@@ -136,7 +136,9 @@ function mergeSection(
   }
 }
 
-/** 导入前自动备份：把术语表全量 dump 到 JSON（事故防线第一道）。 */
+/** 导入前自动备份：把术语表全量 dump 到 JSON（事故防线第一道）。
+ *  轮转：只保留最近 KEEP 份（备份冗余由自动快照承担，term-backup 仅作导入瞬间的防线）。 */
+const BACKUP_KEEP = 3
 function backupTerms(db: ReturnType<typeof getDb>): string {
   const sections = db.prepare('SELECT * FROM term_sections ORDER BY sortOrder').all()
   const entries = db.prepare('SELECT * FROM term_entries ORDER BY id').all()
@@ -145,6 +147,14 @@ function backupTerms(db: ReturnType<typeof getDb>): string {
   const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'data')
   const file = path.join(dir, `term-backup-${stamp}.json`)
   fs.writeFileSync(file, JSON.stringify({ sections, entries }, null, 2), 'utf8')
+  const old = fs
+    .readdirSync(dir)
+    .filter((f) => f.startsWith('term-backup-') && f.endsWith('.json'))
+    .sort()
+  for (const stale of old.slice(0, Math.max(0, old.length - BACKUP_KEEP))) {
+    fs.rmSync(path.join(dir, stale))
+    console.log(`轮转清理旧备份：${stale}`)
+  }
   console.log(`已备份库内术语表 → ${file}（sections ${sections.length}，entries ${entries.length}）`)
   return file
 }

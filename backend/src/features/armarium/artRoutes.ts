@@ -5,7 +5,10 @@ import { ART_DIR } from '../../config/index.js'
 import { pvzSyncApply, pvzSyncCheck } from './pvzSync.js'
 
 const pvzArtDir = join(ART_DIR, 'armarium')
-const pvzAssetDir = join(ART_DIR, '..', 'features', 'armarium', 'projects', 'pvzwiki', 'assets')
+// PVZ 百科是 armarium/projects 下的一个子项目：素材统一住 art/armarium/projects/pvz/
+// （2026-09 资产迁家，原 public/features/.../assets 独享目录体系已删除）。
+// 新增图鉴类小项目（宝可梦图鉴…）照此模式建 art/armarium/projects/<id>/。
+const pvzProjectDir = join(pvzArtDir, 'projects', 'pvz')
 const pvzImageExts = ['png', 'jpg', 'jpeg', 'webp'] as const
 
 function pvzCode(value: unknown): string {
@@ -39,13 +42,14 @@ function pvzTrash(file: string): void {
 }
 
 // 统一的"读取 / 写入 / 删除"三件套工厂：立绘、卡图、背景共用同一套逻辑
+// subdir 相对 pvzProjectDir：plants（用户立绘）/ cards（卡面）/ backgrounds/custom（自定义背景）
 function registerPvzImageRoutes(
   app: FastifyInstance,
   kind: 'plant-image' | 'plant-card' | 'plant-bg',
   subdir: string,
 ): void {
-  const dir = join(pvzArtDir, subdir)
-  const urlPrefix = `/art/armarium/${subdir}`
+  const dir = join(pvzProjectDir, subdir)
+  const urlPrefix = `/art/armarium/projects/pvz/${subdir.split('\\').join('/')}`
 
   app.get(`/api/pvz/${kind}`, async (req) => {
     const code = pvzCode((req.query as { codename?: string }).codename)
@@ -105,16 +109,16 @@ export async function registerPvzArtRoutes(app: FastifyInstance): Promise<void> 
   registerPvzImageRoutes(app, 'plant-image', 'plants')
   registerPvzImageRoutes(app, 'plant-card', 'cards')
 
-  // 图鉴背景：读取/写入同上，另有"从内置背景库复制"通道
-  registerPvzImageRoutes(app, 'plant-bg', 'backgrounds')
+  // 图鉴背景：读取/写入同上，另有"从内置背景库复制"通道（库图在 backgrounds/ 根层，自定义落 backgrounds/custom/）
+  registerPvzImageRoutes(app, 'plant-bg', 'backgrounds/custom')
 
   app.get('/api/pvz/backgrounds', async () => {
-    const dir = join(pvzAssetDir, 'image', 'almanac', 'backgrounds')
+    const dir = join(pvzProjectDir, 'backgrounds')
     const items: Array<{ name: string; url: string }> = []
     if (existsSync(dir)) {
       for (const name of readdirSync(dir)) {
         if (/\.(?:webp|png|jpe?g)$/i.test(name)) {
-          items.push({ name, url: `/features/armarium/projects/pvzwiki/assets/image/almanac/backgrounds/${name}` })
+          items.push({ name, url: `/art/armarium/projects/pvz/backgrounds/${name}` })
         }
       }
     }
@@ -125,11 +129,11 @@ export async function registerPvzArtRoutes(app: FastifyInstance): Promise<void> 
     const body = req.body as { codename?: string; source?: string }
     const code = pvzCode(body?.codename)
     const source = String(body?.source ?? '')
-    const prefix = '/features/armarium/projects/pvzwiki/assets/image/almanac/backgrounds/'
+    const prefix = '/art/armarium/projects/pvz/backgrounds/'
     if (!code || !source.startsWith(prefix)) return reply.code(400).send({ error: 'invalid background source' })
-    const sourceFile = join(pvzAssetDir, 'image', 'almanac', 'backgrounds', basename(source))
+    const sourceFile = join(pvzProjectDir, 'backgrounds', basename(source))
     if (!existsSync(sourceFile)) return reply.code(404).send({ error: 'background not found' })
-    const dir = join(pvzArtDir, 'backgrounds')
+    const dir = join(pvzProjectDir, 'backgrounds', 'custom')
     mkdirSync(dir, { recursive: true })
     const old = pvzFile(dir, code)
     if (old) pvzTrash(old)

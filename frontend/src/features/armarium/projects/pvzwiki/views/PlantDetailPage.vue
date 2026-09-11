@@ -22,7 +22,6 @@ import {
 import { removeCustomPlant, PLANT_PLACEHOLDER_IMAGE } from '@pvzwiki/store/customPlants'
 import { ui } from '@pvzwiki/store/ui'
 import { isEditableTarget } from '@pvzwiki/utils/keyboard'
-import { pvzAsset, pvzImagePath } from '@pvzwiki/asset'
 import PlantEditor from '@pvzwiki/components/PlantEditor.vue'
 import PlantImageEditor from '@pvzwiki/components/PlantImageEditor.vue'
 import PlantCreateDialog from '@pvzwiki/components/PlantCreateDialog.vue'
@@ -52,7 +51,7 @@ watch(codename, () => {
 const worldBg = computed(() => {
   if (customBg.value) return customBg.value
   const code = WORLD_BG_MAP[plant.value?.world ?? ''] ?? 'default'
-  return pvzAsset(`/assets/image/almanac/backgrounds/${code}.webp`)
+  return `/art/armarium/projects/pvz/backgrounds/${code}.webp`
 })
 
 const effectiveFamily = computed(() => {
@@ -137,13 +136,14 @@ interface StatRow {
 
 const stats = computed<StatRow[]>(() => {
   const d = detail.value
+  const icon = (name: string): string => `/art/armarium/projects/pvz/plants/icon/${name}`
   return [
-    { label: '阳光消耗', icon: pvzImagePath('/assets/wikicon/Sun_Cost2I.webp'), value: d?.sunCost != null ? String(d.sunCost) : '—' },
-    { label: '冷却时间', icon: pvzImagePath('/assets/wikicon/Recharge2I.webp'), value: d?.recharge != null ? String(d.recharge) : '—' },
-    { label: '血量', icon: pvzImagePath('/assets/wikicon/Toughness2I.webp'), value: d?.toughness != null ? String(d.toughness) : '—' },
-    { label: '伤害', icon: pvzImagePath('/assets/wikicon/Damage2I.webp'), value: d?.damage != null ? String(d.damage) : '—' },
-    { label: '射程', icon: pvzImagePath('/assets/wikicon/Range2I.webp'), value: d?.range != null ? String(d.range) : '—' },
-    { label: '家族', icon: pvzImagePath('/assets/wikicon/Family2I.webp'), value: d?.family ?? '—' },
+    { label: '阳光消耗', icon: icon('Sun_Cost2I.webp'), value: d?.sunCost != null ? String(d.sunCost) : '—' },
+    { label: '冷却时间', icon: icon('Recharge2I.webp'), value: d?.recharge != null ? String(d.recharge) : '—' },
+    { label: '血量', icon: icon('Toughness2I.webp'), value: d?.toughness != null ? String(d.toughness) : '—' },
+    { label: '伤害', icon: icon('Damage2I.webp'), value: d?.damage != null ? String(d.damage) : '—' },
+    { label: '射程', icon: icon('Range2I.webp'), value: d?.range != null ? String(d.range) : '—' },
+    { label: '家族', icon: icon('Family2I.webp'), value: d?.family ?? '—' },
   ]
 })
 

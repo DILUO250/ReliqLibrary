@@ -120,15 +120,24 @@ art/
 │  ├─ floors/                # 楼层背景图
 │  ├─ systems/               # 战斗系统页「机制说明」表格图（代码常量引用，见 §4.5，不回收）
 │  └─ _trash/                # turris 素材回收站
-├─ armarium/                 # PVZ 用户素材（plants/cards/backgrounds）+ _trash/
+├─ armarium/
+│  ├─ projects/<项目>/        # ★ 研究项目的资产分支（PVZ = projects/pvz/）
+│  │  ├─ plants/{card,full,icon}/  # 库图（卡片图/高清立绘/家族图标），文件名按实体命名
+│  │  ├─ plants/<code>.<ext>     # 用户上传立绘通道
+│  │  ├─ cards/<code>.<ext>      # 卡面生成/上传通道
+│  │  ├─ backgrounds/            # 内置背景库 + custom/ 自定义背景
+│  │  ├─ fonts/                  # 项目专属静态资源
+│  │  └─ pvzg_nav.webp           # 项目卡封面
+│  └─ _trash/                # armarium 素材回收站
 └─ _trash/                   # 通用回收站
 ```
 
 - 上传端点按 feature 归属：`POST /api/turris/upload?kind=portrait|preview|floor`（features/turris/artRoutes.ts）、`/api/pvz/*`（features/armarium/artRoutes.ts）。**禁止**新开往 art/ 顶层平铺的通道
 - **文件在「保存」时才上传**（延迟上传）：选文件/裁剪只在本地暂存（File + objectURL），取消编辑即零服务器文件。服务端即时产出的通道（如 AI 生成）例外，其取消产生的孤儿由 `audit:art` 报告人工处置
-- 图片列登记在 `routes/index.ts` 的 `IMAGE_COLUMNS` 常量：`{ floors: ['artwork'], librarians: ['portrait','portraitPreview'] }`。**新表有图片列就往这里加，漏登记 = 孤儿资源回归。**
+- 图片列登记在 `routes/index.ts` 的 `IMAGE_COLUMNS` 常量（单一来源，`auditArt.ts` 直接 import）：`{ floors: ['artwork'], librarians: ['portrait','portraitPreview'], armarium_projects: ['cover'] }`。**新表有图片列就往这里加，漏登记 = 孤儿资源回归。**
 - PVZ 用户素材（立绘/卡图/背景）的替换与删除统一走 `features/armarium/artRoutes.ts` 的 `pvzTrash()` → `art/armarium/_trash/`
 - `trashArt()` 回收目标跟随素材所属模块（URL 含模块段 → `art/<模块>/_trash/`，否则全局 `art/_trash/`）；只改名不删除，失败时静默保留原文件（防丢）。`_trash/` 由人工定期清理
+- **DB 里的图片 URL 即最终显示路径**（`/art/...` 开头，`/art/` 之外的 URL 一律禁止入库）——2026-09 资产迁家后 PVZ 的 `/assets/...`、`/features/...` 历史前缀已全部改写，前端不存在任何路径翻译层
 
 ### 3.2 现存孤儿处置（人工，禁止自动删）
 
@@ -246,9 +255,8 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 ## 7. 已知的待办（不在本次规范范围）
 
 - 藏书阁五 Tab 中：总览 / 异常实体库（`anomalies` 表就绪）/ 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。
-- **PVZ 资产体系迁移**：用户上传图仍在旧体系 `public/features/armarium/projects/pvzwiki/assets/`（无规范回收站目录），应迁至 `art/armarium/{plants,cards,backgrounds}` + `_trash/`——2026-09 决议分两步走，图片列迁移 + 旧 URL 兼容另行处理。
-- `_trash/` 回收站需要人工定期清理。
-- `term-backup-*.json` 每次恢复运行生成一份且全部被 git 跟踪，无轮转上限（见 §2.3；备份策略待议）。
+- `art/armarium/_trash/`（根级 `art/_trash/` 中的历史遗留文件）需要人工定期清理。
+- `term-backup-*.json` 由恢复脚本轮转（保留最近 3 份）并被 git 跟踪（备份策略待议）。
 
 ---
 
@@ -269,6 +277,8 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 | 资源命名一半按实体一半按池 | §5.2 二选一，同类内统一 |
 | 编辑器手写 `v-if` 罗列卡组区（BASE 出现 EGO 区的旧 bug 之源） | 按 `system.deckZones` 配置循环渲染 |
 | 页面里再画一层模块 Tab（ModuleLayout 的 module-tabs 之外又加 arm-tabs，出现双层导航） | Tab 导航只属于 ModuleLayout，页面组件只按路由渲染内容 |
+| 修改后的数据硬编入"覆盖脚本"、库里原数据原封不动（2026-09 前数据储存混乱崩溃事故的推手之一；PVZ overrides 层的旧形态） | 一切编辑 PUT 落库，库里永远是最终值；禁用任何加载时覆盖机制 |
+| DB 存"规范形态"URL、前端翻译层换算真实路径（/assets/… 四套前缀 + asset.ts 映射，PVZ 迁家前） | DB 直接存 `/art/...` 最终显示路径，零翻译层 |
 | 卡牌前缀下拉展示全量前缀（所有系统同列） | 按 `system.cardPrefixes` 白名单过滤 |
 | 改了术语种子文件没跑导入，库里还是旧词 | 种子已退役（§2.3）：改词条一律词典页直接改库，备份自动跟随 |
 | 导入脚本 DELETE 重灌运营数据（2026-09 词典回溯事故） | §2.3 合并式导入：先备份、只增不改、同名查重、导入后自检 |

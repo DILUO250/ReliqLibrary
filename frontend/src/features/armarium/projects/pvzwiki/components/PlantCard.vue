@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import type { PlantEntity } from '@pvzwiki/types/plant'
 import { WORLD_BG_MAP } from '@pvzwiki/types/plant'
-import { pvzAsset } from '@pvzwiki/asset'
 import { resolveCardSrc, resolveImageSrc } from '@pvzwiki/store/plantImage'
 import { PLANT_PLACEHOLDER_IMAGE } from '@pvzwiki/store/customPlants'
 
@@ -12,7 +11,7 @@ const props = defineProps<{
 
 function worldBg(world: string): string {
   const bgCode = WORLD_BG_MAP[world] ?? 'default'
-  return pvzAsset(`/assets/image/almanac/backgrounds/${bgCode}.webp`)
+  return `/art/armarium/projects/pvz/backgrounds/${bgCode}.webp`
 }
 
 // 自定义植物：优先卡片图（240x152 生成卡）→ 上传立绘 → 占位卡面

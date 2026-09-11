@@ -31,3 +31,15 @@ migration-fossils-2026-09/（2026-09 第二批判死，直接 git rm，本条目
     frontend pvzwiki/data/*.json（7 个，228KB）——PVZ 三层迁移 JSON，前端零消费、pvzSync 不读；
     shared LABELS——零引用死代码，部门名收敛至 frontend/src/app/labels.ts。
     数据均在库内（+ db-snapshot.json 自动快照）与 git 历史中，需要时可考古。
+
+pvz-assets-2026-09/（2026-09 资产迁家，直接删除，本条目仅作记录）
+    frontend/public/features/armarium/projects/pvzwiki/ 整棵目录（约 450 个文件）——
+      PVZ 百科迁移期被"量身打造"的独享资产体系（不属规范家 art/、无回收站），
+      其 overrides.json 曾是"前端覆盖脚本"时代的数据本体（每次页面加载覆盖 DB 值，
+      后被 importPvz 烧录入库才寿终正寝——这正是 CONVENTIONS 反模式清单
+      "修改后的数据硬编入覆盖脚本"条目的原型事故）；
+    assets/image/plants/resources/（22 个 md5 命名抓取残留，库与前端零引用）；
+    backend/data/term-backup-*.json × 8（今日调试积累，importTerms 已加轮转：保留最近 3 份）。
+    迁家后的家：frontend/public/art/armarium/projects/pvz/（plants/card·full·icon、
+    backgrounds、fonts、pvzg_nav.webp；DB URL 已全部改写为 /art/... 最终路径，零翻译层）。
+    文件在 git 历史中，需要时可考古。

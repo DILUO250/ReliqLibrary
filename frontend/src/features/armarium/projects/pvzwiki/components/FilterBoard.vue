@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { WorldInfo, FamilyInfo } from '@pvzwiki/types/plant'
-import { pvzImagePath } from '@pvzwiki/asset'
 
-const allFamilyIcon = pvzImagePath('/assets/wikicon/All_familyicon.webp')
+// PVZ 项目资产分支：/art/armarium/projects/pvz/（2026-09 资产迁家后，URL 即最终路径，无翻译层）
+const allFamilyIcon = '/art/armarium/projects/pvz/plants/icon/All.webp'
 
 defineProps<{
   searchQuery: string

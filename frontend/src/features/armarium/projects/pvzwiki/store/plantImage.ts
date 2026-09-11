@@ -184,7 +184,7 @@ export async function restoreImage(codename: string): Promise<void> {
 
 // ---------------------------------------------------------------------------
 // Background (背景图) channel. Mirrors the portrait image channel above but
-// targets `public/assets/image/almanac/backgrounds/custom/{codename}.{ext}`.
+// targets `art/armarium/projects/pvz/backgrounds/custom/{codename}.{ext}`.
 // ---------------------------------------------------------------------------
 
 interface BgBackup {

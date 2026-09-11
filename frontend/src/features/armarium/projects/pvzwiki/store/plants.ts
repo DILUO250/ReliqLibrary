@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import type { PlantEntity, PlantFamily, WorldInfo, FamilyInfo, PlantDetail } from '@pvzwiki/types/plant'
 import { WORLD_NAMES } from '@pvzwiki/types/plant'
 import type { Keyword } from '@pvzwiki/types/keyword'
-import { pvzImagePath, toRawIcon } from '@pvzwiki/asset'
 import { customVersion } from '@pvzwiki/store/plantImage'
 import { api } from '@/app/services/api'
 
@@ -49,11 +48,12 @@ function parseArr<T>(s: string): T[] {
   }
 }
 
+// 行 → 前端 PlantEntity 形态（image/icon 已是最终可显示 URL，直接透传）
 function decorate(plant: PlantEntity): PlantEntity {
   return {
     ...plant,
-    image: plant.image ? pvzImagePath(plant.image) : '',
-    family: plant.family ? { ...plant.family, icon: pvzImagePath(plant.family.icon) } : null,
+    image: plant.image ?? '',
+    family: plant.family ?? null,
   }
 }
 
@@ -64,7 +64,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
   const loaded = ref(false)
   const error = ref<string | null>(null)
 
-  // 行 → 前端 PlantEntity 形态（含 image/icon 的 pvzAsset 装饰与 custom 标记）
+  // 行 → 前端 PlantEntity 形态（image/icon 已是最终可显示 URL，直接透传）
   const plants = computed<PlantEntity[]>(() =>
     rows.value
       .slice()
@@ -213,7 +213,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       world: input.world,
       familyCode: input.family?.code ?? '',
       familyName: input.family?.name ?? '',
-      familyIcon: input.family ? toRawIcon(input.family.icon) : '',
+      familyIcon: input.family?.icon ?? '',
       summary: input.summary,
       path: '',
       isCustom: 1,
@@ -231,7 +231,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       world: input.world,
       familyCode: input.family?.code ?? '',
       familyName: input.family?.name ?? '',
-      familyIcon: input.family ? toRawIcon(input.family.icon) : '',
+      familyIcon: input.family?.icon ?? '',
       summary: input.summary,
       path: '',
       isCustom: 1,
@@ -282,7 +282,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
     if (patch.family !== undefined) {
       body.familyCode = patch.family?.code ?? ''
       body.familyName = patch.family?.name ?? ''
-      body.familyIcon = patch.family ? toRawIcon(patch.family.icon) : ''
+      body.familyIcon = patch.family?.icon ?? ''
     }
     if (patch.summary !== undefined) body.summary = patch.summary
     await api.update('pvz_plants', r.id, body)
@@ -292,7 +292,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
         ? {
             familyCode: patch.family?.code ?? '',
             familyName: patch.family?.name ?? '',
-            familyIcon: patch.family ? toRawIcon(patch.family.icon) : '',
+            familyIcon: patch.family?.icon ?? '',
           }
         : {}),
     })
@@ -422,7 +422,7 @@ const CUSTOM_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp'] as const
 export function getWikiImage(codename: string): PlantImageRef | undefined {
   const r = store().findRow(codename)
   if (!r || !r.wikiFull) return undefined
-  return { full: pvzImagePath(r.wikiFull) }
+  return { full: r.wikiFull ?? undefined }
 }
 
 // 详情页展示图候选，优先级从高到低：高清大图 → 卡片图。
@@ -432,7 +432,7 @@ export function getShowcaseCandidates(plant: PlantEntity): string[] {
   const version = customVersion(code)
   const candidates: string[] = []
   for (const ext of CUSTOM_EXTENSIONS) {
-    candidates.push(`${pvzImagePath(`/assets/image/plants/custom/${code}.${ext}`)}?v=${version}`)
+    candidates.push(`/art/armarium/projects/pvz/plants/full/${code}.${ext}?v=${version}`)
   }
   candidates.push(plant.image)
   return candidates
