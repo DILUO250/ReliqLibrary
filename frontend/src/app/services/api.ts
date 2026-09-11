@@ -14,6 +14,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: () => request<{ ok: boolean }>('/health'),
   overview: () => request<import('@rtl/shared').OverviewStats>('/overview'),
+  backupStatus: () => request<{ lastBackupAt: string | null; version: number; dirty: boolean }>('/backup/status'),
   list: <T>(resource: string) => request<T[]>(`/${resource}`),
   get: <T>(resource: string, id: number | string) => request<T>(`/${resource}/${id}`),
   create: <T>(resource: string, body: unknown) =>

@@ -251,12 +251,12 @@ frontend\src\features\turris\
 
 | 你想干什么 | 改哪里 | 还要做什么 |
 |---|---|---|
-| 让渲染器认识“XX”并画出格式 | frontend `terms/data/*.ts` 加词条（种子） | 跑 `npm run import:terms` |
+| 让渲染器认识“XX”并画出格式 | **词典页直接建词条**（POST `term_entries`） | 无（备份自动跟随） |
 | 改词条颜色/字体 | **词典页直接改库**（PUT `term_entries`） | 以库为准 |
-| 新增词条进插入面板 | 种子加词条 → import:terms（面板即库，无单独维护） | 无 |
-| 带参数位的词条（插“词条” X层） | DB `hasParam` 列 / 种子名字带 ` X层` 后缀 | import:terms |
+| 新增词条进插入面板 | 词典页直接建（面板即库，无单独维护） | 无 |
+| 带参数位的词条（插“词条” X层） | 词条编辑里勾选参数位（`hasParam` 列） | 无 |
 
-> **重要**：`import:terms` 是**合并模式**——先自动备份、只增不改，**绝不会**回溯你在词典页做的修改（2026-09 事故后的硬性规范，详见 `CONVENTIONS.md` §2.3）。
+> **重要**：数据库是唯一权威源，"种子"只是自动备份——任何写操作后 2 秒后台生成 `backend/data/db-snapshot.json`（全表快照）与 `termSeed.generated.ts`（生成种子，禁止手改），页面右上角会提示"数据已备份"。`import:terms` 仅用于新机引导/灾难恢复（合并模式，绝不回溯你在词典页做的修改，详见 `CONVENTIONS.md` §2.3）。
 
 ---
 

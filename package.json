@@ -15,6 +15,7 @@
     "build:backend": "npm run build --workspace backend",
     "type-check": "npm run type-check --workspace frontend && npm run type-check --workspace backend",
     "seed:reset": "npm run seed:reset --workspace backend",
+    "export:snapshot": "npm run export:snapshot --workspace backend",
     "audit:art": "npm run audit:art --workspace backend",
     "import:terms": "npm run import:terms --workspace backend",
     "import:pvz": "npm run import:pvz --workspace backend"

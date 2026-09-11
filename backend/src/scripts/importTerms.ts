@@ -1,15 +1,19 @@
 // @ts-nocheck
-// 术语导入脚本（非破坏性合并模式）：
-// 把前端静态术语种子合并进 SQLite 的 term_sections / term_entries。
+// 术语恢复脚本（非破坏性合并模式）：
+// 把 termSeed.generated.ts（SQLite 的 git 提交级备份，由 exportSnapshot 自动重生成）
+// 合并回 SQLite 的 term_sections / term_entries。
 //
-// ⚠️ 核心安全语义（2026-09 事故后重写，CONVENTIONS §2.3 / §4.3 硬性规范）：
+// ⚠️ 定位（2026-09 数据流掉头后，CONVENTIONS §2.3 / §4.3 硬性规范）：
+//   - SQLite 是唯一权威源；本脚本平时用不到，仅用于**新机引导 / 灾难恢复**（行意外丢失时补种）。
+//   - 备份会自动随每次写操作更新（db-snapshot.json + termSeed.generated.ts），恢复源永远与库同步，
+//     不存在旧版"过时种子复活错误值"的问题（月笼 幽灵→妖精 事故的教训）。
 //   1. 导入前自动把库内术语表全量 dump 到 backend/data/term-backup-<时间戳>.json；
 //   2. **禁止 DELETE / 禁止覆盖已有数据**——词典页的运营修改（格式/描述/自增词条）永远以库为准；
 //   3. 种子有、库没有 → INSERT；库有、种子没有 → 原样保留；两边都有 → 只补 hasParam 标记，不碰 format/desc/name；
 //   4. 全量重灌必须显式 `--reset` 旗标 + 强制先自动备份（本次默认不提供 reset，宁可手写 SQL）。
 //
 // 跨 workspace 动态引用前端 .ts 源文件，故关闭类型检查；
-// 运行时由 tsx (esbuild) 执行，前端文件中的 `import type` 会被擦除，无需 @/ alias。
+// 运行时由 tsx (esbuild) 执行，无需 @/ alias。
 import { closeDb, getDb } from '../db/index.js'
 import type { TermFormat } from '@rtl/shared'
 
@@ -37,35 +41,24 @@ interface DictSection {
 /** 种子命名习惯：参数位词条的名字自带 " X层/点/次…" 后缀（如「易损 X层」）。 */
 const PARAM_RE = /\s*X(层|点|次|颗|滴|回合|级|张|时|年|月|日)\s*$/
 
-async function loadFrontendTerms(): Promise<{
+async function loadGeneratedSeed(): Promise<{
   visible: DictSection[]
   hidden: DictSection[]
-  overrides: Record<string, Partial<TermFormat>>
   hasParamIndex: Record<string, 1>
 }> {
-  // 用 new Function 构造 dynamic import，避免 tsc 跟随解析前端文件（其 @/ alias 不在 backend tsconfig）。
+  // 用 new Function 构造 dynamic import，避免 tsc 跟随解析前端文件（不在 backend tsconfig rootDir 内）。
   const dynImport = new Function('p', 'return import(p)') as (p: string) => Promise<Record<string, unknown>>
-  const terms = (await dynImport('../../../frontend/src/features/turris/terms/data/terms.ts')) as {
-    termDictionary: DictSection[]
-  }
-  const special = (await dynImport('../../../frontend/src/features/turris/terms/data/specialDiceTerms.ts')) as {
-    specialDiceSection: DictSection
-  }
-  const internal = (await dynImport('../../../frontend/src/features/turris/terms/data/internalTerms.ts')) as {
-    internalTermSections: DictSection[]
-  }
-  const ov = (await dynImport('../../../frontend/src/features/turris/terms/data/termOverrides.ts')) as {
-    ENTRY_OVERRIDES: Record<string, Partial<TermFormat>>
-  }
-  const palette = (await dynImport('../../../frontend/src/features/turris/terms/data/paletteTerms.ts')) as {
-    paletteSections: DictSection[]
-    HAS_PARAM_TERMS: Record<string, 1>
+  const seed = (await dynImport(
+    '../../../frontend/src/features/turris/terms/data/termSeed.generated.ts',
+  )) as {
+    generatedVisibleSections: DictSection[]
+    generatedHiddenSections: DictSection[]
+    generatedHasParamTerms: Record<string, 1>
   }
   return {
-    visible: [...terms.termDictionary, special.specialDiceSection, ...palette.paletteSections],
-    hidden: internal.internalTermSections,
-    overrides: ov.ENTRY_OVERRIDES,
-    hasParamIndex: palette.HAS_PARAM_TERMS,
+    visible: seed.generatedVisibleSections,
+    hidden: seed.generatedHiddenSections,
+    hasParamIndex: seed.generatedHasParamTerms,
   }
 }
 
@@ -79,7 +72,6 @@ function mergeSection(
   db: ReturnType<typeof getDb>,
   section: DictSection,
   visible: boolean,
-  overrides: Record<string, Partial<TermFormat>>,
   hasParamIndex: Record<string, 1>,
   stats: { sectionsAdded: number; entriesAdded: number; hasParamUpdated: number },
 ): void {
@@ -121,10 +113,7 @@ function mergeSection(
     for (const entry of group.entries) {
       const existing = entryIndex.get(entry.name)
       if (!existing) {
-        // 新词条：INSERT（overrides 仅在导入时合并为最终值，符合 §3.4）
-        const merged = overrides[entry.name]
-          ? { ...entry.format, ...overrides[entry.name] }
-          : entry.format
+        // 新词条：INSERT（生成种子的值已是库值快照，无需再做 overrides 合并）
         insertStmt.run(
           sectionId,
           group.title,
@@ -132,7 +121,7 @@ function mergeSection(
           JSON.stringify(entry.tags ?? []),
           JSON.stringify(entry.tagColors ?? []),
           JSON.stringify(entry.tagFormats ?? []),
-          JSON.stringify(merged),
+          JSON.stringify(entry.format),
           entry.desc ?? '',
           resolveHasParam(entry, hasParamIndex) ? 1 : 0,
           entryOrder++,
@@ -166,7 +155,7 @@ import { fileURLToPath } from 'node:url'
 
 async function main(): Promise<void> {
   const db = getDb()
-  const { visible, hidden, overrides, hasParamIndex } = await loadFrontendTerms()
+  const { visible, hidden, hasParamIndex } = await loadGeneratedSeed()
 
   // 事故防线 1：导入前自动备份
   const backupFile = backupTerms(db)
@@ -177,8 +166,8 @@ async function main(): Promise<void> {
   let entriesNow = 0
   try {
     db.transaction(() => {
-      for (const sec of visible) mergeSection(db, sec, true, overrides, hasParamIndex, stats)
-      for (const sec of hidden) mergeSection(db, sec, false, overrides, hasParamIndex, stats)
+      for (const sec of visible) mergeSection(db, sec, true, hasParamIndex, stats)
+      for (const sec of hidden) mergeSection(db, sec, false, hasParamIndex, stats)
 
       // 事故防线 2（必须在事务内做）：自检——备份中每一条已存在的词条，format/description
       // 必须与导入后完全一致。better-sqlite3 事务函数内 throw 会自动回滚整批写入，

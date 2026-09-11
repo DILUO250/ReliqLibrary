@@ -75,17 +75,24 @@ Vue 视图 (features/*/views, features/*/components)
 
 模板见 `routes/index.ts` 中 `floors`/`librarians` 的 reorder 实现。
 
-### 2.3 跨 workspace 导入脚本（必须）
+### 2.3 数据备份与恢复脚本（必须）
 
-一次性数据导入脚本放 `backend/src/scripts/`，通过根 `package.json` 的 `audit:art`/`import:terms`/`import:pvz` 暴露为 npm script。脚本若需读前端 `.ts` 种子源：
+一次性数据迁移脚本放 `backend/src/scripts/`，通过根 `package.json` 暴露为 npm script。
 
-- 顶部加 `// @ts-nocheck`（脚本不在 backend rootDir 内，且引用前端 `@/` alias 无法解析）。
-- 用 `new Function('p', 'return import(p)')` 动态加载，**避免** tsc 跟随静态 `import(...)` 解析前端文件而报 `rootDir`/`alias` 错。
-- **导入目标含运营数据时，禁止"先 DELETE 再重灌"**（2026-09 事故条款：旧版 `importTerms.ts` 重灌曾把词典页的运营修改全部回溯）。合并式导入**必须**遵守：
+**数据流方向（2026-09 掉头，必须遵守）**：SQLite 是唯一权威源，一切"种子"都是库的**备份产物**，不是数据源。历史上术语数据从 Word 文档一次性硬编码进 TS 种子，导入者误把搬家当定型，种子长期过时、行丢失时复活错误值（月笼 幽灵→妖精 事故）。现行体系：
+
+- **自动备份**：任何 `/api/*` 写请求成功后，`routes/index.ts` 的全局 `onResponse` 钩子调度 `db/backupScheduler.ts` 防抖导出（后台运行，失败静默重试+日志，不影响请求）：
+  - `backend/data/db-snapshot.json`——`TABLES` **全部表**的实时 JSON 快照（临时文件 + rename 原子落盘）；
+  - `frontend/src/features/turris/terms/data/termSeed.generated.ts`——库内术语表的 git 提交级生成种子，**文件头标注自动生成、禁止手改**。
+  - 前端经 `GET /api/backup/status`（版本号）在右上角提示"数据已备份"。
+- **手动全量导出**：`npm run export:snapshot`（等价于后台备份的一次性触发）。
+- **恢复**：`import:terms` 从生成种子**合并恢复**术语表（新机引导/灾难恢复用，平时不需要跑）；术语表之外的恢复靠 git（`library.db`/快照均入库）。
+
+历史条款（仍然有效的安全语义，2026-09 事故后确立）：恢复脚本**禁止**"先 DELETE 再重灌"运营数据，合并式导入**必须**遵守：
   1. 导入前自动备份目标表到 `backend/data/<表>-backup-<时间戳>.json`；
   2. 只增不改：种子有库无 → INSERT；库有 → **不碰**（最多补标记列）；库有种子无 → 原样保留（用户删过/挪过组是运营决定，禁止复制旧位置回来）；
   3. 同分区内**同名即已存在**（查重按词条名，不按"分组+名字"——渲染器按名建索引，重名会互相覆盖）；
-  4. 导入后自检：备份中每条已存在记录的最终值必须与导入后一致，否则立即告警。
+  4. 导入后自检（在事务内做）：备份中每条已存在记录的最终值必须与导入后一致，漂移即 throw 回滚。
 - 全量重灌（清空重建）必须显式 `--reset` 旗标 + 强制先自动备份；没有旗标 = 合并模式。
 - 纯初始化表（首次建库的种子数据）可保留 DELETE+重灌语义（如 `seed.ts --reset`），但它**必须**被明确标注为"清库重建"命令。
 
@@ -167,8 +174,9 @@ DELETE 钩子会在删父行前 `UPDATE <子表> SET <fk> = NULL WHERE <fk> = ?`
 
 - **渲染器**（`terms/renderer.ts`）、**插入术语面板**（`editor/TermInserter.vue`）、**卡牌编辑器表单下拉**（`CardEditor.vue` 的类型/骰子/标签候选/前缀兜底）、**机制分类下拉**（`LibrarianSheetEditor.vue` / `EmotionEntityEditorModal.vue`）全部从 `store/terms`（Pinia）读取同一份库数据；**禁止**再从前端任何静态 TS/JSON 文件 import 词条数据。
 - `term_entries.hasParam` 列标记"带参数位"词条；插入面板据此插入 `“词条” X层`（普通词条插入 `“词条”`，自带引号，渲染器立即可识别）。
-- 修改术语内容/格式：词典页直接改库（PUT `term_entries`），**以库为准**；批量新增走种子 + `npm run import:terms`（合并模式，不会回溯运营修改）。
-- 原 `shared/src/terms/` 静态数据已移入 `_trash/shared-terms-2026-09/`，仅作历史查证。
+- 修改术语内容/格式：词典页直接改库（PUT `term_entries`），**以库为准**；新增词条也在词典页直接建，`import:terms` 仅是新机引导/灾难恢复的合并恢复工具。
+- **备份自动跟随每次写操作**（§2.3）：`db-snapshot.json` 全表快照 + `termSeed.generated.ts` 生成种子（禁止手改），右上角"数据已备份"提示。
+- 原 `shared/src/terms/` 静态数据已移入 `_trash/shared-terms-2026-09/`；原 5 个手写 TS 种子已移入 `_trash/seed-terms-2026-09/`，仅作历史查证。
 
 ### 4.4 术语渲染器（异步索引，必须遵守）
 
@@ -259,7 +267,7 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 | 资源命名一半按实体一半按池 | §5.2 二选一，同类内统一 |
 | 编辑器手写 `v-if` 罗列卡组区（BASE 出现 EGO 区的旧 bug 之源） | 按 `system.deckZones` 配置循环渲染 |
 | 卡牌前缀下拉展示全量前缀（所有系统同列） | 按 `system.cardPrefixes` 白名单过滤 |
-| 改了术语种子文件没跑导入，库里还是旧词 | `npm run import:terms`（合并模式，只增不改） |
+| 改了术语种子文件没跑导入，库里还是旧词 | 种子已退役（§2.3）：改词条一律词典页直接改库，备份自动跟随 |
 | 导入脚本 DELETE 重灌运营数据（2026-09 词典回溯事故） | §2.3 合并式导入：先备份、只增不改、同名查重、导入后自检 |
 | 词条跨组被复制出重名（渲染器按名索引互相覆盖） | 同分区内同名即已存在，查重不按"分组+名字" |
 | 删除/替换 `art/turris/systems/` 下的静态表格图 | 先对照 `shared/src/battleMechanics.ts` 的 `MECHANICS_IMAGES` |

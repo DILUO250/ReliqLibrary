@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { getDb } from '../db/index.js'
 import { TABLES, type TableName } from '../db/schema.js'
+import { scheduleBackup, backupStatus } from '../db/backupScheduler.js'
 import { trashArt } from './artTrash.js'
 import { registerPvzArtRoutes } from '../features/armarium/artRoutes.js'
 import { registerTurrisArtRoutes } from '../features/turris/artRoutes.js'
@@ -73,6 +74,16 @@ const DELETE_NULLIFY_HOOKS: Record<string, Array<{ table: string; fk: string }>>
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/health', async () => ({ ok: true }))
+
+  app.get('/api/backup/status', async () => backupStatus())
+
+  // 写后自动备份：任何 /api/* 写请求（通用 CRUD / reorder / feature 路由 / 未来新增）
+  // 成功响应后调度一次防抖后台快照——单一钩子覆盖全部写路径，响应已发出，零延迟影响。
+  app.addHook('onResponse', async (req) => {
+    if ((req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE' || req.method === 'PATCH') && req.url.startsWith('/api/')) {
+      scheduleBackup()
+    }
+  })
 
   await registerTurrisArtRoutes(app)
   await registerPvzArtRoutes(app)

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SiteNav from '@/shared/components/SiteNav.vue'
 import Toast from '@/shared/components/Toast.vue'
+import BackupToast from '@/shared/components/BackupToast.vue'
 import { RouterView } from 'vue-router'
 </script>
 
@@ -10,4 +11,5 @@ import { RouterView } from 'vue-router'
     <RouterView />
   </main>
   <Toast />
+  <BackupToast />
 </template>
