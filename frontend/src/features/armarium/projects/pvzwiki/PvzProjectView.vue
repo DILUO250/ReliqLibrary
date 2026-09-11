@@ -15,13 +15,13 @@ import SyncPanel from '@pvzwiki/components/SyncPanel.vue'
 <style>
 @font-face {
   font-family: pvzgeFontEN;
-  src: url('/features/armarium/projects/pvzwiki/fonts/FBU-ENGRU.woff2') format('woff2');
+  src: url('/art/armarium/projects/pvz/fonts/FBU-ENGRU.woff2') format('woff2');
   font-weight: 400;
 }
 
 @font-face {
   font-family: pvzgFont;
-  src: url('/features/armarium/projects/pvzwiki/fonts/FBUSV8C5EI.woff2') format('woff2');
+  src: url('/art/armarium/projects/pvz/fonts/FBUSV8C5EI.woff2') format('woff2');
   font-weight: 400;
 }
 
