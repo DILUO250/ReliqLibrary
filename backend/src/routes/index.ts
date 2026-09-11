@@ -20,7 +20,10 @@ function columnsOf(table: string): string[] {
 }
 
 function insertColumns(body: Record<string, unknown>, cols: string[]): string[] {
-  return cols.filter((c) => c !== 'id' && c in body)
+  // id 默认由 AUTOINCREMENT 生成，**但 body 显式提供非空 id 时照写**——
+  // TEXT 主键表（pvz_keywords）没有 id 列会插入 id=NULL 的幽灵行（审计 M5 的
+  // 实锤：POST 不写 id → 按 id 删除永远 404）。前端创建类调用从不发 id，零行为变化。
+  return cols.filter((c) => c in body && (c !== 'id' || body.id != null))
 }
 
 // 各表可能存放 /art/ 图片 URL 的列。PUT 更新 / DELETE 整行时，

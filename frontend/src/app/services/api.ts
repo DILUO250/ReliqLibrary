@@ -6,7 +6,10 @@ const WRITE_TOKEN = import.meta.env.VITE_RTL_KEY ?? 'reliq-2026'
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const method = init?.method ?? 'GET'
   const extra = (init?.headers ?? {}) as Record<string, string>
-  const headers: Record<string, string> = { 'Content-Type': 'application/json', ...extra }
+  const headers: Record<string, string> = { ...extra }
+  // Content-Type 仅在确有 body 时设置——DELETE 等"空 body + json Content-Type"
+  // 的请求会被 Fastify 以 FST_ERR_CTP_EMPTY_JSON_BODY 拒成 400（前端删除功能曾因此全灭）
+  if (init?.body != null) headers['Content-Type'] = 'application/json'
   if (method !== 'GET' && method !== 'HEAD') headers['x-rtl-key'] = WRITE_TOKEN
   const { headers: _omit, ...rest } = init ?? {}
   const res = await fetch(`${BASE}${path}`, { ...rest, headers })
