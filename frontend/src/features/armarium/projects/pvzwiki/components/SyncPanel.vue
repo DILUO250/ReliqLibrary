@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ui } from '@pvzwiki/store/ui'
+import { WRITE_HEADERS } from '@pvzwiki/utils/writeKey'
 
 const props = defineProps<{
   hideTrigger?: boolean
@@ -48,7 +49,7 @@ async function check(): Promise<void> {
   selectedAdd.value = new Set()
   selectedRemove.value = new Set()
   try {
-    const res = await fetch('/api/pvz/sync/check', { method: 'POST' })
+    const res = await fetch('/api/pvz/sync/check', { method: 'POST', headers: { ...WRITE_HEADERS } })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     added.value = data.added ?? []
@@ -81,7 +82,7 @@ async function apply(): Promise<void> {
   try {
     const res = await fetch('/api/pvz/sync/apply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...WRITE_HEADERS },
       body: JSON.stringify({
         add: [...selectedAdd.value],
         remove: [...selectedRemove.value],

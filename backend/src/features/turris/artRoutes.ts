@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { execFile } from 'node:child_process'
-import { createWriteStream, mkdirSync } from 'node:fs'
+import { createWriteStream, existsSync, mkdirSync } from 'node:fs'
 import { basename, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import { ART_DIR } from '../../config/index.js'
@@ -31,9 +31,31 @@ function slugify(input: string): string {
   )
 }
 
+// arkcli 原生二进制的绝对路径（npm 全局垫片 → @volcengine/ark-cli/bin/arkcli-<平台>-<架构>.exe）。
+// 可用 ARKCLI_BIN 环境变量覆盖。**禁止经 shell 调用**——旧实现 shell:'powershell.exe'
+// 会把用户可控的 prompt 拼进命令行，构成命令注入面；execFile + 参数数组天然免疫。
+let arkBinaryCache: string | null = null
+function resolveArkBinary(): string {
+  if (arkBinaryCache) return arkBinaryCache
+  const override = process.env.ARKCLI_BIN
+  if (override && existsSync(override)) {
+    arkBinaryCache = override
+    return arkBinaryCache
+  }
+  const platform = process.platform === 'win32' ? 'windows' : process.platform
+  const arch = process.arch === 'x64' ? 'amd64' : process.arch
+  const ext = process.platform === 'win32' ? '.exe' : ''
+  const appData = process.env.APPDATA ?? ''
+  const candidate = join(appData, 'npm', 'node_modules', '@volcengine', 'ark-cli', 'bin', `arkcli-${platform}-${arch}${ext}`)
+  if (existsSync(candidate)) {
+    arkBinaryCache = candidate
+    return arkBinaryCache
+  }
+  throw new Error('arkcli 二进制未找到——请先安装：npm install -g @volcengine/ark-cli（或设置 ARKCLI_BIN）')
+}
+
 function runArk(args: string[]): Promise<string> {
-  return execFileP('arkcli', args, {
-    shell: 'powershell.exe',
+  return execFileP(resolveArkBinary(), args, {
     windowsHide: true,
     maxBuffer: 10 * 1024 * 1024,
   }).then((r) => r.stdout)

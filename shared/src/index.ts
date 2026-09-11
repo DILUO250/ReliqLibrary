@@ -416,10 +416,13 @@ export function parseSheet(raw?: string | null): LibrarianSheet | null {
       )
     }
     s.cards = s.cards ?? { combat: [], special: [] }
+    s.cards.special = s.cards.special ?? []
     s.cards.ego = s.cards.ego ?? []
     s.cards.modules = s.cards.modules ?? []
     s.cards.energy = s.cards.energy ?? []
-    for (const list of [s.cards.combat, s.cards.special, s.cards.ego]) {
+    // 五个卡组区全量归一化——modules(RHD 模组)/energy(PKM 能量) 曾被漏掉，
+    // 旧格式卡牌（effect 单条、【望】：字符串）在这些区不会被规范化
+    for (const list of [s.cards.combat, s.cards.special, s.cards.ego, s.cards.modules, s.cards.energy]) {
       for (const c of list) normalizeCard(c)
     }
     s.systemData = s.systemData ?? {}
@@ -764,7 +767,8 @@ export interface Card {
 export interface RailStation {
   id: number
   name: string
-  order: number
+  /** 列名与 SQLite 对齐为 orderNo（`order` 是 SQL 保留字，当年镜像时写错了）。 */
+  orderNo: number
   boss: string
   theme: string
   drops: string
@@ -1055,106 +1059,6 @@ export function defaultSpeedPassive(sys: BattleSystemId): Passive {
   return first ?? { name: `速战速决${BATTLE_SYSTEMS[sys]?.code ?? sys.toUpperCase()}`, effect: '速度骰子+1' }
 }
 
-export const LABELS = {
-  department: {
-    turris: '迎书楼',
-    armarium: '藏书阁',
-    collegium: '寻书社',
-    director: '馆长层',
-  } as Record<DepartmentId, string>,
-  librarianRole: {
-    curator: '迎书楼司书',
-    librarian: '藏书阁司书·书记官',
-    seeker: '寻书社司书·求索者',
-    chronicler: '寻书社司书·墨工',
-    internal: '内务司书',
-    director: '馆长',
-  } as Record<LibrarianRole, string>,
-  librarianRarity: {
-    '': '常规司书',
-    N: 'N',
-    R: 'R',
-    SR: 'SR',
-    SSR: 'SSR',
-    RR: 'RR',
-    UR: 'UR',
-  } as Record<string, string>,
-  coreColor: {
-    red: '红',
-    blue: '蓝',
-    green: '绿',
-    gold: '金',
-    neutral: '素',
-  } as Record<CorePageColor, string>,
-  anomalyLevel: {
-    safe: 'Safe',
-    euclid: 'Euclid',
-    keter: 'Keter',
-  } as Record<AnomalyLevel, string>,
-  anomalyStatus: {
-    discovered: '已发现',
-    assessing: '评估中',
-    contained: '收容中',
-    researching: '研究中',
-    extracted: '已提取',
-    neutralized: '已失效',
-    escaped: '出逃',
-  } as Record<AnomalyStatus, string>,
-  spaceLevel: {
-    safe: 'Safe',
-    euclid: 'Euclid',
-    keter: 'Keter',
-  } as Record<SpaceLevel, string>,
-  spaceStatus: {
-    discovered: '已发现',
-    assessing: '评估中',
-    controlled: '已控制',
-    harvesting: '开采中',
-    breached: '突破',
-  } as Record<SpaceStatus, string>,
-  repositoryType: {
-    entity: '实体管理书库',
-    life: '生活事务书库',
-    nature: '生命自然研究书库',
-    page: '书页研发书库',
-  } as Record<RepositoryType, string>,
-  pageType: {
-    combat: '战斗书页',
-    abnormality: '异常实体书页',
-    ego: 'E.G.O书页',
-  } as Record<PageType, string>,
-  cardType: {
-    tool: '道具卡',
-    trinket: '饰品卡',
-    consumable: '消耗品卡',
-    skill: '技能卡',
-    tag: '标签卡',
-  } as Record<CardType, string>,
-  packType: {
-    standard: '标准卡册',
-    advanced: '进阶卡册',
-    special: '特化卡册',
-  } as Record<PackType, string>,
-  guestStatus: {
-    invited: '受邀',
-    receiving: '接待中',
-    converted: '已转化',
-    survived: '通过试炼',
-    withdrawn: '滞留',
-  } as Record<GuestStatus, string>,
-  factionType: {
-    hostile: '敌对',
-    neutral: '中立',
-    special: '特殊',
-  } as Record<FactionType, string>,
-  battleSystem: {
-    base: '基本系统',
-    lob: '情感等级',
-    pkm: '奇迹能量',
-    rhd: '部署点数',
-  } as Record<BattleSystemId, string>,
-} as const
-
-// 术语词条（卡牌分类/基础标签/机制词条等）已于 2026-09 迁出至前端种子
-// （frontend/src/features/turris/terms/data/），单一术语源为 SQLite 的
-// term_sections / term_entries；shared 不再持有术语数据。原目录归档于 _trash/。
+// 术语数据（含曾经的 LABELS 部门名映射，2026-09 判死退役）不再以任何形式存放于
+// shared：唯一权威源是 SQLite（term_sections / term_entries 等，经 generic CRUD 消费），
+// 备份由写后自动快照维护（CONVENTIONS §2.3）。部门展示名在前端 frontend/src/app/labels.ts。

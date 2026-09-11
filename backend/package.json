@@ -9,13 +9,9 @@
     "start": "node dist/server.js",
     "type-check": "tsc --noEmit",
     "seed:reset": "tsx src/scripts/seed.ts --reset",
-    "seed:sync": "tsx src/scripts/syncSeed.ts",
     "export:snapshot": "tsx src/scripts/exportSeed.ts",
     "audit:art": "tsx src/scripts/auditArt.ts",
-    "import:terms": "tsx src/scripts/importTerms.ts",
-    "import:pvz": "tsx src/scripts/importPvz.ts",
-    "import:ct2": "tsx src/scripts/importCT2.ts",
-    "import:ct34": "tsx src/scripts/importCT34.ts"
+    "import:terms": "tsx src/scripts/importTerms.ts"
   },
   "dependencies": {
     "@babel/parser": "^7.29.8",

@@ -2,13 +2,14 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import type { ModuleId } from '@/app/router'
+import { MODULE_LABELS } from '@/app/labels'
 
 const route = useRoute()
 const moduleId = computed(() => (route.meta.module as ModuleId | undefined) ?? 'armarium')
 
 const meta = {
   armarium: {
-    zh: '藏书阁',
+    zh: MODULE_LABELS.armarium,
     latin: 'Armarium Absconditorum',
     desc: '研究司书 · 专注于对馆藏书籍进行深度解析与知识挖掘。',
     tabs: [
@@ -20,7 +21,7 @@ const meta = {
     ],
   },
   turris: {
-    zh: '迎书楼',
+    zh: MODULE_LABELS.turris,
     latin: 'Turris Librorum Adventantium',
     desc: '战斗司书 · 驻守图书馆最前线，迎击挑战者与入侵者。',
     tabs: [
@@ -31,7 +32,7 @@ const meta = {
     ],
   },
   collegium: {
-    zh: '寻书社',
+    zh: MODULE_LABELS.collegium,
     latin: 'Collegium Quaerendorum Librorum',
     desc: '探索司书 · 主动深入外界与底层，侦测并收集流散的情报、知识碎片与潜在威胁。',
     tabs: [

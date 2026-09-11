@@ -1,6 +1,7 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance, FastifyReply } from 'fastify'
 import { getDb } from '../db/index.js'
 import { TABLES, type TableName } from '../db/schema.js'
+import { RTL_TOKEN } from '../config/index.js'
 import { scheduleBackup, backupStatus } from '../db/backupScheduler.js'
 import { trashArt } from './artTrash.js'
 import { registerPvzArtRoutes } from '../features/armarium/artRoutes.js'
@@ -72,10 +73,30 @@ const DELETE_NULLIFY_HOOKS: Record<string, Array<{ table: string; fk: string }>>
   ],
 }
 
+// SQLite 错误 → 人话：约束冲突（NOT NULL/UNIQUE/CHECK）是调用方的问题，返回 400；
+// 其余按 500 泛化，不把内部错误细节原样泄漏给局域网客户端。
+function sqliteErrorReply(e: unknown, reply: FastifyReply): unknown {
+  const err = e as { code?: string; message?: string }
+  if (typeof err?.code === 'string' && err.code.startsWith('SQLITE_CONSTRAINT')) {
+    return reply.code(400).send({ error: `数据约束冲突：${err.message?.split(': ').slice(-1)[0] ?? ''}` })
+  }
+  throw e
+}
+
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   app.get('/api/health', async () => ({ ok: true }))
 
   app.get('/api/backup/status', async () => backupStatus())
+
+  // 写操作鉴权（局域网多人形态的最小防线）：非 GET /api/* 必须携带
+  // `x-rtl-key: <RTL_TOKEN>`（前端 api.ts / pvzwiki 写通道自动附头）。GET 不设门。
+  app.addHook('onRequest', async (req, reply) => {
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') return
+    if (!req.url.startsWith('/api/')) return
+    if (req.headers['x-rtl-key'] !== RTL_TOKEN) {
+      return reply.code(401).send({ error: 'unauthorized: missing or invalid x-rtl-key header' })
+    }
+  })
 
   // 写后自动备份：任何 /api/* 写请求（通用 CRUD / reorder / feature 路由 / 未来新增）
   // 成功响应后调度一次防抖后台快照——单一钩子覆盖全部写路径，响应已发出，零延迟影响。
@@ -109,10 +130,14 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       const pick = insertColumns(body, cols)
       if (pick.length === 0) return reply.code(400).send({ error: 'no valid fields' })
       const placeholders = pick.map(() => '?').join(', ')
-      const info = getDb()
-        .prepare(`INSERT INTO ${table} (${pick.join(', ')}) VALUES (${placeholders})`)
-        .run(...pick.map((c) => body[c]))
-      return reply.code(201).send({ id: info.lastInsertRowid })
+      try {
+        const info = getDb()
+          .prepare(`INSERT INTO ${table} (${pick.join(', ')}) VALUES (${placeholders})`)
+          .run(...pick.map((c) => body[c]))
+        return reply.code(201).send({ id: info.lastInsertRowid })
+      } catch (e) {
+        return sqliteErrorReply(e, reply)
+      }
     })
 
     app.put(`${route}/:id`, async (req, reply) => {
@@ -122,23 +147,37 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       const pick = insertColumns(body, cols)
       if (pick.length === 0) return reply.code(400).send({ error: 'no valid fields' })
       const set = pick.map((c) => `${c} = ?`).join(', ')
-      const info = getDb()
-        .prepare(`UPDATE ${table} SET ${set} WHERE id = ?`)
-        .run(...pick.map((c) => body[c]), id)
-      if (info.changes === 0) return reply.code(404).send({ error: 'not found' })
-      trashReplacedImages(table, id, body)
-      return { updated: info.changes }
+      try {
+        const info = getDb()
+          .prepare(`UPDATE ${table} SET ${set} WHERE id = ?`)
+          .run(...pick.map((c) => body[c]), id)
+        if (info.changes === 0) return reply.code(404).send({ error: 'not found' })
+        trashReplacedImages(table, id, body)
+        return { updated: info.changes }
+      } catch (e) {
+        return sqliteErrorReply(e, reply)
+      }
     })
 
     app.delete(`${route}/:id`, async (req, reply) => {
       const { id } = req.params as IdParams
-      for (const hook of DELETE_NULLIFY_HOOKS[table] ?? []) {
-        getDb().prepare(`UPDATE ${hook.table} SET ${hook.fk} = NULL WHERE ${hook.fk} = ?`).run(id)
+      const db = getDb()
+      // 先确认行存在再置空子表——旧实现对不存在的 id 也会先改子表，产生无源 nullify
+      const exists = db.prepare(`SELECT id FROM ${table} WHERE id = ?`).get(id)
+      if (!exists) return reply.code(404).send({ error: 'not found' })
+      try {
+        const tx = db.transaction(() => {
+          for (const hook of DELETE_NULLIFY_HOOKS[table] ?? []) {
+            db.prepare(`UPDATE ${hook.table} SET ${hook.fk} = NULL WHERE ${hook.fk} = ?`).run(id)
+          }
+          db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(id)
+        })
+        tx()
+      } catch (e) {
+        return sqliteErrorReply(e, reply)
       }
       trashRowImages(table, id)
-      const info = getDb().prepare(`DELETE FROM ${table} WHERE id = ?`).run(id)
-      if (info.changes === 0) return reply.code(404).send({ error: 'not found' })
-      return { deleted: info.changes }
+      return { deleted: 1 }
     })
   }
 

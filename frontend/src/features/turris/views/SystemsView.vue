@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { BATTLE_SYSTEMS, type BattleSystemId, type BattleSystemMetrics, type BattleStatTable } from '@rtl/shared'
 import SystemRadar from '../components/SystemRadar.vue'
 
@@ -49,6 +49,13 @@ const statTables = computed<BattleStatTable[]>(() => {
 
 /** 机制说明图片的完整路径（frontend/public/art/turris/systems/）。 */
 const mechImages = computed(() => (info.value.mechanicsImages ?? []).map((f) => `/art/turris/systems/${f}`))
+
+// 图片缺失占位降级：404 的表格图不再渲染破图，改为显示"图待补"提示框。
+// 文件补进 public/art/turris/systems/ 后刷新即自动恢复。
+const failedImages = reactive(new Set<string>())
+function markImageFailed(img: string): void {
+  failedImages.add(img)
+}
 </script>
 
 <template>
@@ -139,7 +146,8 @@ const mechImages = computed(() => (info.value.mechanicsImages ?? []).map((f) => 
         <div class="sys-mech">
           <p class="sys-mech__text">{{ info.mechanicsDesc }}</p>
           <figure v-for="img in mechImages" :key="img" class="sys-mech__figure">
-            <img :src="img" alt="机制表格" loading="lazy" />
+            <div v-if="failedImages.has(img)" class="sys-mech__missing">图待补：{{ img.split('/').pop() }}（放 art/turris/systems/ 后自动显示）</div>
+            <img v-else :src="img" alt="机制表格" loading="lazy" @error="markImageFailed(img)" />
           </figure>
         </div>
       </section>
@@ -392,6 +400,13 @@ const mechImages = computed(() => (info.value.mechanicsImages ?? []).map((f) => 
   display: block;
   width: 100%;
   height: auto;
+}
+.sys-mech__missing {
+  padding: 26px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-ink-dim);
+  font-family: var(--font-mono, monospace);
 }
 @media (max-width: 960px) {
   .sys-tables--2,

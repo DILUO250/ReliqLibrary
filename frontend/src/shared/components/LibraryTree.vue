@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { OverviewStats } from '@rtl/shared'
 import { useOverviewStore } from '@/app/stores/overview'
+import { MODULE_LABELS } from '@/app/labels'
 import silhouette from '@/shared/assets/tree-silhouette.jpeg'
 
 const router = useRouter()
@@ -23,7 +24,7 @@ const zones: Zone[] = [
   {
     id: 'crown',
     to: '/director',
-    zh: '馆长层',
+    zh: MODULE_LABELS.director,
     latin: 'Director Floor',
     desc: '申瑟 · 白石庄园 · 内务司书 · 属兽',
     stats: [{ key: 'librarians', label: '司书总数' }],
@@ -31,7 +32,7 @@ const zones: Zone[] = [
   {
     id: 'trunk-left',
     to: '/turris',
-    zh: '迎书楼',
+    zh: MODULE_LABELS.turris,
     latin: 'Turris Librorum Adventantium',
     desc: '战斗司书 · 以战养藏 · 楼层试炼',
     stats: [
@@ -42,7 +43,7 @@ const zones: Zone[] = [
   {
     id: 'trunk-right',
     to: '/armarium',
-    zh: '藏书阁',
+    zh: MODULE_LABELS.armarium,
     latin: 'Armarium Absconditorum',
     desc: '研究司书 · SCL 协议 · 书库体系',
     stats: [
@@ -55,7 +56,7 @@ const zones: Zone[] = [
   {
     id: 'roots',
     to: '/collegium',
-    zh: '寻书社',
+    zh: MODULE_LABELS.collegium,
     latin: 'Collegium Quaerendorum Librorum',
     desc: '探索司书 · 折射轨道 · 生木髓',
     stats: [

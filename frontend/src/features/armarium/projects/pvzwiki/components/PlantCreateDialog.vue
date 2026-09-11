@@ -98,7 +98,7 @@ function close(): void {
   emit('close')
 }
 
-function save(): void {
+async function save(): Promise<void> {
   if (!canSave.value) {
     if (!nameValid.value) error.value = '请填写植物名称'
     else if (!form.codename.trim()) error.value = '请填写植物代号'
@@ -110,7 +110,7 @@ function save(): void {
   const family = familyOptions.value.find((f) => f.code === form.familyCode) ?? null
   try {
     if (props.mode === 'edit' && props.plant) {
-      updateCustomPlant(props.plant.codename, {
+      await updateCustomPlant(props.plant.codename, {
         name: form.name.trim(),
         englishName: form.englishName.trim(),
         world: form.world,
@@ -131,12 +131,12 @@ function save(): void {
         summary: form.summary.trim(),
         path: '',
       }
-      addCustomPlant(entity)
+      await addCustomPlant(entity)
       showToast('植物已建立档案')
       emit('saved', entity)
     }
-  } catch {
-    error.value = '保存失败，请重试'
+  } catch (e) {
+    error.value = e instanceof Error ? `保存失败：${e.message}` : '保存失败，请重试'
   }
 }
 </script>

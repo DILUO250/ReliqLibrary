@@ -21,3 +21,13 @@ seed-terms-2026-09/
     - SQLite 是唯一权威源；备份由 exportSnapshot 自动产出
       （backend/data/db-snapshot.json 实时快照 + terms/data/termSeed.generated.ts 提交级生成种子）
     - 手改种子是禁止行为；恢复历史数据用 git 或本目录，恢复术语库用 npm run import:terms
+
+migration-fossils-2026-09/（2026-09 第二批判死，直接 git rm，本条目仅作记录）
+    backend/src/seed/data.ts（851KB：94 个 sheet 常量 + floors/librarians/emotion_entities 全量硬编码）——
+      当年自动导入脚本的偷懒产物，"种子"实为一次性迁移残留，与库完全重复；
+    backend/src/scripts/syncSeed.ts——正则回写种子（SQLite↔源码双向流），任一新司书未映射即 throw；
+    backend/src/scripts/importPvz.ts——DELETE 重灌 PVZ 表（旧 JSON 快照会覆盖运营编辑）；
+    backend/src/scripts/importCT2.ts / importCT34.ts——"跑完即弃"的 524KB 数据尸体；
+    frontend pvzwiki/data/*.json（7 个，228KB）——PVZ 三层迁移 JSON，前端零消费、pvzSync 不读；
+    shared LABELS——零引用死代码，部门名收敛至 frontend/src/app/labels.ts。
+    数据均在库内（+ db-snapshot.json 自动快照）与 git 历史中，需要时可考古。

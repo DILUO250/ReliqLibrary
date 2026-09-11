@@ -52,7 +52,7 @@ No test runner is configured in any package.
 - **Vite dev does not proxy `/art`** (only `/api`): custom uploaded PVZ images should be shown via the API `dataUrl` (`resolveImageSrc` in `@pvzwiki/store/plantImage`), not the raw URL. Files under `frontend/public/` (e.g. `art/turris/systems/*.png`) are served as-is by Vite/build — static URLs like `/art/turris/systems/x.png` work fine for code-referenced assets.
 - `tsconfig` enables `noUncheckedIndexedAccess`: index access needs `?.` / non-null assertions.
 - Seed table-name mismatch (latent bug, already fixed once): `seed/data.ts` keys must stay snake_case and match `TABLES` exactly.
-- `PASSWORD`/`RTL_PASSWORD` in `backend/src/config/index.ts` is currently unused by routes.
+- **Write auth (LAN multi-user)**: all non-GET `/api/*` requests must carry `x-rtl-key: <RTL_TOKEN>` (backend default `reliq-2026`, override via env `RTL_TOKEN`; frontend sends it automatically via `VITE_RTL_KEY` in `services/api.ts` + pvzwiki `utils/writeKey.ts`). GET is unguarded. The old `PASSWORD`/`RTL_PASSWORD` constants never existed — this `RTL_TOKEN` in `backend/src/config/index.ts` is the real one and is enforced by an `onRequest` hook in `routes/index.ts`.
 - Node 22 is required. `start.bat` opens backend + frontend in separate `cmd` windows.
 - Do not run `seed:reset` unless data loss is intended — it DROPs all tables. The authoritative live DB is `backend/data/library.db`.
 - Historical note: the predecessor repo (`reliqLibraryOLD`) suffered an encoding-corruption disaster (double-encoded UTF-8→GBK mojibake). Any migrated text must be verified clean; `routes/index.ts`-style mojibake comments must be rewritten, not copied.

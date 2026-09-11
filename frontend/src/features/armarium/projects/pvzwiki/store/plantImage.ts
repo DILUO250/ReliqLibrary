@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { WRITE_HEADERS } from '@pvzwiki/utils/writeKey'
 
 // Session-scoped state for the custom plant image (立绘) upload channel.
 // `backups` lives in sessionStorage so it survives a page reload (used after
@@ -139,7 +140,7 @@ export async function resolveCardSrc(codename: string): Promise<string | null> {
 export async function uploadCard(codename: string, dataUrl: string): Promise<void> {
   const res = await fetch('/api/pvz/plant-card', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...WRITE_HEADERS },
     body: JSON.stringify({ codename, dataUrl }),
   })
   if (!res.ok) throw new Error('card upload failed')
@@ -150,7 +151,7 @@ export async function uploadCard(codename: string, dataUrl: string): Promise<voi
 export async function uploadImage(codename: string, dataUrl: string): Promise<void> {
   const res = await fetch('/api/pvz/plant-image', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...WRITE_HEADERS },
     body: JSON.stringify({ codename, dataUrl }),
   })
   if (!res.ok) throw new Error('upload failed')
@@ -168,6 +169,7 @@ export async function restoreImage(codename: string): Promise<void> {
     try {
       await fetch(`/api/pvz/plant-image?codename=${encodeURIComponent(codename)}`, {
         method: 'DELETE',
+        headers: { ...WRITE_HEADERS },
       })
     } catch {
       // dev server unavailable; nothing more we can do
@@ -265,7 +267,7 @@ export async function ensureBgBackup(codename: string): Promise<void> {
 export async function uploadBg(codename: string, dataUrl: string): Promise<void> {
   const res = await fetch('/api/pvz/plant-bg', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...WRITE_HEADERS },
     body: JSON.stringify({ codename, dataUrl }),
   })
   if (!res.ok) throw new Error('bg upload failed')
@@ -279,7 +281,7 @@ export async function uploadBg(codename: string, dataUrl: string): Promise<void>
 export async function setBgFromLibrary(codename: string, source: string): Promise<void> {
   const res = await fetch('/api/pvz/plant-bg/copy', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...WRITE_HEADERS },
     body: JSON.stringify({ codename, source }),
   })
   if (!res.ok) throw new Error('bg copy failed')
@@ -296,6 +298,7 @@ export async function restoreBg(codename: string): Promise<void> {
     try {
       await fetch(`/api/pvz/plant-bg?codename=${encodeURIComponent(codename)}`, {
         method: 'DELETE',
+        headers: { ...WRITE_HEADERS },
       })
     } catch {
       // dev server unavailable; nothing more we can do

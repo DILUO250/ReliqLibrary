@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import { MODULE_LABELS } from '@/app/labels'
 
 const route = useRoute()
 
 const links = [
   { to: '/', label: '首页' },
-  { to: '/armarium', label: '藏书阁' },
-  { to: '/turris', label: '迎书楼' },
-  { to: '/collegium', label: '寻书社' },
-  { to: '/director', label: '馆长层' },
+  { to: '/armarium', label: MODULE_LABELS.armarium },
+  { to: '/turris', label: MODULE_LABELS.turris },
+  { to: '/collegium', label: MODULE_LABELS.collegium },
+  { to: '/director', label: MODULE_LABELS.director },
   { to: '/factions', label: '相关势力' },
 ]
 
