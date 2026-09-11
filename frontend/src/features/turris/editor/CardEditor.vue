@@ -1,18 +1,11 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import type { BattleCard } from '@rtl/shared'
-import {
-  cardTypes,
-  cardPrefixes,
-  baseDice,
-  specialDice,
-  baseTags,
-  generalTags,
-  normalizeCard,
-  PKM_TYPES,
-} from '@rtl/shared'
+import { normalizeCard, PKM_TYPES } from '@rtl/shared'
 import TermInserter from './TermInserter.vue'
 import StsCard from './StsCard.vue'
+import { ensureTermIndex } from '@/features/turris/terms/renderer'
+import { useTermsStore } from '@/features/turris/store/terms'
 import type { PrivateTerm } from '@/features/turris/terms/renderer'
 
 const props = withDefaults(
@@ -20,7 +13,7 @@ const props = withDefaults(
     card: BattleCard
     renderTerms?: boolean
     privateTerms?: PrivateTerm[]
-    /** 卡牌前缀白名单（按战斗系统过滤）；缺省 = 全部前缀。 */
+    /** 卡牌前缀白名单（按战斗系统过滤）；缺省 = 词典全部「卡牌前缀」。 */
     prefixes?: string[]
     /** 是否显示卡牌属性编辑（BASE/PKM 模板开放）。 */
     showAttr?: boolean
@@ -29,15 +22,28 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ (e: 'duplicate'): void; (e: 'remove'): void }>()
 
-const typeNames = cardTypes.map((t) => t.name)
+// 表单选项统一从术语词典（SQLite 经 store 缓存）读取 —— 单一术语源。
+const termsStore = useTermsStore()
+onMounted(() => {
+  void ensureTermIndex()
+})
+
+function sectionNames(slug: string): string[] {
+  return (
+    termsStore.sections
+      .find((s) => s.id === slug && s.visible)
+      ?.groups.flatMap((g) => g.entries.map((e) => e.name)) ?? []
+  )
+}
+const typeNames = computed(() => sectionNames('卡牌分类'))
 const prefixNames = computed(() => {
   const allow = props.prefixes
-  if (!allow || !allow.length) return cardPrefixes.map((p) => p.name)
-  return cardPrefixes.filter((p) => allow.includes(p.name)).map((p) => p.name)
+  if (!allow || !allow.length) return sectionNames('卡牌前缀')
+  return allow
 })
-const baseDiceNames = baseDice.map((d) => d.name)
-const specialDiceNames = specialDice.map((d) => d.name)
-const tagNames = [...baseTags, ...generalTags].map((t) => t.name)
+const baseDiceNames = computed(() => sectionNames('基础骰子'))
+const specialDiceNames = computed(() => sectionNames('特殊骰子'))
+const tagNames = computed(() => [...sectionNames('基础标签'), ...sectionNames('泛用标签')])
 
 const DICE_EFFECT_MAX = 3
 

@@ -288,6 +288,7 @@ export function migrate(db: Database.Database): void {
   ensureColumn(db, 'librarians', 'portraitPreview', "TEXT DEFAULT ''")
   ensureColumn(db, 'librarians', 'sortOrder', 'INTEGER DEFAULT 0')
   ensureColumn(db, 'librarians', 'rarity', "TEXT DEFAULT ''")
+  ensureColumn(db, 'term_entries', 'hasParam', 'INTEGER DEFAULT 0')
 }
 
 export const TABLES = [

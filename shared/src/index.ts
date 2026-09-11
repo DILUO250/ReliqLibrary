@@ -1155,4 +1155,6 @@ export const LABELS = {
   } as Record<BattleSystemId, string>,
 } as const
 
-export * from './terms/index.js'
+// 术语词条（卡牌分类/基础标签/机制词条等）已于 2026-09 迁出至前端种子
+// （frontend/src/features/turris/terms/data/），单一术语源为 SQLite 的
+// term_sections / term_entries；shared 不再持有术语数据。原目录归档于 _trash/。

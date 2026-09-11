@@ -8,6 +8,8 @@ export interface DictEntry {
   tagFormats: TermFormat[]
   format: TermFormat
   desc: string
+  /** 是否带参数位（插入面板插入「“词条” X层」）。 */
+  hasParam?: boolean
 }
 
 export interface DictGroup {
@@ -2159,7 +2161,7 @@ export const termDictionary: DictSection[] = [
             desc: '不会被施加负面基础异常',
           },
           {
-            name: '极光回合',
+            name: '极光幕',
             tags: ['场地', '单向', '叠加'],
             tagColors: ['#002060', '#8a8a8a', '#8a8a8a'],
             tagFormats: [

@@ -36,7 +36,7 @@ Vue 视图 (features/*/views, features/*/components)
 
 - **领域数据必须落库**：凡是会被运营/玩家读到、且需要运行时编辑的内容（词条、楼层、司书、卡牌、植物……），**禁止**以前端 `.ts`/`.json` 静态文件为权威源。
 - **前端只做消费**：视图通过 `api.list/get/create/update/remove` 拿数据，经 Pinia store 缓存后渲染。前端**不得**直接 `import` 任何领域数据 JSON/TS 作为展示源。
-- **种子源例外**：`frontend/src/features/turris/terms/data/{terms,internalTerms,specialDiceTerms,termOverrides}.ts` 与 `features/armarium/projects/pvzwiki/data/*.json` 等历史静态文件**仅作为** `backend/src/scripts/importTerms.ts` / `importPvz.ts` 的导入种子源保留。前端业务代码**禁止**再 import 它们（`turris/terms/data/*` 仅被导入脚本经动态 import 加载；`pvzwiki/data/*.ts` 兼容层只做 store 形态适配、不含数据本体）。新模块若需类似一次性导入，把种子文件放在对应 feature 的 `data/` 下，并在导入脚本里用 `new Function('p','return import(p)')` 动态加载（避免 backend tsc 的 rootDir 报错）。
+- **种子源例外**：`frontend/src/features/turris/terms/data/{terms,internalTerms,specialDiceTerms,termOverrides,paletteTerms}.ts` 与 `features/armarium/projects/pvzwiki/data/*.json` 等历史静态文件**仅作为** `backend/src/scripts/importTerms.ts` / `importPvz.ts` 的导入种子源保留。前端业务代码**禁止**再 import 它们（`turris/terms/data/*` 仅被导入脚本经动态 import 加载；`pvzwiki/data/*.ts` 兼容层只做 store 形态适配、不含数据本体）。新模块若需类似一次性导入，把种子文件放在对应 feature 的 `data/` 下，并在导入脚本里用 `new Function('p','return import(p)')` 动态加载（避免 backend tsc 的 rootDir 报错）。
 
 ### 1.2 表与类型（应当）
 
@@ -75,13 +75,19 @@ Vue 视图 (features/*/views, features/*/components)
 
 模板见 `routes/index.ts` 中 `floors`/`librarians` 的 reorder 实现。
 
-### 2.3 跨 workspace 导入脚本（应当）
+### 2.3 跨 workspace 导入脚本（必须）
 
 一次性数据导入脚本放 `backend/src/scripts/`，通过根 `package.json` 的 `audit:art`/`import:terms`/`import:pvz` 暴露为 npm script。脚本若需读前端 `.ts` 种子源：
 
 - 顶部加 `// @ts-nocheck`（脚本不在 backend rootDir 内，且引用前端 `@/` alias 无法解析）。
 - 用 `new Function('p', 'return import(p)')` 动态加载，**避免** tsc 跟随静态 `import(...)` 解析前端文件而报 `rootDir`/`alias` 错。
-- 脚本**应当**幂等：先 `DELETE` 目标表再导入，重复运行不改变内容（仅自增 id 前移）。
+- **导入目标含运营数据时，禁止"先 DELETE 再重灌"**（2026-09 事故条款：旧版 `importTerms.ts` 重灌曾把词典页的运营修改全部回溯）。合并式导入**必须**遵守：
+  1. 导入前自动备份目标表到 `backend/data/<表>-backup-<时间戳>.json`；
+  2. 只增不改：种子有库无 → INSERT；库有 → **不碰**（最多补标记列）；库有种子无 → 原样保留（用户删过/挪过组是运营决定，禁止复制旧位置回来）；
+  3. 同分区内**同名即已存在**（查重按词条名，不按"分组+名字"——渲染器按名建索引，重名会互相覆盖）；
+  4. 导入后自检：备份中每条已存在记录的最终值必须与导入后一致，否则立即告警。
+- 全量重灌（清空重建）必须显式 `--reset` 旗标 + 强制先自动备份；没有旗标 = 合并模式。
+- 纯初始化表（首次建库的种子数据）可保留 DELETE+重灌语义（如 `seed.ts --reset`），但它**必须**被明确标注为"清库重建"命令。
 
 ### 2.4 Seed 数据（必须）
 
@@ -155,7 +161,16 @@ DELETE 钩子会在删父行前 `UPDATE <子表> SET <fk> = NULL WHERE <fk> = ?`
 
 `frontend/src/features/turris/editor/Modal.vue` 是唯一的弹窗容器：`align-items: center` 居中、遮罩 `overflow-y: auto`、内容区内部滚动。**禁止**新写 `position: fixed; inset: 0` 的自制遮罩——会重蹈"视窗不居中"覆辙。需要宽弹窗传 `wide` prop。
 
-### 4.3 术语渲染器（异步索引，必须遵守）
+### 4.3 术语单一源（必须遵守）
+
+**SQLite 的 `term_sections` / `term_entries` 是术语的唯一权威源**（2026-09 术语源合并，前身项目的双轨制已废除；那次事故的直接原因正是破坏性重灌，见 §2.3 事故条款）：
+
+- **渲染器**（`terms/renderer.ts`）、**插入术语面板**（`editor/TermInserter.vue`）、**卡牌编辑器表单下拉**（`CardEditor.vue` 的类型/骰子/标签候选/前缀兜底）、**机制分类下拉**（`LibrarianSheetEditor.vue` / `EmotionEntityEditorModal.vue`）全部从 `store/terms`（Pinia）读取同一份库数据；**禁止**再从前端任何静态 TS/JSON 文件 import 词条数据。
+- `term_entries.hasParam` 列标记"带参数位"词条；插入面板据此插入 `“词条” X层`（普通词条插入 `“词条”`，自带引号，渲染器立即可识别）。
+- 修改术语内容/格式：词典页直接改库（PUT `term_entries`），**以库为准**；批量新增走种子 + `npm run import:terms`（合并模式，不会回溯运营修改）。
+- 原 `shared/src/terms/` 静态数据已移入 `_trash/shared-terms-2026-09/`，仅作历史查证。
+
+### 4.4 术语渲染器（异步索引，必须遵守）
 
 `frontend/src/features/turris/terms/renderer.ts` 的 `renderTermText` 依赖后端术语索引（经 `store/terms` 加载 `term_sections`/`term_entries`）。调用方（如 `features/turris/terms/RenderedText.vue`）**必须**：
 
@@ -222,7 +237,6 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 
 ## 7. 已知的待办（不在本次规范范围）
 
-- `shared/src/terms/`（cardTypes/baseTags/mechanism 等 `TermItem` 结构，供 `TermInserter` 插入术语法）与 `term_entries` 表（`DictEntry` 结构，供词典页展示 + 渲染器格式化）是两套重叠数据，待后续合并为单一术语源。
 - 藏书阁其余页（异常实体/空间/书库/书库体系）与寻书社全部页仍是占位，数据表已建好（generic CRUD 已就绪），按需填充。
 - `_trash/` 回收站需要人工定期清理。
 
@@ -245,7 +259,9 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 | 资源命名一半按实体一半按池 | §5.2 二选一，同类内统一 |
 | 编辑器手写 `v-if` 罗列卡组区（BASE 出现 EGO 区的旧 bug 之源） | 按 `system.deckZones` 配置循环渲染 |
 | 卡牌前缀下拉展示全量前缀（所有系统同列） | 按 `system.cardPrefixes` 白名单过滤 |
-| 改了术语种子文件忘跑导入，库里还是旧词 | `npm run import:terms` 幂等重灌 |
+| 改了术语种子文件没跑导入，库里还是旧词 | `npm run import:terms`（合并模式，只增不改） |
+| 导入脚本 DELETE 重灌运营数据（2026-09 词典回溯事故） | §2.3 合并式导入：先备份、只增不改、同名查重、导入后自检 |
+| 词条跨组被复制出重名（渲染器按名索引互相覆盖） | 同分区内同名即已存在，查重不按"分组+名字" |
 | 删除/替换 `art/turris/systems/` 下的静态表格图 | 先对照 `shared/src/battleMechanics.ts` 的 `MECHANICS_IMAGES` |
 
 每一条都曾真实出现过。别让它们复活。

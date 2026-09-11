@@ -21,6 +21,7 @@ interface TermEntryRow {
   tagFormats: string
   format: string
   description: string
+  hasParam: number
   sortOrder: number
 }
 
@@ -33,6 +34,8 @@ export interface DictEntry {
   tagFormats: TermFormat[]
   format: TermFormat
   desc: string
+  /** 是否带参数位（插入面板插入「“词条” X层」）。 */
+  hasParam: boolean
 }
 export interface DictGroup {
   id: string
@@ -108,6 +111,7 @@ export const useTermsStore = defineStore('terms', () => {
           tagFormats: parseArr<TermFormat>(e.tagFormats),
           format: parseObj<TermFormat>(e.format),
           desc: e.description,
+          hasParam: e.hasParam === 1,
         })
       }
       sections.value = secs

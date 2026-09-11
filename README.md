@@ -245,11 +245,18 @@ frontend\src\features\turris\
 2. 文件名**必须**和 `shared\src\battleMechanics.ts` 里 `MECHANICS_IMAGES` 声明的一致（该目录里有 README.txt 列了全部清单，如 `lob-emotion-rewards.png`、`rhd-command-levels.png`）；
 3. 放好即生效，无需任何代码或数据库改动。
 
-### 6.4 改了术语文案之后
+### 6.4 术语文案改在哪里（单一术语源）
 
-术语有两套来源（详见 `CONVENTIONS.md` §7 待办）：
-- `frontend\src\features\turris\terms\data\*.ts` → 需要**跑 `npm run import:terms`** 才会进数据库；
-- `shared\src\terms\*.ts`（卡牌前缀/基础标签等）→ 不进数据库，直接喂给"插入术语"面板，改完即生效。
+术语的**唯一权威源是数据库**（`term_sections` / `term_entries` 表）。前端所有消费者——渲染器、插入术语面板、卡牌编辑器的表单下拉——都读同一份库数据（经 Pinia store 缓存）。前身项目"静态 TS 文件直接 import"的旧双轨制已于 2026-09 废除（旧数据归档在 `reliqLibrary\_trash\shared-terms-2026-09\`）。
+
+| 你想干什么 | 改哪里 | 还要做什么 |
+|---|---|---|
+| 让渲染器认识“XX”并画出格式 | frontend `terms/data/*.ts` 加词条（种子） | 跑 `npm run import:terms` |
+| 改词条颜色/字体 | **词典页直接改库**（PUT `term_entries`） | 以库为准 |
+| 新增词条进插入面板 | 种子加词条 → import:terms（面板即库，无单独维护） | 无 |
+| 带参数位的词条（插“词条” X层） | DB `hasParam` 列 / 种子名字带 ` X层` 后缀 | import:terms |
+
+> **重要**：`import:terms` 是**合并模式**——先自动备份、只增不改，**绝不会**回溯你在词典页做的修改（2026-09 事故后的硬性规范，详见 `CONVENTIONS.md` §2.3）。
 
 ---
 

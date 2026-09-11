@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import type { LibrarianSheet, Passive, Mechanism, ResistValue, BattleCard, TermFormat, DeckZoneId } from '@rtl/shared'
 import {
   BATTLE_SYSTEMS,
-  statusTags,
   speedPassiveTemplates,
   defaultSpeedPassive,
   RHD_CLASSES,
@@ -17,6 +16,8 @@ import TermInserter from './TermInserter.vue'
 import FormatEditor from './FormatEditor.vue'
 import RenderedText from '@/features/turris/terms/RenderedText.vue'
 import type { PrivateTerm } from '@/features/turris/terms/renderer'
+import { ensureTermIndex } from '@/features/turris/terms/renderer'
+import { useTermsStore } from '@/features/turris/store/terms'
 import { formatToCss } from '@/features/turris/terms/format'
 
 const props = defineProps<{ sheet: LibrarianSheet; readonly?: boolean }>()
@@ -28,7 +29,17 @@ const RESIST_VALUES: Array<{ v: ResistValue; label: string }> = [
 ]
 
 const system = computed(() => BATTLE_SYSTEMS[props.sheet.battleSystem])
-const mechTypes = statusTags.map((t) => t.name)
+// 机制分类下拉 = 术语词典的「状态标签」分区（SQLite 经 store 缓存，单一术语源）。
+const termsStore = useTermsStore()
+onMounted(() => {
+  void ensureTermIndex()
+})
+const mechTypes = computed(
+  () =>
+    termsStore.sections
+      .find((s) => s.id === '状态标签' && s.visible)
+      ?.groups.flatMap((g) => g.entries.map((e) => e.name)) ?? [],
+)
 
 /** 卡组区配置：按系统渲染（combat+special 通用，ego/modules/energy 系统专属）。 */
 const zones = computed(() => system.value?.deckZones ?? [])

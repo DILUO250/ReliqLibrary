@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, reactive } from 'vue'
+import { computed, nextTick, onMounted, reactive } from 'vue'
 import type { EmotionEntity, EmotionSheet, EgoCard, Mechanism, TermFormat } from '@rtl/shared'
 import {
   EMOTION_PAGE_MAX,
@@ -8,7 +8,6 @@ import {
   emptyEmotionSheet,
   normalizeCard,
   parseEmotionSheet,
-  statusTags,
   BATTLE_SYSTEMS,
 } from '@rtl/shared'
 import Modal from './Modal.vue'
@@ -17,6 +16,8 @@ import FormatEditor from './FormatEditor.vue'
 import TermInserter from './TermInserter.vue'
 import { formatToCss } from '@/features/turris/terms/format'
 import type { PrivateTerm } from '@/features/turris/terms/renderer'
+import { ensureTermIndex } from '@/features/turris/terms/renderer'
+import { useTermsStore } from '@/features/turris/store/terms'
 
 const props = defineProps<{
   entity: EmotionEntity | null
@@ -67,7 +68,14 @@ function movePage(i: number, dir: -1 | 1): void {
   form.sheet.pages.splice(j, 0, p!)
 }
 /* ---------- 特殊机制（与司书 Mechanism 同构；机制名纳入实体私人词典） ---------- */
-const mechTypes = statusTags.map((t) => t.name)
+// 机制分类下拉 = 术语词典的「状态标签」分区（SQLite 经 store 缓存，单一术语源）。
+const termsStore = useTermsStore()
+const mechTypes = computed(
+  () =>
+    termsStore.sections
+      .find((s) => s.id === '状态标签' && s.visible)
+      ?.groups.flatMap((g) => g.entries.map((e) => e.name)) ?? [],
+)
 
 /** 实体私人词典：全部书页机制名+格式，EGO 卡牌预览渲染时优先于通用词典。 */
 function editorPrivateTerms(): PrivateTerm[] {
@@ -87,6 +95,7 @@ function autoGrow(target: Event | HTMLTextAreaElement): void {
   el.style.height = `${el.scrollHeight}px`
 }
 onMounted(() => {
+  void ensureTermIndex()
   void nextTick(() => {
     document.querySelectorAll<HTMLTextAreaElement>('.modal .auto-grow').forEach((el) => autoGrow(el))
   })
