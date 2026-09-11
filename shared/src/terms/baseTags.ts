@@ -21,6 +21,12 @@ export const baseTags = [
         format: { textDecoration: 'underline', textDecorationStyle: 'dotted' }
     },
     {
+        name: '消耗:X',
+        desc: 'PKM 系统专属：该卡牌在使用 X 次后被消耗掉；卡牌使用次数归零后将其移入放逐区',
+        hasParam: true,
+        format: { textDecoration: 'underline', textDecorationStyle: 'dotted' }
+    },
+    {
         name: '虚无',
         desc: '该回合结束时若虚无卡牌处于手牌堆，则将其移入放逐区',
         format: { textDecoration: 'underline', textDecorationStyle: 'dotted' }

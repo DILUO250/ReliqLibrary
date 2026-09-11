@@ -9,6 +9,7 @@ import {
   normalizeCard,
   parseEmotionSheet,
   statusTags,
+  BATTLE_SYSTEMS,
 } from '@rtl/shared'
 import Modal from './Modal.vue'
 import CardEditor from './CardEditor.vue'
@@ -246,7 +247,7 @@ function submit(): void {
         <div class="ego-block__head">
           <span class="ego-block__no">EGO {{ i + 1 }}</span>
         </div>
-        <CardEditor :card="c" :render-terms="true" :private-terms="editorPrivateTerms()" @duplicate="duplicateEgo(i)" @remove="removeEgo(i)" />
+        <CardEditor :card="c" :render-terms="true" :private-terms="editorPrivateTerms()" :prefixes="BATTLE_SYSTEMS.lob.cardPrefixes" @duplicate="duplicateEgo(i)" @remove="removeEgo(i)" />
         <div class="passive-block">
           <div class="passive-grid">
             <label>EGO被动 · 名称</label>

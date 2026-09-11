@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import type { Floor, Librarian, LibrarianSheet, BattleSystemId } from '@rtl/shared'
+import type { Floor, Librarian, LibrarianSheet, BattleSystemId, BattleCard } from '@rtl/shared'
 import { BATTLE_SYSTEMS, parseSheet, parseEmotionSheet, toRoman } from '@rtl/shared'
 import type { EmotionEntity, EmotionSheet, Mechanism } from '@rtl/shared'
 import { api } from '@/app/services/api'
@@ -200,6 +200,10 @@ function coreName(row: Librarian): string {
 function deckCount(row: Librarian): number {
   const s = sheetOf(row)
   if (!s) return 0
+  const zones = BATTLE_SYSTEMS[s.battleSystem]?.deckZones
+  if (zones?.length) {
+    return zones.reduce((n, z) => n + ((s.cards[z.key] as BattleCard[] | undefined)?.length ?? 0), 0)
+  }
   return s.cards.combat.length + s.cards.special.length + (s.cards.ego?.length ?? 0)
 }
 

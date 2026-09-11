@@ -9,16 +9,32 @@ import {
   baseTags,
   generalTags,
   normalizeCard,
+  PKM_TYPES,
 } from '@rtl/shared'
 import TermInserter from './TermInserter.vue'
 import StsCard from './StsCard.vue'
 import type { PrivateTerm } from '@/features/turris/terms/renderer'
 
-const props = defineProps<{ card: BattleCard; renderTerms?: boolean; privateTerms?: PrivateTerm[] }>()
+const props = withDefaults(
+  defineProps<{
+    card: BattleCard
+    renderTerms?: boolean
+    privateTerms?: PrivateTerm[]
+    /** 卡牌前缀白名单（按战斗系统过滤）；缺省 = 全部前缀。 */
+    prefixes?: string[]
+    /** 是否显示卡牌属性编辑（BASE/PKM 模板开放）。 */
+    showAttr?: boolean
+  }>(),
+  { prefixes: undefined, showAttr: false },
+)
 const emit = defineEmits<{ (e: 'duplicate'): void; (e: 'remove'): void }>()
 
 const typeNames = cardTypes.map((t) => t.name)
-const prefixNames = cardPrefixes.map((p) => p.name)
+const prefixNames = computed(() => {
+  const allow = props.prefixes
+  if (!allow || !allow.length) return cardPrefixes.map((p) => p.name)
+  return cardPrefixes.filter((p) => allow.includes(p.name)).map((p) => p.name)
+})
 const baseDiceNames = baseDice.map((d) => d.name)
 const specialDiceNames = specialDice.map((d) => d.name)
 const tagNames = [...baseTags, ...generalTags].map((t) => t.name)
@@ -102,6 +118,10 @@ normalizeCard(props.card)
         <select v-model="card.prefix" class="mw-sm">
           <option value="">前缀</option>
           <option v-for="p in prefixNames" :key="p" :value="p">{{ p }}</option>
+        </select>
+        <select v-if="showAttr" v-model="card.attr" class="mw-sm">
+          <option value="">属性</option>
+          <option v-for="t in PKM_TYPES" :key="t" :value="t">{{ t }}</option>
         </select>
         <input v-model="card.name" placeholder="卡牌名称" />
         <input v-model.number="card.cost" type="number" class="mw-sm" placeholder="费用" />

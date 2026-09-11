@@ -62,6 +62,20 @@ const PREFIX_THEME: Record<
     tint: 'rgba(251,191,36,0.16)',
     light: true,
   },
+  'ELIT1.': {
+    from: '#0F2733',
+    to: '#2D5F8E',
+    border: '#3a7d99',
+    glow: '#6FC3E0',
+    tint: 'rgba(111,195,224,0.14)',
+  },
+  'ELIT2.': {
+    from: '#332106',
+    to: '#A06A12',
+    border: '#8a6d1e',
+    glow: '#E0A83C',
+    tint: 'rgba(224,168,60,0.16)',
+  },
 }
 const prefix = computed(() => props.card.prefix?.trim() ?? '')
 const theme = computed(() => PREFIX_THEME[prefix.value] ?? null)
@@ -101,6 +115,7 @@ const hasEffects = computed(
 
       <div class="sts-card__art">
         <span class="sts-card__art-type">{{ card.type || '—' }}</span>
+        <span v-if="card.attr" class="sts-card__attr">{{ card.attr }}</span>
         <span v-if="card.tags && card.tags.length" class="sts-card__art-tags">
           <i v-for="t in card.tags" :key="t" class="tag-chip">{{ t }}</i>
         </span>
@@ -243,6 +258,15 @@ const hasEffects = computed(
   font-size: 20px;
   color: var(--glow);
   font-weight: 600;
+}
+.sts-card__attr {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--glow);
+  border: 1px solid var(--glow);
+  border-radius: 999px;
+  padding: 1px 8px;
+  letter-spacing: 0.08em;
 }
 .sts-card__art-tags {
   display: flex;

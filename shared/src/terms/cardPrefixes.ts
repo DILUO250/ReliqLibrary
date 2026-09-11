@@ -33,5 +33,15 @@ export const cardPrefixes = [
         name: 'EX.',
         desc: '在几大战斗系统之外的小体系内才能用的卡牌',
         format: { fontWeight: 'bold', fontFamily: 'Castellar' }
+    },
+    {
+        name: 'ELIT1.',
+        desc: '部署点数战斗系统之中，精英化一阶段时解禁的卡牌',
+        format: { fontWeight: 'bold', fontFamily: 'Castellar' }
+    },
+    {
+        name: 'ELIT2.',
+        desc: '部署点数战斗系统之中，精英化二阶段时解禁的卡牌',
+        format: { fontWeight: 'bold', fontFamily: 'Castellar' }
     }
 ]

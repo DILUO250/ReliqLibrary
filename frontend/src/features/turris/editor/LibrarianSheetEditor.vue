@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { LibrarianSheet, Passive, Mechanism, ResistValue, BattleCard, TermFormat } from '@rtl/shared'
-import { BATTLE_SYSTEMS, statusTags, speedPassiveTemplates, defaultSpeedPassive } from '@rtl/shared'
+import type { LibrarianSheet, Passive, Mechanism, ResistValue, BattleCard, TermFormat, DeckZoneId } from '@rtl/shared'
+import {
+  BATTLE_SYSTEMS,
+  statusTags,
+  speedPassiveTemplates,
+  defaultSpeedPassive,
+  RHD_CLASSES,
+  PKM_TYPES,
+  professionLabel,
+  pkmAttributeDisplay,
+} from '@rtl/shared'
 import StsCard from './StsCard.vue'
 import CardEditor from './CardEditor.vue'
 import TermInserter from './TermInserter.vue'
@@ -21,22 +30,52 @@ const RESIST_VALUES: Array<{ v: ResistValue; label: string }> = [
 const system = computed(() => BATTLE_SYSTEMS[props.sheet.battleSystem])
 const mechTypes = statusTags.map((t) => t.name)
 
+/** 卡组区配置：按系统渲染（combat+special 通用，ego/modules/energy 系统专属）。 */
+const zones = computed(() => system.value?.deckZones ?? [])
+/** 卡牌属性编辑（仅 BASE/PKM 模板开放）。 */
+const showCardAttr = computed(() => system.value?.id === 'base' || system.value?.id === 'pkm')
+/** 卡牌前缀白名单（传给 CardEditor 过滤下拉）。 */
+const cardPrefixOptions = computed(() => system.value?.cardPrefixes ?? [])
+/** 被动名称可用前缀（如 RHD 的 ELIT1. ELIT2.）。 */
+const passivePrefixes = computed(() => system.value?.passivePrefixes ?? [])
+
 interface SpeedOption extends Passive {
   custom?: boolean
+  label?: string
 }
-/** 系统固定被动「速战速决」的可选变体；当前值不在模板内时额外追加一个自定义占位。 */
+const SPEED_CUSTOM = '__custom__'
+/** 系统固定被动「速战速决」的可选变体；末尾追加「自定义」供手动输入。 */
 const speedOptions = computed<SpeedOption[]>(() => {
   const tpl = speedPassiveTemplates(props.sheet.battleSystem).map((t) => ({ ...t, custom: false }))
+  const opts: SpeedOption[] = [...tpl, { name: SPEED_CUSTOM, effect: '', label: '自定义…（手动输入）', custom: true }]
   const cur = props.sheet.passives?.[0]?.name ?? ''
-  if (cur && !tpl.some((o) => o.name === cur)) {
-    return [{ name: cur, effect: props.sheet.passives[0]?.effect ?? '', custom: true }, ...tpl]
+  if (cur && cur !== SPEED_CUSTOM && !tpl.some((o) => o.name === cur)) {
+    opts.unshift({ name: cur, effect: props.sheet.passives[0]?.effect ?? '', custom: true, label: `${cur}（自定义）` })
   }
-  return tpl
+  return opts
 })
-function onSpeedSelect(p: Passive): void {
-  const opt = speedPassiveTemplates(props.sheet.battleSystem).find((o) => o.name === p.name)
-  if (opt) p.effect = opt.effect
-}
+const speedChoice = computed<string>({
+  get() {
+    const cur = props.sheet.passives?.[0]?.name ?? ''
+    return speedPassiveTemplates(props.sheet.battleSystem).some((o) => o.name === cur) ? cur : SPEED_CUSTOM
+  },
+  set(v: string) {
+    const p = props.sheet.passives?.[0]
+    if (!p) return
+    if (v === SPEED_CUSTOM) {
+      if (speedPassiveTemplates(props.sheet.battleSystem).some((o) => o.name === p.name)) {
+        p.name = ''
+        p.effect = ''
+      }
+    } else {
+      const opt = speedPassiveTemplates(props.sheet.battleSystem).find((o) => o.name === v)
+      if (opt) {
+        p.name = opt.name
+        p.effect = opt.effect
+      }
+    }
+  },
+})
 
 function addPassive(): void {
   props.sheet.passives.push({ name: '', effect: '' })
@@ -61,22 +100,38 @@ function insertAtMechanism(i: number, text: string): void {
   if (m) m.desc += text
 }
 
-function addCard(list: 'combat' | 'special'): void {
-  props.sheet.cards[list].push({
+function cardsFor(key: DeckZoneId): BattleCard[] {
+  const deck = props.sheet.cards
+  const cur = deck[key]
+  if (!Array.isArray(cur)) deck[key] = []
+  return deck[key] as BattleCard[]
+}
+
+function addCard(key: DeckZoneId): void {
+  const list = cardsFor(key)
+  const card: BattleCard = {
     name: '',
     cost: 0,
     type: '',
     tags: [],
     effects: [''],
     dice: [],
-  } as BattleCard)
+  }
+  // PKM 模板：每张卡自动预置「消耗:1」标签，使用者直接改数字即可。
+  if (system.value?.id === 'pkm') card.tags = ['消耗:1']
+  list.push(card)
 }
-function removeCard(list: 'combat' | 'special', i: number): void {
-  props.sheet.cards[list].splice(i, 1)
+function removeCard(key: DeckZoneId, i: number): void {
+  cardsFor(key).splice(i, 1)
 }
-function duplicateCard(list: 'combat' | 'special', i: number): void {
-  const clone = JSON.parse(JSON.stringify(props.sheet.cards[list][i])) as BattleCard
-  props.sheet.cards[list].splice(i + 1, 0, clone)
+function duplicateCard(key: DeckZoneId, i: number): void {
+  const list = cardsFor(key)
+  const clone = JSON.parse(JSON.stringify(list[i])) as BattleCard
+  list.splice(i + 1, 0, clone)
+}
+
+function applyPassivePrefix(p: Passive, prefix: string): void {
+  if (!p.name.trim().startsWith(prefix)) p.name = `${prefix} ${p.name.trim()}`.trim()
 }
 
 function autoGrow(e: Event): void {
@@ -149,6 +204,50 @@ function setEgoMode(mode: 'distortion' | 'ego'): void {
   egoMode.value = mode
 }
 
+/** 切换系统时归一化 systemData 默认值：RHD 元素损伤默认 100；PKM 属性槽双「无属性」。 */
+watch(
+  () => props.sheet.battleSystem,
+  (sys) => {
+    const d = sysData()
+    if (sys === 'rhd' && d.elementDamage == null) d.elementDamage = 100
+    if (sys === 'rhd' && d.profession == null) d.profession = ''
+    if (sys === 'pkm') {
+      const a = d.attributes
+      if (!Array.isArray(a)) d.attributes = ['无属性', '无属性']
+      if (a && a[0] == null) a[0] = '无属性'
+      if (a && a[1] == null) a[1] = '无属性'
+      if (d.teraType == null) d.teraType = '无属性'
+    }
+  },
+  { immediate: true },
+)
+
+/** RHD 职业预览行（如「🗡近卫：近战输出单位，能够叠加物理异常与法术异常」）。 */
+const professionLine = computed(() => {
+  const name = props.sheet.systemData?.profession ?? ''
+  return name ? professionLabel(name) : ''
+})
+
+/** PKM 属性槽（两个下拉，'无属性' = 未选；显示时过滤出实际属性）。 */
+const pkmSlot1 = computed<string>({
+  get: () => sysData().attributes?.[0] ?? '无属性',
+  set: (v) => {
+    sysData().attributes = [v, sysData().attributes?.[1] ?? '无属性']
+  },
+})
+const pkmSlot2 = computed<string>({
+  get: () => sysData().attributes?.[1] ?? '无属性',
+  set: (v) => {
+    sysData().attributes = [sysData().attributes?.[0] ?? '无属性', v]
+  },
+})
+/** PKM 预览行：训练师（全无属性）/ 单属性 / 双属性。 */
+const pkmAttrPreview = computed(() => {
+  const real = pkmAttributeDisplay(props.sheet.systemData?.attributes)
+  if (!real.length) return '训练师（无属性）'
+  return real.join(' / ')
+})
+
 watch(
   () => hasMind(),
   (on) => {
@@ -197,26 +296,6 @@ const privateTerms = computed<PrivateTerm[]>(() => {
   if (mind?.name && mind.format) list.push({ name: mind.name, format: mind.format })
   return list
 })
-
-function addEgoCard(): void {
-  const list = props.sheet.cards.ego ?? (props.sheet.cards.ego = [])
-  list.push({
-    name: '',
-    cost: 0,
-    type: '',
-    tags: [],
-    effects: [''],
-    dice: [],
-  } as BattleCard)
-}
-function removeEgoCard(i: number): void {
-  props.sheet.cards.ego?.splice(i, 1)
-}
-function duplicateEgoCard(i: number): void {
-  const list = props.sheet.cards.ego ?? []
-  const clone = JSON.parse(JSON.stringify(list[i])) as BattleCard
-  list.splice(i + 1, 0, clone)
-}
 </script>
 
 <template>
@@ -282,22 +361,48 @@ function duplicateEgoCard(i: number): void {
     <!-- 被动能力 -->
     <section class="sec">
       <h3>被动能力</h3>
-      <p class="hint">第 1 条为系统固定被动「速战速决」，从模板下拉中选取（效果由模板决定，不可编辑）；其余可自由增删。</p>
+      <p class="hint">第 1 条为系统固定被动「速战速决」，从模板下拉中选取（效果由模板决定，不可编辑）；也可选「自定义」手动输入名称与效果。其余被动可自由增删。</p>
       <div v-for="(p, i) in sheet.passives" :key="i" class="passive-item">
         <span class="idx">{{ i + 1 }}.</span>
         <div class="passive-fields">
           <template v-if="i === 0">
-            <select v-model="p.name" class="p-name" @change="onSpeedSelect(p)">
-              <option v-for="o in speedOptions" :key="o.name" :value="o.name">
-                {{ o.name }}{{ o.custom ? '（自定义）' : '' }}
-              </option>
+            <select v-model="speedChoice" class="p-name">
+              <option v-for="o in speedOptions" :key="o.name" :value="o.name">{{ o.label ?? o.name }}</option>
             </select>
-            <div class="p-effect p-effect--readonly">
+            <template v-if="speedChoice === SPEED_CUSTOM">
+              <input v-model="p.name" placeholder="自定义被动名称" class="p-name" />
+              <div class="p-effect">
+                <textarea
+                  v-model="p.effect"
+                  rows="2"
+                  :style="{ minHeight: '44px' }"
+                  class="auto-grow"
+                  placeholder="自定义效果（自动换行，可用「插入术语」，如 “情感等级”…）"
+                  @input="autoGrow"
+                ></textarea>
+                <TermInserter @insert="(t) => insertAtPassive(0, t)" />
+              </div>
+            </template>
+            <div v-else class="p-effect p-effect--readonly">
               <RenderedText :text="p.effect" />
             </div>
           </template>
           <template v-else>
-            <input v-model="p.name" placeholder="被动名称" class="p-name" />
+            <div class="p-name-row">
+              <input v-model="p.name" placeholder="被动名称" class="p-name" />
+              <div v-if="passivePrefixes.length" class="p-prefixes">
+                <button
+                  v-for="pp in passivePrefixes"
+                  :key="pp"
+                  type="button"
+                  class="mini"
+                  :title="`被动名称添加 ${pp} 前缀（精英化解禁标记）`"
+                  @click="applyPassivePrefix(p, pp)"
+                >
+                  {{ pp }}
+                </button>
+              </div>
+            </div>
             <div class="p-effect">
               <textarea
                 v-model="p.effect"
@@ -364,6 +469,7 @@ function duplicateEgoCard(i: number): void {
       <h3>系统信息 · {{ system.zh }}（{{ system.code }}）</h3>
       <p class="hint">{{ system.desc }}</p>
 
+      <!-- LOB系统 - 理智值 | EGO展现&扭曲展现 | 心&望 -->
       <div v-if="system.id === 'lob'" class="lob">
         <div class="sys-toggle">
           <label class="toggle-label">
@@ -493,43 +599,98 @@ function duplicateEgoCard(i: number): void {
         </div>
       </div>
 
-      <!-- 预留其他系统的信息面板位置 -->
-      <div v-else class="sys-reserve">
+      <!-- RHD系统 - 元素损伤 | 职业 -->
+      <div v-if="system.id === 'rhd'" class="rhd">
+          <div class="sys-toggle">
+            <div class="grid lob-grid">
+              <label>元素损伤上限</label>
+              <input v-model.number="sheet.systemData!.elementDamage" type="number" min="0" placeholder="100" />
+              <label>职业</label>
+              <select v-model="sheet.systemData!.profession">
+                <option value="">未选择</option>
+                <option v-for="c in RHD_CLASSES" :key="c.name" :value="c.name">{{ c.emoji }} {{ c.name }}</option>
+              </select>
+            </div>
+            <p class="hint">元素损伤条归零后触发元素爆发；我方默认 100 点（敌方默认 200 点）。每场战斗必须带 1 名信标，其余单位职业各不相同。</p>
+            <div v-if="professionLine" class="rhd-class-preview">{{ professionLine }}</div>
+          </div>
+        </div>
+
+      <!-- PKM系统 - 单位属性 | MEGA形态 | 专属Z招式 | 超极巨化形态 | 太晶属性 -->
+      <div v-if="system.id === 'pkm'" class="pkm">
+        <div class="sys-toggle">
+          <div class="grid lob-grid">
+            <label>单位属性 1</label>
+            <select v-model="pkmSlot1">
+              <option v-for="t in PKM_TYPES" :key="t" :value="t">{{ t }}</option>
+            </select>
+            <label>单位属性 2</label>
+            <select v-model="pkmSlot2">
+              <option v-for="t in PKM_TYPES" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </div>
+          <p class="hint">每个单位最多 2 个属性；两个槽都是「无属性」代表这是一名训练师，预览中将隐藏属性栏。PKM 卡牌已自动携带「消耗:1」标签，编辑时直接修改数字即可。</p>
+          <div class="rhd-class-preview">属性预览：{{ pkmAttrPreview }}</div>
+        </div>
+        <div class="sys-toggle">
+          <div class="grid lob-grid">
+            <label>MEGA 形态</label>
+            <input v-model="sheet.systemData!.megaForm" placeholder="如：超级喷火龙X（留空 = 无 MEGA 形态）" />
+            <label>专属 Z 招式</label>
+            <input v-model="sheet.systemData!.zMove" placeholder="如：超绝灭焰光浪（留空 = 无 Z 招式）" />
+            <label>超极巨形态</label>
+            <input v-model="sheet.systemData!.gmaxForm" placeholder="如：超极巨化喷火龙（留空 = 仅普通极巨化）" />
+            <label>太晶属性</label>
+            <select v-model="sheet.systemData!.teraType">
+              <option v-for="t in PKM_TYPES" :key="t" :value="t">{{ t }}</option>
+            </select>
+          </div>
+          <p class="hint">对战形态：MEGA 进化消耗1点【超级能量】，永久增强；Z 招式消耗1点【Z能量】，令装备的战斗书页变为强化的【Z招式书页】；极巨化消耗1点【极巨能量】，超极巨形态是特定单位的极巨化强化版；太晶化消耗1张【太晶能量】，属性变更为太晶属性。</p>
+        </div>
+      </div>
+
+        <!-- 预留其他系统的信息面板位置 -->
+        <div v-else-if="system.id !== 'lob' && system.id !== 'rhd' && system.id !== 'pkm'" class="sys-reserve">
         <span class="tag">预留</span>
         <p class="hint">该系统的专属信息面板将在后续版本补充（已为此处预留位置）。</p>
       </div>
     </section>
 
-    <!-- 战斗卡组 -->
-    <section class="sec">
-      <h3>战斗卡牌（{{ sheet.cards.combat.length }}）</h3>
-      <CardEditor v-for="(c, i) in sheet.cards.combat" :key="'cp'+i" :card="c" render-terms :private-terms="privateTerms" @duplicate="duplicateCard('combat', i)" @remove="removeCard('combat', i)" />
-      <button type="button" class="mini" @click="addCard('combat')">+ 添加战斗卡</button>
-    </section>
-
-    <section class="sec">
-      <h3>特殊卡牌（{{ sheet.cards.special.length }}）</h3>
-      <CardEditor v-for="(c, i) in sheet.cards.special" :key="'sp'+i" :card="c" render-terms :private-terms="privateTerms" @duplicate="duplicateCard('special', i)" @remove="removeCard('special', i)" />
-      <button type="button" class="mini" @click="addCard('special')">+ 添加特殊卡</button>
-    </section>
-
-    <section class="sec">
-      <h3>EGO 卡牌（{{ sheet.cards.ego?.length ?? 0 }}）</h3>
-      <p v-if="!sheet.cards.ego?.length" class="hint">仅 LOB 系统使用；情感等级达到Ⅲ/Ⅳ/Ⅴ 级时从中抽取。</p>
-      <CardEditor v-for="(c, i) in sheet.cards.ego ?? []" :key="'ego'+i" :card="c" render-terms :private-terms="privateTerms" @duplicate="duplicateEgoCard(i)" @remove="removeEgoCard(i)" />
-      <button type="button" class="mini" @click="addEgoCard">+ 添加 EGO 卡</button>
+    <!-- 战斗卡组（按系统卡组区配置渲染：combat/special 通用，ego=LOB、modules=RHD、energy=PKM） -->
+    <section v-for="z in zones" :key="z.key" class="sec">
+      <h3>{{ z.label }}（{{ cardsFor(z.key).length }}）</h3>
+      <p v-if="z.hint" class="hint">{{ z.hint }}</p>
+      <CardEditor
+        v-for="(c, i) in cardsFor(z.key)"
+        :key="z.key + '-c' + i"
+        :card="c"
+        render-terms
+        :private-terms="privateTerms"
+        :prefixes="cardPrefixOptions"
+        :show-attr="showCardAttr"
+        @duplicate="duplicateCard(z.key, i)"
+        @remove="removeCard(z.key, i)"
+      />
+      <button type="button" class="mini" @click="addCard(z.key)">+ 添加{{ z.label.replace('卡牌', '卡') }}</button>
     </section>
 
     <!-- 卡组总览 -->
     <section class="sec">
       <h3>卡组总览</h3>
-      <div v-if="sheet.cards.combat.length + sheet.cards.special.length + (sheet.cards.ego?.length ?? 0) === 0" class="hint">
+      <div v-if="zones.every((z) => cardsFor(z.key).length === 0)" class="hint">
         尚无卡牌，在上方添加。
       </div>
       <div class="deck-grid">
-        <StsCard v-for="(c, i) in sheet.cards.combat" :key="'dg'+i" :card="c" :height="260" render-terms :private-terms="privateTerms" />
-        <StsCard v-for="(c, i) in sheet.cards.special" :key="'dgs'+i" :card="c" :height="260" render-terms :private-terms="privateTerms" />
-        <StsCard v-for="(c, i) in sheet.cards.ego ?? []" :key="'dge'+i" :card="c" :height="260" render-terms :private-terms="privateTerms" />
+        <template v-for="z in zones" :key="z.key + '-zone'">
+          <StsCard
+            v-for="(c, i) in cardsFor(z.key)"
+            :key="z.key + '-d' + i"
+            :card="c"
+            :height="260"
+            render-terms
+            :private-terms="privateTerms"
+          />
+        </template>
       </div>
     </section>
   </div>
@@ -715,6 +876,31 @@ textarea:focus {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+.rhd,
+.pkm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rhd-class-preview {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-ink);
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+}
+.p-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.p-prefixes {
+  display: flex;
+  gap: 4px;
 }
 .sys-toggle {
   border: 1px solid var(--color-line);

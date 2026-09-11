@@ -3,6 +3,8 @@
  * 前后端共用的一份领域模型定义。
  */
 
+import { MECHANICS_TEXT, MECHANICS_IMAGES } from './battleMechanics.js'
+
 export type DepartmentId = 'turris' | 'armarium' | 'collegium' | 'director'
 
 export type PermissionLevel = 'A' | 'B' | 'C' | 'D'
@@ -104,6 +106,8 @@ export interface BattleCard {
   dice: Dice[]
   /** 望机制（SHM 卡牌专属）：最多触发次数 | 每次触发消耗 | 每次触发后效果。 */
   hope?: BattleHope
+  /** 卡牌属性（PKM/BASE 模板开放显示）：宝可梦属性名，如「火」。 */
+  attr?: string
 }
 
 export interface TermFormat {
@@ -131,6 +135,10 @@ export interface CardDeck {
   combat: BattleCard[]
   special: BattleCard[]
   ego?: BattleCard[]
+  /** RHD 模组区卡牌（定位同 LOB 的 EGO 栏）。 */
+  modules?: BattleCard[]
+  /** PKM 宝可梦能量区卡牌。 */
+  energy?: BattleCard[]
 }
 
 export interface MindBuff {
@@ -259,12 +267,6 @@ export interface LibrarianSystemData {
   egoManifest?: string
   distortionName?: string
   mind?: MindBuff
-  attribute?: string
-  energyTypes?: string[]
-  summonCapacity?: number
-  deploy?: number
-  elite?: number
-  damageBar?: string
   sanityMin?: number
   sanityMax?: number
   /** 理智值增加条件 */
@@ -274,6 +276,28 @@ export interface LibrarianSystemData {
   panicType?: string
   panicLow?: string
   panicPanic?: string
+  /** PKM 单位属性：两个槽位的原始选择（PKM_TYPES 值；'无属性' = 该槽未选；显示时过滤）。 */
+  attributes?: string[]
+  /** PKM 对战形态：MEGA 进化形态名（如「超级喷火龙X」；留空 = 无 MEGA 形态）。 */
+  megaForm?: string
+  /** PKM 对战形态：专属 Z 招式名（留空 = 无 Z 招式）。 */
+  zMove?: string
+  /** PKM 对战形态：超极巨化形态名（留空 = 仅普通极巨化）。 */
+  gmaxForm?: string
+  /** PKM 对战形态：太晶属性（PKM_TYPES 值；'无属性' = 未太晶化）。 */
+  teraType?: string
+  /** RHD 职业（RHD_CLASSES 的 name，空串 = 未选择）。 */
+  profession?: string
+  /** RHD 元素损伤上限（默认 100）。 */
+  elementDamage?: number
+  /** PKM 奇迹能量种类（预留）。 */
+  energyTypes?: string[]
+  /** PKM 每名训练师可召唤的宝可梦数量（预留）。 */
+  summonCapacity?: number
+  /** RHD 已消耗部署点数（预留）。 */
+  deploy?: number
+  /** RHD 精英化阶段（0~2，预留）。 */
+  elite?: number
 }
 
 export interface LibrarianSheet {
@@ -312,8 +336,13 @@ export function emptySheet(battleSystem: BattleSystemId = 'base'): LibrarianShee
     faction: '',
     passives: [defaultSpeedPassive(battleSystem)],
     mechanisms: [],
-    cards: { combat: [], special: [], ego: [] },
-    systemData: {},
+    cards: { combat: [], special: [], ego: [], modules: [], energy: [] },
+    systemData:
+      battleSystem === 'rhd'
+        ? { elementDamage: 100, profession: '' }
+        : battleSystem === 'pkm'
+          ? { attributes: ['无属性', '无属性'], teraType: '无属性' }
+          : {},
   }
 }
 
@@ -388,6 +417,8 @@ export function parseSheet(raw?: string | null): LibrarianSheet | null {
     }
     s.cards = s.cards ?? { combat: [], special: [] }
     s.cards.ego = s.cards.ego ?? []
+    s.cards.modules = s.cards.modules ?? []
+    s.cards.energy = s.cards.energy ?? []
     for (const list of [s.cards.combat, s.cards.special, s.cards.ego]) {
       for (const c of list) normalizeCard(c)
     }
@@ -447,6 +478,70 @@ export interface BattleSystemMetrics {
   learning: number
 }
 
+/** 基础数值表的一行。 */
+export interface BattleStatRow {
+  label: string
+  value: string
+}
+
+/** 基础数值表：多模板系统（PKM 训练师|宝可梦、RHD 信标|其他单位）为多张表。 */
+export interface BattleStatTable {
+  /** 表头标题（双列模板如「训练师 | 宝可梦」；可省略）。 */
+  title?: string
+  rows: BattleStatRow[]
+}
+
+/** 卡组区 id：combat/special 为通用模板区，其余为系统专属区。 */
+export type DeckZoneId = 'combat' | 'special' | 'ego' | 'modules' | 'energy'
+
+/** 卡组区配置：编辑器与预览按各系统的 deckZones 渲染卡牌区。 */
+export interface DeckZoneInfo {
+  key: DeckZoneId
+  label: string
+  hint?: string
+}
+
+/** RHD 职业定义。 */
+export interface BattleProfession {
+  emoji: string
+  name: string
+  desc: string
+}
+
+/** RHD 的 10 个职业（每场战斗必须 1 名信标 + 最多 12 名不同职业单位）。 */
+export const RHD_CLASSES: BattleProfession[] = [
+  { emoji: '☀', name: '信标', desc: '保护目标；拥有独立数值模板、独立卡组容量，信标存活带来正面收益' },
+  { emoji: '🚩', name: '先锋', desc: '前期开场单位，能够恢复“部署费用”与卡牌回转' },
+  { emoji: '🗡', name: '近卫', desc: '近战输出单位，能够叠加物理异常与法术异常' },
+  { emoji: '🪄', name: '术士', desc: '法术远程输出单位，能够叠加法术异常' },
+  { emoji: '🏹', name: '狙击', desc: '物理远程输出单位，能够叠加物理异常' },
+  { emoji: '🛡', name: '重装', desc: '承伤单位，能够吸引敌方火力并承受大量压力' },
+  { emoji: '⚕️', name: '医疗', desc: '治疗单位，能够恢复我方单位体力、技力与卡牌回转' },
+  { emoji: '🔩', name: '辅助', desc: '辅助单位，能够恢复我方单位体力并带来拐力' },
+  { emoji: '🎾', name: '特种', desc: '特殊单位，技能组不定与攻击方式不定，上下限差距大' },
+  { emoji: '🍴', name: '突击', desc: '输出终端单位，能够消耗敌方的物理异常与法术异常造成大量伤害' },
+]
+
+/** RHD 职业的展示行（「🗡近卫：近战输出单位，…」）。 */
+export function professionLabel(name: string): string {
+  const c = RHD_CLASSES.find((p) => p.name === name)
+  return c ? `${c.emoji}${c.name}：${c.desc}` : name
+}
+
+/** PKM 属性选项：无属性 + 18 种宝可梦属性（与机制词条分组同名）。 */
+const PKM_TYPE_GROUPS: string[] = [
+  '一般', '格斗', '飞行', '毒', '地面', '岩石', '虫', '幽灵', '钢',
+  '火', '水', '草', '电', '超能', '冰', '龙', '恶', '妖精',
+]
+
+/** PKM 属性选择器的 19 个选项。 */
+export const PKM_TYPES: string[] = ['无属性', ...PKM_TYPE_GROUPS]
+
+/** PKM 单位属性显示规则：全无属性=训练师（隐藏属性栏）；1 有 1 无=单属性；2 有=双属性。 */
+export function pkmAttributeDisplay(attributes?: string[]): string[] {
+  return (attributes ?? []).filter((t) => t && t !== '无属性')
+}
+
 export interface BattleSystemInfo {
   id: BattleSystemId
   zh: string
@@ -464,6 +559,18 @@ export interface BattleSystemInfo {
   extraDeckZone?: string
   /** 队伍容量（单场接待的常规上阵人数）。 */
   teamCapacity?: string
+  /** 卡组区配置：编辑器/预览按此渲染（combat+special 为通用区，其余系统专属）。 */
+  deckZones: DeckZoneInfo[]
+  /** 卡牌前缀白名单（cardPrefixes 的 name）。 */
+  cardPrefixes: string[]
+  /** 被动名称可用前缀（如 RHD 的 ELIT1. ELIT2.）。 */
+  passivePrefixes?: string[]
+  /** 基础数值表（多模板系统为多张表；缺省时由扁平字段拼单表）。 */
+  statTables?: BattleStatTable[]
+  /** 机制说明（多行文本，战斗系统页展示）。 */
+  mechanicsDesc?: string
+  /** 机制说明表格图片（/art/turris/systems/ 下文件路径）。 */
+  mechanicsImages?: string[]
   /** 六维属性评分（雷达图数据）。 */
   metrics?: BattleSystemMetrics
   /** 系统优势描述。 */
@@ -725,13 +832,38 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     speedDice: 0,
     handLimit: 7,
     draw: 2,
-    deckLimit: 12,
+    deckLimit: 16,
     keepHand: false,
     extraDeckZone: '无',
     teamCapacity: '4',
+    deckZones: [
+      { key: 'combat', label: '战斗卡牌' },
+      { key: 'special', label: '特殊卡牌' },
+    ],
+    cardPrefixes: ['V.', 'GX.', 'EX.', 'DEF.'],
+    statTables: [
+      {
+        rows: [
+          { label: '起始费用上限', value: '5点' },
+          { label: '自动回费量', value: '2点/回合' },
+          { label: '起始手牌上限', value: '7张' },
+          { label: '自动抽牌数', value: '2张/回合' },
+          { label: '牌组容量', value: '16张' },
+          { label: '手牌保留规则', value: '自动弃牌' },
+          { label: '额外卡牌区', value: '无' },
+          { label: '起始速度骰子', value: '0颗' },
+          { label: '队伍容量', value: '4人' },
+        ],
+      },
+    ],
+    mechanicsDesc: MECHANICS_TEXT.base,
     metrics: { offense: 3, defense: 3, speed: 2, resource: 4, growth: 1, learning: 1 },
     pros: '泛用性强，无特殊机制，任何单位可直接入队；费用充沛、回转快，容错稳定。',
     cons: '上限低，缺乏随机应变能力，没有成长体系与特殊形态。',
+    speedPassives: [
+      { name: '速战速决BASE', effect: '速度骰子+1' },
+      { name: '速战速决BASE2', effect: '速度骰子+2' },
+    ],
   },
   lob: {
     id: 'lob',
@@ -748,6 +880,29 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     keepHand: true,
     extraDeckZone: '1（EGO 栏）',
     teamCapacity: '6',
+    deckZones: [
+      { key: 'combat', label: '战斗卡牌' },
+      { key: 'special', label: '特殊卡牌' },
+      { key: 'ego', label: 'EGO 卡牌', hint: '仅 LOB 系统使用；情感等级达到Ⅲ/Ⅳ/Ⅴ级时从中抽取' },
+    ],
+    cardPrefixes: ['V.', 'GX.', 'DEF.', 'EGO.', 'DST.', 'SHM.'],
+    statTables: [
+      {
+        rows: [
+          { label: '起始费用上限', value: '4点' },
+          { label: '自动回费量', value: '1点/回合' },
+          { label: '起始手牌上限', value: '6张' },
+          { label: '自动抽牌数', value: '1张/回合' },
+          { label: '牌组容量', value: '9张' },
+          { label: '手牌保留规则', value: '不自动弃牌' },
+          { label: '额外卡牌区', value: 'EGO栏' },
+          { label: '起始速度骰子', value: '1颗' },
+          { label: '队伍容量', value: '6人' },
+        ],
+      },
+    ],
+    mechanicsDesc: MECHANICS_TEXT.lob,
+    mechanicsImages: MECHANICS_IMAGES.lob,
     metrics: { offense: 5, defense: 2, speed: 4, resource: 2, growth: 5, learning: 3 },
     pros: '以强大的力量碾压目标，人均攻击性强；情感等级带来全系统最高的成长上限，EGO 一锤定音。',
     cons: '不擅长持久战，缺乏回转和恢复手段；成长依赖战斗行为，逆风局难以滚雪球。',
@@ -765,13 +920,61 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     code: 'PKM',
     desc: '训练师指挥召唤物（宝可梦）战斗，使用奇迹能量发动强大能力。',
     costLabel: 'PP',
-    costCap: 5,
-    regen: 1,
-    speedDice: 0,
-    handLimit: 7,
+    costCap: 3,
+    regen: 3,
+    speedDice: 1,
+    handLimit: 6,
     draw: 2,
-    deckLimit: 12,
+    deckLimit: 3,
     keepHand: false,
+    extraDeckZone: '无 | 能量区',
+    teamCapacity: '3人 | 18只',
+    deckZones: [
+      { key: 'combat', label: '战斗卡牌' },
+      { key: 'special', label: '特殊卡牌' },
+      { key: 'energy', label: '能量卡牌', hint: 'PKM 宝可梦的能量区：携带奇迹能量的能量卡牌' },
+    ],
+    cardPrefixes: ['V.', 'GX.', 'EX.', 'DEF.'],
+    statTables: [
+      {
+        title: '训练师',
+        rows: [
+          { label: '起始费用上限', value: '3点' },
+          { label: '自动回费量', value: '3点/回合' },
+          { label: '起始手牌上限', value: '6张' },
+          { label: '自动抽牌数', value: '2张/回合' },
+          { label: '牌组容量', value: '3张' },
+          { label: '手牌保留规则', value: '不自动弃牌' },
+          { label: '额外卡牌区', value: '无' },
+          { label: '起始速度骰子', value: '1颗' },
+          { label: '队伍容量', value: '3人' },
+        ],
+      },
+      {
+        title: '宝可梦',
+        rows: [
+          { label: '起始费用上限', value: '3点' },
+          { label: '自动回费量', value: '0点/回合' },
+          { label: '起始手牌上限', value: '4张' },
+          { label: '自动抽牌数', value: '0张/回合' },
+          { label: '牌组容量', value: '4张' },
+          { label: '手牌保留规则', value: '不自动弃牌' },
+          { label: '额外卡牌区', value: '能量区' },
+          { label: '起始速度骰子', value: '1颗' },
+          { label: '队伍容量', value: '18只' },
+        ],
+      },
+    ],
+    mechanicsDesc: MECHANICS_TEXT.pkm,
+    mechanicsImages: MECHANICS_IMAGES.pkm,
+    metrics: { offense: 4, defense: 4, speed: 3, resource: 3, growth: 2, learning: 3 },
+    pros: '消耗型系统。开局即全盛，随回合衰减，短线作战极强。',
+    cons: '奖励是补给不是成长，长线作战能力弱，资源耗尽后作战能力疲软。',
+    speedPassives: [
+      { name: '速战速决PKM', effect: '每回合开始时手牌与费用充满' },
+      { name: '速战速决PKM2', effect: '速度骰子+1 每回合开始时手牌与费用充满' },
+      { name: '速战速决PKM3', effect: '速度骰子+2 每回合开始时手牌与费用充满' },
+    ],
   },
   rhd: {
     id: 'rhd',
@@ -779,13 +982,62 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     code: 'RHD',
     desc: '以部署点数限制单位出场与精英化；风险与收益并存的希望/危机书页。',
     costLabel: '技力',
-    costCap: 5,
+    costCap: 3,
     regen: 1,
-    speedDice: 0,
-    handLimit: 7,
+    speedDice: 1,
+    handLimit: 6,
     draw: 2,
-    deckLimit: 12,
+    deckLimit: 6,
     keepHand: false,
+    extraDeckZone: '无 | 模组栏',
+    teamCapacity: '12人 + 1人',
+    deckZones: [
+      { key: 'combat', label: '战斗卡牌' },
+      { key: 'special', label: '特殊卡牌' },
+      { key: 'modules', label: '模组卡牌', hint: 'RHD 专属模组区，定位同 LOB 的 EGO 栏' },
+    ],
+    cardPrefixes: ['V.', 'GX.', 'DEF.', 'ELIT1.', 'ELIT2.'],
+    passivePrefixes: ['ELIT1.', 'ELIT2.'],
+    statTables: [
+      {
+        title: '信标',
+        rows: [
+          { label: '起始费用上限', value: '3点' },
+          { label: '自动回费量', value: '1点/回合' },
+          { label: '起始手牌上限', value: '6张' },
+          { label: '自动抽牌数', value: '2张/回合' },
+          { label: '牌组容量', value: '3张' },
+          { label: '手牌保留规则', value: '不自动弃牌' },
+          { label: '额外卡牌区', value: '无' },
+          { label: '起始速度骰子', value: '1颗' },
+          { label: '队伍容量', value: '12人 + 1人' },
+        ],
+      },
+      {
+        title: '其他单位',
+        rows: [
+          { label: '起始费用上限', value: '3点' },
+          { label: '自动回费量', value: '1点/回合' },
+          { label: '起始手牌上限', value: '6张' },
+          { label: '自动抽牌数', value: '2张/回合' },
+          { label: '牌组容量', value: '6张' },
+          { label: '手牌保留规则', value: '自动弃牌' },
+          { label: '额外卡牌区', value: '模组栏' },
+          { label: '起始速度骰子', value: '2颗' },
+          { label: '队伍容量', value: '12人 + 1人' },
+        ],
+      },
+    ],
+    mechanicsDesc: MECHANICS_TEXT.rhd,
+    mechanicsImages: MECHANICS_IMAGES.rhd,
+    metrics: { offense: 3, defense: 5, speed: 4, resource: 5, growth: 4, learning: 5 },
+    pros: '队伍分工明确，攻守兼备，抗压能力强，能够适应多种场合。',
+    cons: '灌伤爆发能力弱，难以短时间内造成大量伤害，且操作依赖运营，上手门槛高。',
+    speedPassives: [
+      { name: '速战速决RHD', effect: '占用1点部署点数' },
+      { name: '速战速决RHD2', effect: '占用2点部署点数' },
+      { name: '速战速决RHD3', effect: '占用3点部署点数' },
+    ],
   },
 } as const
 

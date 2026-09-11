@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import type { Librarian, Mechanism } from '@rtl/shared'
-import { parseSheet, BATTLE_SYSTEMS } from '@rtl/shared'
+import type { Librarian, Mechanism, BattleCard } from '@rtl/shared'
+import {
+  parseSheet,
+  BATTLE_SYSTEMS,
+  professionLabel,
+  pkmAttributeDisplay,
+} from '@rtl/shared'
 import Modal from './Modal.vue'
 import StsCard from './StsCard.vue'
 import RenderedText from '@/features/turris/terms/RenderedText.vue'
@@ -45,12 +50,15 @@ const passiveItems = computed(() => {
   }))
 })
 
-const combatCards = computed(() => sheet.value?.cards?.combat ?? [])
-const specialCards = computed(() => sheet.value?.cards?.special ?? [])
-const egoCards = computed(() => sheet.value?.cards?.ego ?? [])
-const totalCards = computed(
-  () => combatCards.value.length + specialCards.value.length + egoCards.value.length,
+/** 卡组区：按系统 deckZones 配置渲染（combat/special 通用，ego=LOB、modules=RHD、energy=PKM）。 */
+const zones = computed(() => system.value?.deckZones ?? [])
+const zoneCards = computed(() =>
+  zones.value.map((z) => ({
+    zone: z,
+    cards: (sheet.value?.cards?.[z.key] as BattleCard[] | undefined) ?? [],
+  })),
 )
+const totalCards = computed(() => zoneCards.value.reduce((n, z) => n + z.cards.length, 0))
 
 const sd = computed(() => sheet.value?.systemData ?? null)
 const sdHasSanity = computed(() => {
@@ -65,6 +73,16 @@ const sdHasMind = computed(() => {
   const d = sd.value
   return !!d && (d.hasMind ?? (!!d.mind?.name || !!d.mind?.effect))
 })
+
+/** RHD 元素损伤/职业预览。 */
+const rhdElement = computed(() => (system.value?.id === 'rhd' ? sd.value?.elementDamage ?? null : null))
+const rhdProfession = computed(() => {
+  const name = sd.value?.profession ?? ''
+  return name && system.value?.id === 'rhd' ? professionLabel(name) : ''
+})
+
+/** PKM 属性三档显示：全无=训练师（隐藏属性栏）；一有一无=单属性；两有=双属性。 */
+const pkmRealAttrs = computed(() => (system.value?.id === 'pkm' ? pkmAttributeDisplay(sd.value?.attributes) : []))
 
 const privateTerms = computed<PrivateTerm[]>(() => {
   const s = sheet.value
@@ -139,6 +157,36 @@ onBeforeUnmount(() => {
                 <span>突 {{ resistLabel(resist.chaos.pierce) }}</span>
                 <span>打 {{ resistLabel(resist.chaos.strike) }}</span>
               </div>
+            </div>
+          </section>
+
+          <section v-if="system?.id === 'rhd' && sd && (rhdElement != null || rhdProfession)" class="block">
+            <h4>系统机制 · 部署点数</h4>
+            <div v-if="rhdElement != null" class="lobtext">
+              <b>元素损伤上限</b>：{{ rhdElement }} 点
+            </div>
+            <div v-if="rhdProfession" class="lobtext">
+              <b>职业</b>：{{ rhdProfession }}
+            </div>
+          </section>
+
+          <section v-if="system?.id === 'pkm' && sd" class="block">
+            <h4>系统机制 · 奇迹能量</h4>
+            <div v-if="pkmRealAttrs.length" class="lobtext">
+              <b>属性</b>：<span v-for="t in pkmRealAttrs" :key="t" class="pkmtag">{{ t }}</span>
+            </div>
+            <div v-else class="lobtext">训练师（无属性）</div>
+            <div v-if="sd!.megaForm" class="lobtext">
+              <b>MEGA 形态</b>：{{ sd!.megaForm }}
+            </div>
+            <div v-if="sd!.zMove" class="lobtext">
+              <b>专属 Z 招式</b>：{{ sd!.zMove }}
+            </div>
+            <div v-if="sd!.gmaxForm" class="lobtext">
+              <b>超极巨形态</b>：{{ sd!.gmaxForm }}
+            </div>
+            <div v-if="sd!.teraType && sd!.teraType !== '无属性'" class="lobtext">
+              <b>太晶属性</b>：{{ sd!.teraType }}
             </div>
           </section>
 
@@ -218,33 +266,17 @@ onBeforeUnmount(() => {
             <h4>卡组（{{ totalCards }} 张，{{ system?.code === 'LOB' ? '3×3' : '每行 3 张' }}）</h4>
             <p v-if="totalCards === 0" class="empty">无卡牌</p>
             <div v-else class="deck">
-              <StsCard
-                v-for="(c, i) in combatCards"
-                :key="'c' + i"
-                :card="c"
-                :height="280"
-                render-terms
-                :private-terms="privateTerms"
-                class="deck__item"
-              />
-              <StsCard
-                v-for="(c, i) in specialCards"
-                :key="'s' + i"
-                :card="c"
-                :height="280"
-                render-terms
-                :private-terms="privateTerms"
-                class="deck__item"
-              />
-              <StsCard
-                v-for="(c, i) in egoCards"
-                :key="'e' + i"
-                :card="c"
-                :height="280"
-                render-terms
-                :private-terms="privateTerms"
-                class="deck__item"
-              />
+              <template v-for="zc in zoneCards" :key="zc.zone.key">
+                <StsCard
+                  v-for="(c, i) in zc.cards"
+                  :key="zc.zone.key + '-c' + i"
+                  :card="c"
+                  :height="280"
+                  render-terms
+                  :private-terms="privateTerms"
+                  class="deck__item"
+                />
+              </template>
             </div>
           </section>
         </aside>
@@ -488,6 +520,15 @@ onBeforeUnmount(() => {
 }
 .lob-panic {
   color: #ff0000;
+}
+.pkmtag {
+  display: inline-block;
+  margin: 0 4px 2px 0;
+  padding: 0 8px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  font-size: 13px;
+  color: var(--color-ink);
 }
 .deck {
   display: grid;

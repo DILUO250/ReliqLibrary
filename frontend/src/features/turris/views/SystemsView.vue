@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { BATTLE_SYSTEMS, type BattleSystemId, type BattleSystemMetrics } from '@rtl/shared'
+import { BATTLE_SYSTEMS, type BattleSystemId, type BattleSystemMetrics, type BattleStatTable } from '@rtl/shared'
 import SystemRadar from '../components/SystemRadar.vue'
 
-/** 展示顺序：BASE 默认，随后 LOB；RHD/PKM 待录入。 */
+/** 展示顺序：BASE 默认，随后 LOB、RHD、PKM。 */
 const ORDER: BattleSystemId[] = ['base', 'lob', 'rhd', 'pkm']
 
 /** 六维图例的固定顺序与中文标签（与雷达轴一致）。 */
@@ -26,21 +26,29 @@ const readySystems = computed(() =>
   ORDER.map((id) => ({ id, info: BATTLE_SYSTEMS[id], ready: !!BATTLE_SYSTEMS[id].metrics })),
 )
 
-/** 数值表：严格按 设计文档 顺序。 */
-const paramRows = computed(() => {
+/** 基础数值表（多模板系统为多张表；无 statTables 时由扁平字段拼单表兜底）。 */
+const statTables = computed<BattleStatTable[]>(() => {
   const s = info.value
+  if (s.statTables?.length) return s.statTables
   return [
-    { label: '起始费用上限', value: `${s.costCap} 点${s.costLabel}` },
-    { label: '自动回费量', value: `${s.regen} 点/回合` },
-    { label: '起始手牌上限', value: `${s.handLimit} 张` },
-    { label: '自动抽牌数', value: `${s.draw} 张/回合` },
-    { label: '牌组容量', value: `${s.deckLimit} 张` },
-    { label: '手牌保留规则', value: s.keepHand ? '不自动弃牌' : '自动弃牌' },
-    { label: '额外卡牌区', value: s.extraDeckZone ?? '—' },
-    { label: '起始速度骰子', value: `${s.speedDice} 颗` },
-    { label: '队伍容量', value: s.teamCapacity ?? '—' },
+    {
+      rows: [
+        { label: '起始费用上限', value: `${s.costCap} 点${s.costLabel}` },
+        { label: '自动回费量', value: `${s.regen} 点/回合` },
+        { label: '起始手牌上限', value: `${s.handLimit} 张` },
+        { label: '自动抽牌数', value: `${s.draw} 张/回合` },
+        { label: '牌组容量', value: `${s.deckLimit} 张` },
+        { label: '手牌保留规则', value: s.keepHand ? '不自动弃牌' : '自动弃牌' },
+        { label: '额外卡牌区', value: s.extraDeckZone ?? '—' },
+        { label: '起始速度骰子', value: `${s.speedDice} 颗` },
+        { label: '队伍容量', value: s.teamCapacity ?? '—' },
+      ],
+    },
   ]
 })
+
+/** 机制说明图片的完整路径（frontend/public/art/turris/systems/）。 */
+const mechImages = computed(() => (info.value.mechanicsImages ?? []).map((f) => `/art/turris/systems/${f}`))
 </script>
 
 <template>
@@ -49,7 +57,7 @@ const paramRows = computed(() => {
       <div class="page-header__eyebrow latin">Systema Pugnae</div>
       <h1 class="page-header__title">战斗系统</h1>
       <p class="page-header__desc">
-        迎书楼各楼层采用的战斗体系总览。选择一个系统查看六维属性、优势劣势与开局数值；各系统的专属机制描述将在后续补充。
+        迎书楼各楼层采用的战斗体系总览。选择一个系统查看六维属性、优势劣势、开局数值与机制说明。
       </p>
     </header>
 
@@ -107,17 +115,33 @@ const paramRows = computed(() => {
         </div>
       </section>
 
-      <!-- 开局数值 -->
+      <!-- 开局数值（多表响应式：1 表居中，2 表左右，3 表横排） -->
       <section class="sys-block">
         <h2 class="sys-block__title">开局数值</h2>
-        <table class="sys-table">
-          <tbody>
-            <tr v-for="row in paramRows" :key="row.label">
-              <th>{{ row.label }}</th>
-              <td>{{ row.value }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="sys-tables" :class="`sys-tables--${Math.min(statTables.length, 3)}`">
+          <div v-for="(table, ti) in statTables" :key="ti" class="sys-table-wrap">
+            <div v-if="table.title" class="sys-table-title">{{ table.title }}</div>
+            <table class="sys-table">
+              <tbody>
+                <tr v-for="row in table.rows" :key="row.label">
+                  <th>{{ row.label }}</th>
+                  <td>{{ row.value }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 机制说明 -->
+      <section v-if="info.mechanicsDesc" class="sys-block">
+        <h2 class="sys-block__title">机制说明</h2>
+        <div class="sys-mech">
+          <p class="sys-mech__text">{{ info.mechanicsDesc }}</p>
+          <figure v-for="img in mechImages" :key="img" class="sys-mech__figure">
+            <img :src="img" alt="机制表格" loading="lazy" />
+          </figure>
+        </div>
       </section>
     </template>
   </div>
@@ -287,8 +311,36 @@ const paramRows = computed(() => {
 .sys-pc__card--con {
   border-color: rgba(217, 118, 106, 0.35);
 }
+.sys-tables {
+  display: grid;
+  gap: 14px;
+  justify-content: center;
+}
+/* 1 表：居中限宽；2 表：左右并排；3 表：横向排布。 */
+.sys-tables--1 {
+  grid-template-columns: minmax(0, 620px);
+}
+.sys-tables--2 {
+  grid-template-columns: repeat(2, minmax(0, 340px));
+}
+.sys-tables--3 {
+  grid-template-columns: repeat(3, minmax(0, 320px));
+}
+.sys-table-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.sys-table-title {
+  margin: 0 0 6px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink-dim);
+  letter-spacing: 0.08em;
+}
 .sys-table {
-  width: min(620px, 100%);
+  width: 100%;
   margin: 0 auto;
   border: 1px solid var(--color-line);
   border-radius: var(--radius);
@@ -316,6 +368,36 @@ const paramRows = computed(() => {
 .sys-table td {
   color: var(--color-ink);
   font-variant-numeric: tabular-nums;
+}
+.sys-mech {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sys-mech__text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 2;
+  color: var(--color-ink-dim);
+  white-space: pre-line;
+}
+.sys-mech__figure {
+  margin: 0;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+.sys-mech__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+@media (max-width: 960px) {
+  .sys-tables--2,
+  .sys-tables--3 {
+    grid-template-columns: minmax(0, 620px);
+  }
 }
 @media (max-width: 720px) {
   .sys-pc {
