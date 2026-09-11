@@ -226,7 +226,7 @@ DELETE 钩子会在删父行前 `UPDATE <子表> SET <fk> = NULL WHERE <fk> = ?`
 
 ```bash
 # 开发（均在仓库根目录执行）
-npm run dev:backend          # tsx watch backend/src/server.ts（127.0.0.1:3000）
+npm run dev:backend          # tsx watch backend/src/server.ts（默认 0.0.0.0:3000，局域网可访问，写操作需 token）
 npm run dev:frontend         # vite（0.0.0.0:4290，/api 代理到后端）
 npm start                    # 或双击 start.bat（自动安装依赖 + 开两个窗口）
 
@@ -235,9 +235,9 @@ npm run type-check           # vue-tsc + tsc，零报错才合格
 npm run lint --workspace frontend   # oxlint，零告警才合格
 
 # 数据运维
-npm run seed:reset           # 清库重建 + 种子（会丢现有数据，慎用）
-npm run import:terms         # 从前端种子源导入术语到 SQLite（幂等）
-npm run import:pvz           # 从前端种子源导入 PVZ 植物到 SQLite（幂等）
+npm run export:snapshot      # 手动取一份新鲜全表快照 + 重生成术语种子
+npm run seed:reset           # 清库后从自动快照无损恢复（无旗标运行会拒绝执行）
+npm run import:terms         # 术语恢复/新机引导（合并模式，绝不覆盖库内修改）
 npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删任何文件）
 ```
 
@@ -245,8 +245,10 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 
 ## 7. 已知的待办（不在本次规范范围）
 
-- 藏书阁其余页（异常实体/空间/书库/书库体系）与寻书社全部页仍是占位，数据表已建好（generic CRUD 已就绪），按需填充。
+- 藏书阁五 Tab 中：总览 / 异常实体库（`anomalies` 表就绪）/ 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。
+- **PVZ 资产体系迁移**：用户上传图仍在旧体系 `public/features/armarium/projects/pvzwiki/assets/`（无规范回收站目录），应迁至 `art/armarium/{plants,cards,backgrounds}` + `_trash/`——2026-09 决议分两步走，图片列迁移 + 旧 URL 兼容另行处理。
 - `_trash/` 回收站需要人工定期清理。
+- `term-backup-*.json` 每次恢复运行生成一份且全部被 git 跟踪，无轮转上限（见 §2.3；备份策略待议）。
 
 ---
 
@@ -262,7 +264,7 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 | 弹窗 `align-items: flex-start` 贴顶 | 复用 `Modal.vue`，居中 |
 | `import type` 静态建术语索引 | `ensureTermIndex()` 异步从后端建索引 |
 | generic CRUD 拼 `${table}` 不校验 | `columnsOf` 白名单断言 |
-| seed key camelCase 与 snake_case 表名不符 | key 与 `TABLES` 完全一致 |
+| 为"引导数据"新建手写种子文件 | 首条记录走 API/界面入库，随自动快照固化（§2.4） |
 | feature 之间互相 import / 业务代码混进共享层 | 按模块平行分层，复用走 `shared/` |
 | 资源命名一半按实体一半按池 | §5.2 二选一，同类内统一 |
 | 编辑器手写 `v-if` 罗列卡组区（BASE 出现 EGO 区的旧 bug 之源） | 按 `system.deckZones` 配置循环渲染 |

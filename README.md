@@ -12,7 +12,7 @@
 
 | 模块 | 主题色 | 现状 |
 |---|---|---|
-| 藏书阁 Armarium | 蓝 `#4a7fc4` | **PVZ 百科完整可用**（181 株植物、编辑器、卡图生成器、云端同步）；其余页面占位 |
+| 藏书阁 Armarium | 蓝 `#4a7fc4` | **五 Tab 结构**（总览/异常实体库/超自然空间库/研究项目/书库管理员）；**研究项目 Tab 已落库**（`armarium_projects` 表，PVZ 百科为首个项目，完整可用：181 株植物、编辑器、卡图生成器、云端同步）；其余 Tab 占位待建 UI |
 | 迎书楼 Turris | 红 `#c04a32` | **楼层/司书编辑器 + 术语词典 + 战斗系统页完整可用**（战斗系统 v2）；其余页面占位 |
 | 寻书社 Collegium | 绿 `#55a05f` | 占位（数据表与 generic CRUD 已就绪，按需填充） |
 | 馆长层 Director | 金 `#e0b564` | 无功能设计，空置 |
@@ -81,7 +81,8 @@ D:\ReliqLibrary\
 
 ```
 backend\src\
-├─ server.ts            # 入口：启动 Fastify 服务器（127.0.0.1:3000）
+├─ server.ts            # 入口：启动 Fastify 服务器（默认监听 0.0.0.0:3000，局域网可访问；
+│                       #   写操作需 x-rtl-key 令牌，见 §8 坑 1）
 ├─ config\index.ts      # 配置：路径、端口、环境变量
 ├─ db\
 │  ├─ schema.ts         # 建表语句（DDL）+ TABLES 白名单 —— ★ 想加新表先来这里
@@ -138,7 +139,7 @@ backend\src\
 ```
 frontend\
 ├─ index.html                 # 网页入口
-├─ public\art\                # ★ 所有图片素材都住这里（按模块分家）
+├─ public\art\                # ★ 规范的图片素材家（按模块分家）
 │  └─ turris\
 │     ├─ librarian-portraits\ #   司书立绘
 │     ├─ librarian-previews\  #   司书缩略图
@@ -149,13 +150,14 @@ frontend\
    ├─ app\                    # "壳"：全站共用的骨架
    │  ├─ main.ts              #   程序入口
    │  ├─ router\              #   网址 → 页面的路由表
-   │  ├─ services\api.ts      # ★ 唯一的后端请求通道（统一封装）
+   │  ├─ labels.ts            #   部门中文名唯一一份（全站从此 import）
+   │  ├─ services\api.ts      # ★ 唯一的后端请求通道（统一封装，写操作自动带 token）
    │  ├─ stores\              #   全局 Pinia 状态（如 toast 提示）
    │  └─ styles\              #   全站样式 + tokens.css 设计变量
-   ├─ shared\                 # 跨模块的公共组件（三个模块都能用的）
+   ├─ shared\                 # 跨模块的公共组件（SiteNav / ModuleLayout / Toast / BackupToast 等）
    └─ features\               # ★ 三个模块各一个平行文件夹，互不 import
       ├─ turris\              #   迎书楼（重点，见 5.2）
-      ├─ armarium\            #   藏书阁（PVZ 百科）
+      ├─ armarium\            #   藏书阁（五 Tab + PVZ 百科子项目，见 5.4）
       └─ collegium\           #   寻书社（占位）
 ```
 
@@ -184,7 +186,8 @@ frontend\src\features\turris\
 ├─ terms\                 # 术语渲染系统
 │  ├─ renderer.ts            # ★ 核心：把文案里的“词条”变成带颜色的文字
 │  ├─ RenderedText.vue       # 调 renderer 的组件
-│  └─ data\                  # 术语种子（只给后端导入脚本用，运行时不读）
+│  └─ data\
+│     └─ termSeed.generated.ts # 自动生成的术语备份种子（禁止手改，随每次写库重生成）
 ├─ store\terms.ts         # Pinia：从后端拉术语词典并缓存
 └─ components\
    └─ SystemRadar.vue     # 六维属性雷达图（纯 SVG）
@@ -204,6 +207,25 @@ frontend\src\features\turris\
 
 **永远不要**在视图组件里直接写 `fetch('/api/...')`，必须用 `api` 对象；跨页面共享的数据必须放 Pinia store（如 `store/terms.ts`），不要在视图里散落请求代码。
 
+### 5.4 藏书阁 armarium 导览（五 Tab 结构）
+
+```
+frontend\src\features\armarium\
+├─ views\
+│  ├─ ArmariumView.vue    # ★ 五 Tab 容器：按路由渲染 总览/异常实体库/超自然空间库/研究项目/书库管理员
+│  │                      #   （Tab 导航由 ModuleLayout 统一渲染，页面里禁止再画一层 Tab）
+│  └─ ProjectView.vue     # /armarium/project/:projectId 的站内 SPA 项目页（未来小库用）
+└─ projects\pvzwiki\      # PVZ 百科（独立子项目，独立标签页打开）
+   ├─ PvzProjectView.vue     #   壳 + 侧边导航
+   ├─ views\                 #   植物图鉴页 / 植物详情页
+   ├─ editor\ components\    #   编辑器与图鉴组件群
+   ├─ store\                 #   Pinia：plants（图鉴数据）、plantImage（立绘/卡图/背景通道）等
+   ├─ data\                  #   纯转发适配层（薄壳，无数据本体——数据在 pvz_plants 表）
+   └─ types\ utils\          #   类型与工具（WORLD_NAMES 等世界枚举为 PVZ 设定层常量）
+```
+
+研究项目由数据库 `armarium_projects` 表驱动（每行一个项目卡片；`openMode:'tab'` 新窗口打开、`'spa'` 站内跳转）。**加新图鉴类小项目 = 库里加一行 + 一条路由，禁止把项目卡片硬编码进组件。** 注意：PVZ 的用户上传图片目前仍存在旧体系 `public/features/armarium/projects/pvzwiki/assets/` 下（迁移到 `art/armarium/` 是待办，见 CONVENTIONS §7）。
+
 ---
 
 ## 6. 战斗系统 v2 专区（最重要的一节）
@@ -219,7 +241,8 @@ frontend\src\features\turris\
 | `shared\src\index.ts` | `BATTLE_SYSTEMS` 大表：每个系统的卡组区配置（`deckZones`）、前缀白名单（`cardPrefixes`/`passivePrefixes`）、开局数值表（`statTables`）、六维评分（`metrics`）、优劣势、速战速决模板（`speedPassives`） |
 | `shared\src\battleMechanics.ts` | 四个系统的"机制说明"长文本（`MECHANICS_TEXT`）+ 表格图片文件名（`MECHANICS_IMAGES`） |
 | `shared\src\index.ts` 里的常量 | `RHD_CLASSES`（10 职业 emoji 文案）、`PKM_TYPES`（19 个属性选项） |
-| `shared\src\terms\` | 术词条目种子（卡牌前缀、基础标签、18 属性机制词条……） |
+
+**注意：shared 里已经没有任何术语数据**（原 `shared\src\terms\` 已删除归档，术语全部在数据库，见 §6.4）。
 
 **第二层：运营层（数据库）** —— 每个司书实际填的数据，存在 `librarians.sheet` JSON 里，通过界面编辑器增删改，不改代码：
 
@@ -245,7 +268,7 @@ frontend\src\features\turris\
 
 1. 把表格截图放进 `frontend\public\art\turris\systems\`；
 2. 文件名**必须**和 `shared\src\battleMechanics.ts` 里 `MECHANICS_IMAGES` 声明的一致（该目录里有 README.txt 列了全部清单，如 `lob-emotion-rewards.png`、`rhd-command-levels.png`）；
-3. 放好即生效，无需任何代码或数据库改动。
+3. 放好即生效，无需任何代码或数据库改动。图片缺失时页面会显示"图待补"占位框（不会渲染破图），补图后自动恢复。
 
 ### 6.4 术语文案改在哪里（单一术语源）
 
