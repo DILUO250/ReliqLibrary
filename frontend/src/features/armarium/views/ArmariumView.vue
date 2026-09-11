@@ -5,18 +5,10 @@ import SectionPlaceholder from '@/shared/components/SectionPlaceholder.vue'
 import { api } from '@/app/services/api'
 import type { ArmariumProject } from '@rtl/shared'
 
-// 藏书阁五 Tab（CONVENTIONS §5 结构规范，2026-09 Tab 重构）：
-// 总览 / 异常实体库 / 超自然空间库 / 研究项目 / 书库管理员。
-// Tab 内容与路由一一对应（/armarium/<id>），共用本容器组件。
+// 藏书阁五 Tab（2026-09 Tab 重构）：Tab 导航由 ModuleLayout 的 module-tabs 渲染
+// （路径前缀高亮），本组件只负责按当前路由渲染对应 Tab 的内容——
+// 禁止在页面里再画一层 Tab（双层 Tab 事故）。
 type TabId = 'overview' | 'entities' | 'spaces' | 'projects' | 'librarians'
-
-const TABS: Array<{ id: TabId; label: string }> = [
-  { id: 'overview', label: '总览' },
-  { id: 'entities', label: '异常实体库' },
-  { id: 'spaces', label: '超自然空间库' },
-  { id: 'projects', label: '研究项目' },
-  { id: 'librarians', label: '书库管理员' },
-]
 
 const route = useRoute()
 const router = useRouter()
@@ -25,14 +17,10 @@ const active = computed<TabId>(() => {
   const name = String(route.name ?? '')
   if (name.startsWith('armarium-')) {
     const id = name.replace('armarium-', '') as TabId
-    if (TABS.some((t) => t.id === id)) return id
+    if (['overview', 'entities', 'spaces', 'projects', 'librarians'].includes(id)) return id
   }
   return 'overview'
 })
-
-function switchTab(id: TabId): void {
-  void router.push(id === 'overview' ? '/armarium' : `/armarium/${id}`)
-}
 
 /* ---------- Tab4 研究项目：armarium_projects 表（DB 权威，禁止再硬编码项目数组） ---------- */
 
@@ -64,19 +52,6 @@ function openProject(project: ArmariumProject): void {
 
 <template>
   <div class="armarium-page">
-    <nav class="arm-tabs" aria-label="藏书阁分区">
-      <button
-        v-for="t in TABS"
-        :key="t.id"
-        type="button"
-        class="arm-tabs__btn"
-        :class="{ 'is-active': t.id === active }"
-        @click="switchTab(t.id)"
-      >
-        {{ t.label }}
-      </button>
-    </nav>
-
     <!-- Tab1 总览（UI 待规划） -->
     <SectionPlaceholder
       v-if="active === 'overview'"
@@ -160,38 +135,6 @@ function openProject(project: ArmariumProject): void {
   flex-direction: column;
   gap: 18px;
   min-width: 0;
-}
-
-.arm-tabs {
-  border-bottom: 1px solid var(--color-line);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding-bottom: 10px;
-}
-
-.arm-tabs__btn {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  color: var(--color-ink-dim);
-  cursor: pointer;
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 7px 16px;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.arm-tabs__btn:hover {
-  color: var(--color-ink);
-}
-
-.arm-tabs__btn.is-active {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-  color: var(--color-ink);
 }
 
 .project-register {
