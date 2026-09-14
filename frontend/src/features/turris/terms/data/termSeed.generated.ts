@@ -6167,7 +6167,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "thick"
             },
-            "desc": "至多10层，特殊烟气；击中目标时伤害+X*3%；若二噁英层数不低于9则所有骰子威力+1，每回合结束时层数-1"
+            "desc": "至多10层，特殊“烟气”；击中目标时伤害+X*3%；若二噁英层数不低于9则所有骰子威力+1，每回合结束时层数-1"
           },
           {
             "name": "尼古丁 X层",
@@ -6191,7 +6191,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "none"
             },
-            "desc": "受到烟气卡牌的攻击时转化为1层麻痹/虚弱/易损"
+            "desc": "受到“烟气”卡牌的攻击时转化为1层“麻痹”/“虚弱”/“易损”"
           },
           {
             "name": "源石刺激",
@@ -7108,7 +7108,7 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
             "desc": "群体卡牌依次对敌方战斗卡牌上的每颗骰子进行拼点判定，若拼点成功则摧毁该骰子并造成伤害"
           },
@@ -7121,7 +7121,7 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
             "desc": "群体卡牌对敌方战斗卡牌的所有骰子计算总和并进行拼点判定，若拼点成功则摧毁该卡牌并造成伤害"
           },
@@ -7134,7 +7134,7 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
             "desc": "带有该标签的卡牌将拼点的敌方速度骰子视为“主要目标”并会选择多名“次要目标”，对主要目标造成伤害时会同时对次要目标造成伤害。"
           },
@@ -7147,9 +7147,9 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
-            "desc": "使用消耗卡牌后将其移入放逐区"
+            "desc": "使用消耗卡牌后将其移入消耗堆"
           },
           {
             "name": "消耗:X",
@@ -7160,9 +7160,9 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
-            "desc": "PKM 系统专属：该卡牌在使用 X 次后被消耗掉；卡牌使用次数归零后将其移入放逐区"
+            "desc": "该卡牌在使用 X 次后被消耗掉；卡牌使用次数归零后将其移入消耗堆"
           },
           {
             "name": "虚无",
@@ -7173,9 +7173,9 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
-            "desc": "该回合结束时若虚无卡牌处于手牌堆，则将其移入放逐区"
+            "desc": "该回合结束时若“虚无”卡牌处于手牌堆，则将其移入消耗堆"
           },
           {
             "name": "丢弃",
@@ -7186,9 +7186,9 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
-            "desc": "该回合结束时若丢弃卡牌处于手牌堆，则将其移入弃牌堆"
+            "desc": "该回合结束时若“丢弃”卡牌处于手牌堆，则将其移入弃牌堆"
           },
           {
             "name": "禁用",
@@ -7278,7 +7278,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "thin"
             },
-            "desc": "一种连携机制。发起者使用带有 [连携-同技] 标签的卡牌时，可指定一名符合条件的友方单位作为连携者。本次行动中，发起者与连携者将各自独立使用一次该卡牌的全部效果。"
+            "desc": "一种“连携”机制。发起者使用带有 [“连携-同技”] 标签的卡牌时，可指定一名符合条件的友方单位作为连携者。本次行动中，发起者与连携者将各自独立使用一次该卡牌的全部效果。"
           },
           {
             "name": "连携-合击",
@@ -7291,7 +7291,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "thin"
             },
-            "desc": "一种需要条件解锁的连携机制。发起者想要使用卡牌A，需要场上存在一名装备了特定卡牌B的友方单位时，卡牌A才可发动。发动后，发起者使用卡牌A，连携者使用卡牌B。"
+            "desc": "一种需要条件解锁的“连携”机制。发起者想要使用卡牌A，需要场上存在一名装备了特定卡牌B的友方单位时，卡牌A才可发动。发动后，发起者使用卡牌A，连携者使用卡牌B。"
           },
           {
             "name": "穿刺",
