@@ -55,33 +55,42 @@ const systemOptions = computed(() =>
 )
 const currentSystem = computed(() => BATTLE_SYSTEMS[form.battleSystem])
 
+// 防连点内锁（同 LibrarianEditorModal）：上传窗口在父组件 PUT 锁之外
+const submitting = ref(false)
+
 async function submit(): Promise<void> {
+  if (submitting.value || props.saving) return
   if (!form.name.trim()) {
     saveError.value = '楼层名称不能为空'
     return
   }
   saveError.value = null
-  if (pendingArtwork.value) {
-    try {
-      const res = await api.uploadImage(pendingArtwork.value.file, 'floor')
-      form.artwork = res.url
-    } catch (e) {
-      saveError.value = `背景图上传失败：${e instanceof Error ? e.message : String(e)}`
-      return
+  submitting.value = true
+  try {
+    if (pendingArtwork.value) {
+      try {
+        const res = await api.uploadImage(pendingArtwork.value.file, 'floor')
+        form.artwork = res.url
+      } catch (e) {
+        saveError.value = `背景图上传失败：${e instanceof Error ? e.message : String(e)}`
+        return
+      }
     }
+    emit('save', {
+      name: form.name,
+      latinName: form.latinName,
+      code: form.code,
+      designation: form.designation,
+      theme: form.theme,
+      battleSystem: form.battleSystem,
+      description: form.description,
+      sortOrder: form.sortOrder,
+      artwork: form.artwork,
+    })
+    discardPendingArtwork()
+  } finally {
+    submitting.value = false
   }
-  emit('save', {
-    name: form.name,
-    latinName: form.latinName,
-    code: form.code,
-    designation: form.designation,
-    theme: form.theme,
-    battleSystem: form.battleSystem,
-    description: form.description,
-    sortOrder: form.sortOrder,
-    artwork: form.artwork,
-  })
-  discardPendingArtwork()
 }
 
 function triggerUpload(): void {
@@ -169,8 +178,8 @@ async function generateArt(): Promise<void> {
     <template #footer>
       <span v-if="saveError" class="error">{{ saveError }}</span>
       <button type="button" class="btn btn--ghost" @click="emit('close')">取消</button>
-      <button type="button" class="btn btn--primary" :disabled="saving" @click="submit">
-        {{ saving ? '保存中…' : '保存楼层' }}
+    <button type="button" class="btn btn--primary" :disabled="saving || submitting" @click="submit">
+      {{ saving || submitting ? '保存中…' : '保存楼层' }}
       </button>
     </template>
   </Modal>

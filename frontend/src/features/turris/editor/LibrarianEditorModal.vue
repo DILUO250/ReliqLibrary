@@ -130,43 +130,53 @@ watch(
   (sys) => resetFirstPassive(sys),
 )
 
+// 防连点内锁：saving prop 只覆盖父组件的 PUT 阶段，"点击 → 上传立绘/裁剪图"窗口里
+// 父组件的锁还没立起来，连点会重复上传产生孤儿文件（2026-09 实锤）。
+const submitting = ref(false)
+
 async function submit(): Promise<void> {
+  if (submitting.value || props.saving) return
   if (!form.name.trim()) {
     saveError.value = '司书名称不能为空'
     return
   }
   saveError.value = null
-  // 先上传本地暂存的立绘/裁剪图（此刻才落盘），再提交整行
+  submitting.value = true
   try {
-    if (pendingPortrait.value) {
-      const res = await api.uploadImage(pendingPortrait.value.file, 'portrait')
-      form.portrait = res.url
+    // 先上传本地暂存的立绘/裁剪图（此刻才落盘），再提交整行
+    try {
+      if (pendingPortrait.value) {
+        const res = await api.uploadImage(pendingPortrait.value.file, 'portrait')
+        form.portrait = res.url
+      }
+      if (pendingPreview.value) {
+        const res = await api.uploadImage(pendingPreview.value.file, 'preview')
+        form.portraitPreview = res.url
+      }
+    } catch (e) {
+      saveError.value = `立绘上传失败：${e instanceof Error ? e.message : String(e)}`
+      return
     }
-    if (pendingPreview.value) {
-      const res = await api.uploadImage(pendingPreview.value.file, 'preview')
-      form.portraitPreview = res.url
-    }
-  } catch (e) {
-    saveError.value = `立绘上传失败：${e instanceof Error ? e.message : String(e)}`
-    return
+    form.sheet.name = form.name
+    form.sheet.romanNum = ''
+    // 关键词（keyword）暂存于 description 字段
+    emit('save', {
+      name: form.name,
+      title: form.title,
+      department: 'turris',
+      role: 'curator',
+      floorId: form.floorId,
+      rarity: form.rarity,
+      affiliation: form.affiliation,
+      description: form.description,
+      sheet: JSON.stringify(form.sheet),
+      portrait: form.portrait,
+      portraitPreview: form.portraitPreview,
+    })
+    discardPending()
+  } finally {
+    submitting.value = false
   }
-  form.sheet.name = form.name
-  form.sheet.romanNum = ''
-  // 关键词（keyword）暂存于 description 字段
-  emit('save', {
-    name: form.name,
-    title: form.title,
-    department: 'turris',
-    role: 'curator',
-    floorId: form.floorId,
-    rarity: form.rarity,
-    affiliation: form.affiliation,
-    description: form.description,
-    sheet: JSON.stringify(form.sheet),
-    portrait: form.portrait,
-    portraitPreview: form.portraitPreview,
-  })
-  discardPending()
 }
 
 function triggerUpload(): void {
@@ -286,8 +296,8 @@ function removePortrait(): void {
     <template #footer>
       <span v-if="saveError" class="error">{{ saveError }}</span>
       <button type="button" class="btn btn--ghost" @click="emit('close')">取消</button>
-      <button type="button" class="btn btn--primary" :disabled="saving" @click="submit">
-        {{ saving ? '保存中…' : '保存司书' }}
+    <button type="button" class="btn btn--primary" :disabled="saving || submitting" @click="submit">
+      {{ saving || submitting ? '保存中…' : '保存司书' }}
       </button>
     </template>
   </Modal>
