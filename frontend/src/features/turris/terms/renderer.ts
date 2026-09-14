@@ -1,5 +1,6 @@
-import { useTermsStore, type DictEntry } from '@/features/turris/store/terms'
+import { useTermsStore, type DictEntry, type DictSection } from '@/features/turris/store/terms'
 import { mergedFormat } from './format'
+import { matchCompound, type AffixCandidate } from './compound'
 import type { TermFormat } from '@rtl/shared'
 
 /** 司书私人词典词条：机制名 → 字体格式。渲染时优先于通用词典。 */
@@ -55,8 +56,55 @@ function rebuildIndex(): void {
   }
   INDEX_MAP = map
   INDEX = [...map].map(([key, entry]) => ({ key, entry }))
+  rebuildCompoundIndex(store.sections)
   // 词典已变化：清空渲染缓存，避免旧着色残留
   SEG_CACHE.clear()
+}
+
+// ---------------------------------------------------------------------------
+// 专项基础状态（合成词）：词缀 = 机制类状态 / 基础骰子分区词条，词根 = 基础状态分区词条。
+// 词缀/词根全部动态取自库；显式词条（INDEX_MAP）永远优先，组合解析只兜未收录的引号词。
+// ---------------------------------------------------------------------------
+
+let AFFIXES: AffixCandidate[] = []
+let ROOT_FORMAT: Map<string, TermFormat> = new Map()
+/** baseKey → 合成格式（含未命中 undefined 的负缓存）。 */
+const COMPOSED_CACHE = new Map<string, TermFormat | undefined>()
+
+function rebuildCompoundIndex(sections: DictSection[]): void {
+  const roots = new Map<string, TermFormat>()
+  const mech: AffixCandidate[] = []
+  const dice: AffixCandidate[] = []
+  for (const sec of sections) {
+    for (const g of sec.groups) {
+      for (const e of g.entries) {
+        const key = baseKeyCached(e.name)
+        if (!key) continue
+        if (sec.id === '基础状态') roots.set(key, mergedFormat(e))
+        else if (sec.id === '机制类状态') mech.push({ key, kind: 'mech' })
+        else if (sec.id === '基础骰子') dice.push({ key, kind: 'dice' })
+      }
+    }
+  }
+  // 长词缀优先（“充能力场”先于“充能”）；同长按键序保证稳定。
+  AFFIXES = [...mech, ...dice].sort(
+    (a, b) => b.key.length - a.key.length || a.key.localeCompare(b.key),
+  )
+  ROOT_FORMAT = roots
+  COMPOSED_CACHE.clear()
+}
+
+/** 组合解析：未收录的引号词尝试拆为「词缀(机制状态/骰子) + 词根(基础状态)」，格式取词根。 */
+function resolveCompound(q: string): TermFormat | undefined {
+  const key = baseKeyCached(q)
+  if (!key) return undefined
+  if (COMPOSED_CACHE.has(key)) return COMPOSED_CACHE.get(key)
+  let result: TermFormat | undefined
+  const m = matchCompound(key, AFFIXES, (root) => ROOT_FORMAT.has(root))
+  if (m) result = ROOT_FORMAT.get(m.root)
+  if (COMPOSED_CACHE.size > 5000) COMPOSED_CACHE.clear()
+  COMPOSED_CACHE.set(key, result)
+  return result
 }
 
 /** 预热术语索引：从后端拉取 term_sections / term_entries 并建立查询索引。
@@ -75,7 +123,7 @@ export function termIndexReady(): boolean {
   return INDEX.length > 0
 }
 
-/** 解析某个被引号包裹的词条 → 字体格式。私人词典优先，随后通用词典。 */
+/** 解析某个被引号包裹的词条 → 字体格式。私人词典优先，随后通用词典，最后组合解析。 */
 function resolveFormat(q: string, privateTerms: PrivateTerm[], privateKey: string): TermFormat | undefined {
   for (const p of privateTerms) {
     if (p.name.trim() === q.trim() || baseKeyCached(p.name) === baseKeyCached(q)) return p.format
@@ -83,7 +131,7 @@ function resolveFormat(q: string, privateTerms: PrivateTerm[], privateKey: strin
   void privateKey
   const g = INDEX_MAP.get(baseKeyCached(q))
   if (g) return mergedFormat(g)
-  return undefined
+  return resolveCompound(q)
 }
 
 /** 渲染结果缓存：同一段文本（+同一套私人词典）只切分/查词一次。 */
