@@ -257,7 +257,10 @@ onBeforeUnmount(() => {
             <div v-if="sdHasMind" class="lobrow">
               <div class="lob-title">心 &amp; 望</div>
               <div v-if="sd!.mind" class="lobtext">
-                <b :style="mindNameStyle(sd!.mind!)">{{ sd!.mind!.name }}</b>：<RenderedText :text="sd!.mind!.effect ?? ''" :private-terms="privateTerms" />
+                <b :style="mindNameStyle(sd!.mind!)">{{ sd!.mind!.name }}</b>
+                <span v-if="sd!.mind!.effect" class="mech-desc">
+                  <RenderedText :text="sd!.mind!.effect ?? ''" :private-terms="privateTerms" />
+                </span>
               </div>
             </div>
           </section>
@@ -509,6 +512,7 @@ onBeforeUnmount(() => {
   font-size: 15px;
   line-height: 1.7;
   color: var(--color-ink-dim);
+  white-space: pre-wrap;
 }
 .lob-sub {
   color: #00B0F0;

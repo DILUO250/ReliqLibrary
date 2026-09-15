@@ -768,54 +768,6 @@ export const generatedVisibleSections = [
             "desc": "这一回合施加的异常状态层数+X"
           },
           {
-            "name": "烧伤易损 X层",
-            "tags": [
-              "负面状态"
-            ],
-            "tagColors": [
-              "#EE0000"
-            ],
-            "tagFormats": [
-              {
-                "color": "#EE0000",
-                "bold": false,
-                "italic": false,
-                "underline": "none"
-              }
-            ],
-            "format": {
-              "color": "#EE0000",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "这一回合受到的烧伤伤害+X*10%"
-          },
-          {
-            "name": "烧伤守护 X层",
-            "tags": [
-              "正面状态"
-            ],
-            "tagColors": [
-              "#00B0F0"
-            ],
-            "tagFormats": [
-              {
-                "color": "#00B0F0",
-                "bold": false,
-                "italic": false,
-                "underline": "none"
-              }
-            ],
-            "format": {
-              "color": "#00B0F0",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "这一回合受到的烧伤伤害-X*10%"
-          },
-          {
             "name": "理智值恢复效率减少 X层",
             "tags": [
               "负面状态"
@@ -1006,6 +958,54 @@ export const generatedVisibleSections = [
               "underline": "none"
             },
             "desc": "该回合结束时获得X点费用"
+          },
+          {
+            "name": "体力恢复减少",
+            "tags": [
+              "负面状态"
+            ],
+            "tagColors": [
+              "#EE0000"
+            ],
+            "tagFormats": [
+              {
+                "color": "#EE0000",
+                "bold": false,
+                "italic": false,
+                "underline": "none"
+              }
+            ],
+            "format": {
+              "color": "#EE0000",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "这一回合中体力的恢复量-X*10%"
+          },
+          {
+            "name": "体力恢复增加",
+            "tags": [
+              "正面状态"
+            ],
+            "tagColors": [
+              "#00B0F0"
+            ],
+            "tagFormats": [
+              {
+                "color": "#00B0F0",
+                "bold": false,
+                "italic": false,
+                "underline": "none"
+              }
+            ],
+            "format": {
+              "color": "#00B0F0",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "这一回合中体力的恢复量+X*10%"
           }
         ]
       }
@@ -2170,6 +2170,30 @@ export const generatedVisibleSections = [
             "desc": "受到 “毒液爆发” 时受到X点伤害并将该层数减至2/3"
           },
           {
+            "name": "毒液爆发",
+            "tags": [
+              "负面状态"
+            ],
+            "tagColors": [
+              "#EE0000"
+            ],
+            "tagFormats": [
+              {
+                "color": "#EE0000",
+                "bold": false,
+                "italic": false,
+                "underline": "none"
+              }
+            ],
+            "format": {
+              "color": "#70ad47",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "令目标受到(\"毒液\"层数)点伤害并将\"毒液\"层数减至2/3"
+          },
+          {
             "name": "毒药瓶 X层",
             "tags": [
               "正面状态"
@@ -2328,30 +2352,6 @@ export const generatedVisibleSections = [
               "underline": "none"
             },
             "desc": "受到攻击时追加Y点毒元素伤害并将该层数减至2/3；元素爆发立刻造成体力上限13%的真实伤害"
-          },
-          {
-            "name": "毒液爆发",
-            "tags": [
-              "负面状态"
-            ],
-            "tagColors": [
-              "#EE0000"
-            ],
-            "tagFormats": [
-              {
-                "color": "#EE0000",
-                "bold": false,
-                "italic": false,
-                "underline": "none"
-              }
-            ],
-            "format": {
-              "color": "#70ad47",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "令目标受到(\"毒液\"层数)点伤害并将\"毒液\"层数减至2/3"
           }
         ]
       },
@@ -3052,6 +3052,30 @@ export const generatedVisibleSections = [
               "underline": "none"
             },
             "desc": "记录场地内所有单位受到的“流血”伤害与恢复的体力量，将其转化为等量“血宴”"
+          },
+          {
+            "name": "血魔之赐",
+            "tags": [
+              "能力"
+            ],
+            "tagColors": [
+              "#FFC000"
+            ],
+            "tagFormats": [
+              {
+                "color": "#FFC000",
+                "bold": false,
+                "italic": false,
+                "underline": "none"
+              }
+            ],
+            "format": {
+              "color": "#ff0000",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "隶属于 <血魔> 的单位持有的特殊能力；\n- 积攒层数获得强化，层数达到一定阈值后会进入下一阶段；\n- 积攒至III阶段时全部消耗以释放强化技能"
           },
           {
             "name": "血宴 X层",
@@ -4522,12 +4546,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#000000",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "特殊破裂；被施加咒杀状态时获得1个基础值计数，满足条件时使对应咒杀的计数-1，减至0时立刻受到1次(持有者破裂层数)点破裂伤害，并同时受到咒杀的特殊效果，随后解除该咒杀状态；持有咒杀时被再次施加相同种类的咒杀不会有任何效果"
+            "desc": "特殊“破裂”；被施加“咒杀”状态时获得1个基础值计数，满足条件时使对应“咒杀”的计数-1；\n- 计数减至0时立刻受到1次 (持有者“破裂”层数) 点“破裂”伤害，并同时受到“咒杀”的特殊效果，随后解除该“咒杀”状态；\n- 持有“咒杀”时被再次施加相同种类的“咒杀”不会有任何效果"
           },
           {
             "name": "咒杀【迅捷】 X层",
@@ -4546,12 +4570,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#ffc000",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀3: 受到速度值不低于6点的攻击 -&gt; 获得10层破裂"
+            "desc": "咒杀3: 受到速度值不低于6点的攻击 -> 获得10层\"破裂\""
           },
           {
             "name": "咒杀【剧毒】 X层",
@@ -4570,12 +4594,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#f1a9e7",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀5: 受到暴击攻击 -&gt; 获得2层无力与易伤"
+            "desc": "咒杀5: 受到暴击攻击 -> 获得2层\"无力\"与\"易伤\""
           },
           {
             "name": "咒杀【弱化】 X层",
@@ -4594,12 +4618,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#ad52ee",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀5: 受到速度值高于自身至少3点的攻击 -&gt; 获得3层易伤与1层束缚"
+            "desc": "咒杀5: 受到速度值高于自身至少3点的攻击 -> 获得3层\"易伤\"与1层\"束缚\""
           },
           {
             "name": "咒杀【勿动】 X层",
@@ -4618,12 +4642,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#e0d4c4",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀4: 持有者被累积施加3层束缚 -&gt; 受到(持有者破裂层数)点混乱伤害"
+            "desc": "咒杀4: 持有者被累积施加3层\"束缚\" -> 受到 (持有者\"破裂\"层数) 点混乱伤害"
           },
           {
             "name": "咒杀【血爆】 X层",
@@ -4642,12 +4666,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#ee0000",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀3：持有者受到体力比例低于自身的目标攻击 -&gt; 受到(持有者烧伤层数)点破裂伤害"
+            "desc": "咒杀3：持有者受到体力比例低于自身的目标攻击 -> 受到 (持有者\"烧伤\"层数) 点\"破裂\"伤害"
           },
           {
             "name": "咒杀【掣肘】 X层",
@@ -4666,12 +4690,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#039fdd",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀10: 其他咒杀的计数-1 -&gt; 获得2层虚弱"
+            "desc": "咒杀10: 其他\"咒杀\"的计数-1 -> 获得2层\"虚弱\""
           },
           {
             "name": "咒杀【衰亡】 X层",
@@ -4690,12 +4714,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#5e3325",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀4: 施加者触发破裂 -&gt; 使持有者所有咒杀的计数-1"
+            "desc": "咒杀4: 施加者触发\"破裂\" -> 使持有者所有\"咒杀\"的计数-1"
           },
           {
             "name": "咒杀【破】 X层",
@@ -4714,12 +4738,12 @@ export const generatedVisibleSections = [
               }
             ],
             "format": {
-              "color": "#3FA129",
-              "bold": false,
+              "color": "#e27e02",
+              "bold": true,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "咒杀3: 持有者的破裂被触发 -&gt; 受到(持有者破裂层数)点真实伤害"
+            "desc": "咒杀3: 持有者的\"破裂\"被触发 -> 受到 (持有者\"破裂\"层数) 点真实伤害"
           },
           {
             "name": "草种 X层",
@@ -5229,7 +5253,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "none"
             },
-            "desc": "这回合结束时获得X层破裂"
+            "desc": "这回合结束时获得X层“破裂”"
           },
           {
             "name": "充能力场 X层",
@@ -5253,7 +5277,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "none"
             },
-            "desc": "获得(X*3)点屏障，每失去3点屏障则使该层数-1；该回合结束时解除所有屏障并获得X层充能"
+            "desc": "获得 (X*3) 点“屏障”，每失去3点“屏障”则使该层数-1；\n- 每回合结束时解除 (X*3) 点“屏障”并获得X层“充能”"
           },
           {
             "name": "负荷 X级",
@@ -5301,7 +5325,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "none"
             },
-            "desc": "抵消X次受到的致命伤害并在触发时获得2层充能、对伤害来源立刻施加1层破裂"
+            "desc": "抵消X次受到的致命伤害并在触发时获得2层“充能”、对伤害来源立刻施加1层“破裂”"
           },
           {
             "name": "数据乱流 X层",
@@ -6779,7 +6803,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "none"
             },
-            "desc": "元素反应 电磁/水蚀，使所有带有电磁/水蚀的敌方单位受到相同的暴击伤害"
+            "desc": "元素反应 “电磁”/“水蚀”，使所有带有“电磁”/“水蚀”的敌方单位受到相同的暴击伤害"
           },
           {
             "name": "月绽放",
@@ -6828,6 +6852,83 @@ export const generatedVisibleSections = [
               "underline": "none"
             },
             "desc": "元素反应 崩碎/水蚀，使本次攻击命中时获得1层月笼与(伤害量)点屏障"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "基础骰子",
+    "title": "基础骰子",
+    "groups": [
+      {
+        "id": "g-基础骰子-0",
+        "title": "",
+        "entries": [
+          {
+            "name": "斩击",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "造成斩击伤害"
+          },
+          {
+            "name": "打击",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "造成打击伤害"
+          },
+          {
+            "name": "突刺",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "造成突刺伤害"
+          },
+          {
+            "name": "招架",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "拼点胜利，则免疫所有伤害并反震对应数值的混乱伤害；拼点失败，则受到(目标点数-自身点数)点伤害"
+          },
+          {
+            "name": "闪避",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": false,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "拼点胜利，则恢复对应数值点混乱抗性，并重复投掷；拼点失败，则摧毁该骰子；与招架/闪避骰子拼点，无论数值直接摧毁双方的骰子"
           }
         ]
       }
@@ -7092,6 +7193,135 @@ export const generatedVisibleSections = [
     ]
   },
   {
+    "id": "卡牌前缀",
+    "title": "卡牌前缀",
+    "groups": [
+      {
+        "id": "g-卡牌前缀-0",
+        "title": "",
+        "entries": [
+          {
+            "name": "V.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "满足一定条件后才可使用的特殊卡牌"
+          },
+          {
+            "name": "GX.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "满足一定条件后才可使用的，特殊栏位的卡牌"
+          },
+          {
+            "name": "DEF.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "守备专属卡牌"
+          },
+          {
+            "name": "EGO.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "情感等级战斗系统之中，处于EGO展现状态下单位使用的卡牌"
+          },
+          {
+            "name": "DST.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "情感等级战斗系统之中，处于扭曲状态下单位才能使用的卡牌"
+          },
+          {
+            "name": "SHM.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "情感等级战斗系统之中，能够让持有\"心\"的单位生成\"望\"的卡牌"
+          },
+          {
+            "name": "EX.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "在几大战斗系统之外的小体系内才能用的卡牌"
+          },
+          {
+            "name": "ELIT1.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "部署点数战斗系统之中，精英化一阶段时解禁的卡牌"
+          },
+          {
+            "name": "ELIT2.",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#8a8a8a",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "部署点数战斗系统之中，精英化二阶段时解禁的卡牌"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "基础标签",
     "title": "基础标签",
     "groups": [
@@ -7261,9 +7491,9 @@ export const generatedVisibleSections = [
             "tagFormats": [],
             "format": {
               "color": "#8a8a8a",
-              "bold": false,
+              "bold": true,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
             "desc": "必须有满足条件的友方单位在场才能成功发动"
           },
@@ -7276,7 +7506,7 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
             "desc": "一种“连携”机制。发起者使用带有 [“连携-同技”] 标签的卡牌时，可指定一名符合条件的友方单位作为连携者。本次行动中，发起者与连携者将各自独立使用一次该卡牌的全部效果。"
           },
@@ -7289,7 +7519,7 @@ export const generatedVisibleSections = [
               "color": "#8a8a8a",
               "bold": false,
               "italic": false,
-              "underline": "thin"
+              "underline": "none"
             },
             "desc": "一种需要条件解锁的“连携”机制。发起者想要使用卡牌A，需要场上存在一名装备了特定卡牌B的友方单位时，卡牌A才可发动。发动后，发起者使用卡牌A，连携者使用卡牌B。"
           },
@@ -7487,212 +7717,6 @@ export const generatedVisibleSections = [
               "underline": "thin"
             },
             "desc": "亡语卡牌在持有者阵亡时自动使用"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "卡牌前缀",
-    "title": "卡牌前缀",
-    "groups": [
-      {
-        "id": "g-卡牌前缀-0",
-        "title": "",
-        "entries": [
-          {
-            "name": "V.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "满足一定条件后才可使用的特殊卡牌"
-          },
-          {
-            "name": "GX.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "满足一定条件后才可使用的，特殊栏位的卡牌"
-          },
-          {
-            "name": "DEF.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "守备专属卡牌"
-          },
-          {
-            "name": "EGO.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "情感等级战斗系统之中，处于EGO展现状态下单位使用的卡牌"
-          },
-          {
-            "name": "DST.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "情感等级战斗系统之中，处于扭曲状态下单位才能使用的卡牌"
-          },
-          {
-            "name": "SHM.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "情感等级战斗系统之中，能够让持有\"心\"的单位生成\"望\"的卡牌"
-          },
-          {
-            "name": "EX.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "在几大战斗系统之外的小体系内才能用的卡牌"
-          },
-          {
-            "name": "ELIT1.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "部署点数战斗系统之中，精英化一阶段时解禁的卡牌"
-          },
-          {
-            "name": "ELIT2.",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": true,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "部署点数战斗系统之中，精英化二阶段时解禁的卡牌"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "基础骰子",
-    "title": "基础骰子",
-    "groups": [
-      {
-        "id": "g-基础骰子-0",
-        "title": "",
-        "entries": [
-          {
-            "name": "斩击",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "造成斩击伤害"
-          },
-          {
-            "name": "打击",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "造成打击伤害"
-          },
-          {
-            "name": "突刺",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "造成突刺伤害"
-          },
-          {
-            "name": "招架",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "拼点胜利，则免疫所有伤害并反震对应数值的混乱伤害；拼点失败，则受到(目标点数-自身点数)点伤害"
-          },
-          {
-            "name": "闪避",
-            "tags": [],
-            "tagColors": [],
-            "tagFormats": [],
-            "format": {
-              "color": "#8a8a8a",
-              "bold": false,
-              "italic": false,
-              "underline": "none"
-            },
-            "desc": "拼点胜利，则恢复对应数值点混乱抗性，并重复投掷；拼点失败，则摧毁该骰子；与招架/闪避骰子拼点，无论数值直接摧毁双方的骰子"
           }
         ]
       }
@@ -8213,8 +8237,6 @@ export const generatedHasParamTerms = {
   "迅捷 X层": 1,
   "状态虚弱 X层": 1,
   "状态增强 X层": 1,
-  "烧伤易损 X层": 1,
-  "烧伤守护 X层": 1,
   "理智值恢复效率减少 X层": 1,
   "理智值恢复效率增加 X层": 1,
   "理智值降低效率增加 X层": 1,
@@ -8223,6 +8245,8 @@ export const generatedHasParamTerms = {
   "抽牌增加 X层": 1,
   "费用流失 X层": 1,
   "费用充盈 X层": 1,
+  "体力恢复减少": 1,
+  "体力恢复增加": 1,
   "缓冲 X层": 1,
   "活力 X层": 1,
   "精准 X层": 1,

@@ -10,6 +10,8 @@
  * 合成词不落库、不出现在词典页与卡牌编辑器下拉；库内显式词条永远优先于组合解析。
  */
 
+import { PARAM_SUFFIX } from './termKeys'
+
 export type AffixKind = 'mech' | 'dice'
 
 export interface AffixCandidate {
@@ -61,8 +63,6 @@ export const DICE_AXES: string[] = [
   '虚弱',
   '强壮',
 ]
-
-const PARAM_SUFFIX = /\s*X(层|点|次|颗|滴|回合|级|张|时|年|月|日)\s*$/
 
 /** 词条名去掉参数后缀 → 词缀显示名（保留连字符与空格原貌，如「震颤-崩坏」「凋亡」）。 */
 export function affixDisplayName(name: string): string {
