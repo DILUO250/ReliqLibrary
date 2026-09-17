@@ -65,4 +65,12 @@ export const api = {
     request<{ ok: boolean }>(`/armarium/anomaly-image?url=${encodeURIComponent(url)}`, {
       method: 'DELETE',
     }),
+  // 服务端 PDF 导出（双段式①）：同步阻塞至 PDF 就绪，返回暂存 id + 下载地址（双段式②）
+  exportAnomalyReport: async (id: number | string): Promise<{ id: string; filename: string; fileUrl: string }> => {
+    const res = await request<{ id: string; filename: string }>(
+      `/armarium/export/anomaly/${id}`,
+      { method: 'POST' },
+    )
+    return { ...res, fileUrl: `${BASE}/armarium/export/anomaly/file/${res.id}` }
+  },
 }

@@ -25,6 +25,14 @@ const routes: RouteRecordRaw[] = [
     meta: { chromeless: true },
   },
   {
+    // 服务端 PDF 导出的无 UI 打印路由（后端无头浏览器加载）：chromeless + 零工具栏，
+    // 分页完成信号 window.__PAPER_READY 由 EntityPrintView 发出。
+    path: '/print/armarium/anomaly/:id',
+    name: 'print-armarium-anomaly',
+    component: () => import('@/features/armarium/entities/EntityPrintView.vue'),
+    meta: { chromeless: true },
+  },
+  {
     path: '/armarium',
     component: () => import('@/shared/components/ModuleLayout.vue'),
     meta: { module: 'armarium' },

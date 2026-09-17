@@ -92,6 +92,11 @@ backend\src\
 ├─ features\
 │  ├─ turris\artRoutes.ts    # 迎书楼专属接口：图片上传 + AI 立绘生成
 │  ├─ armarium\artRoutes.ts  # 藏书阁专属接口：PVZ 素材上传 + 云端同步
+│  ├─ armarium\anomalyArtRoutes.ts # 藏书阁专属接口：异常实体报告插图上传/删除
+│  ├─ armarium\exportRoutes.ts     # 藏书阁专属接口：报告单服务端 PDF 导出（双段式）
+│  ├─ pdf\pdfPrinter.ts      # ★ 服务端 PDF 打印引擎（模块无关）：puppeteer-core 驱动
+│  │                         #   本机 Chrome/Edge 加载前端 /print 路由 → printToPDF；
+│  │                         #   各模块导出必须复用它，禁止在后端重复实现渲染
 │  └─ armarium\pvzSync.ts    # PVZ 云端同步逻辑
 ├─ scripts\
 │  ├─ exportSeed.ts      # 手动触发一次全表快照 + 术语种子重生成（npm run export:snapshot）
@@ -152,8 +157,11 @@ frontend\
    │  ├─ services\api.ts      # ★ 唯一的后端请求通道（统一封装，写操作自动带 token）
    │  ├─ stores\              #   全局 Pinia 状态（如 toast 提示）
    │  └─ styles\              #   全站样式 + tokens.css 设计变量
-   ├─ shared\                 # 跨模块的公共组件（SiteNav / ModuleLayout / Toast / BackupToast 等）
-   └─ features\               # ★ 三个模块各一个平行文件夹，互不 import
+    ├─ shared\                 # 跨模块的公共组件（SiteNav / ModuleLayout / Toast / BackupToast 等）
+    │  └─ paper\               # 通用分页引擎（paginate 引擎 / PaperPages 多页纸面组件 /
+    │                          #   printPageStyle @page 注入 / paper-base.css 机制骨架——
+    │                           #   各模块纸面复用：报告单、未来的楼层导出等）
+    └─ features\               # ★ 三个模块各一个平行文件夹，互不 import
       ├─ turris\              #   迎书楼（重点，见 5.2）
       ├─ armarium\            #   藏书阁（五 Tab + PVZ 百科子项目，见 5.4）
       └─ collegium\           #   寻书社（占位）
@@ -217,10 +225,13 @@ frontend\src\features\armarium\
 ├─ store\
 │  └─ anomalies.ts        # Pinia：anomalies 列表缓存（load/reload 幂等）
 ├─ entities\              # ★ SCL 异常实体报告单（格式权威依据：草稿\1.2 的格式规范文档）
-│  ├─ EntityReportView.vue   # 报告单预览页（纸面 + 返回按钮 + 打印导出 PDF）
+│  ├─ EntityReportView.vue   # 报告单预览页（纸面 + 返回按钮 + 服务端导出 PDF / 浏览器打印）
 │  ├─ EntityEditView.vue     # 报告单编辑器（左编辑/右实时预览双栏，保存时才上传图片）
-│  ├─ reportRender.ts        # 纯函数：Anomaly + report JSON → 纸面 HTML
-│  └─ paper.css              # 纸面样式（Word 版式 + 屏幕增强双轨，编辑页/预览页共用）
+│  ├─ EntityPrintView.vue    # 无 UI 打印路由宿主（/print/armarium/anomaly/:id）：
+│  │                         #   服务端导出时后端无头浏览器加载本页渲染并 printToPDF
+│  ├─ ReportPaper.vue        # 薄适配壳：SCL 行构造/页内重组 → shared/paper 分页组件
+│  ├─ reportRender.ts        # 纯函数：Anomaly + report JSON → 原子行序列 + 页 HTML（SCL 内容格式）
+│  └─ paper.css              # SCL 纸面皮肤（Word 版式 + 屏幕增强双轨，编辑页/预览页共用）
 └─ projects\pvzwiki\      # PVZ 百科（独立子项目，独立标签页打开）
    ├─ PvzProjectView.vue     #   壳 + 侧边导航
    ├─ views\                 #   植物图鉴页 / 植物详情页
@@ -231,6 +242,8 @@ frontend\src\features\armarium\
 ```
 
 研究项目由数据库 `armarium_projects` 表驱动（每行一个项目卡片；`openMode:'tab'` 新窗口打开、`'spa'` 站内跳转）。**加新图鉴类小项目 = 库里加一行 + 一条路由，禁止把项目卡片硬编码进组件。** PVZ 的图片资产住在规范家 `public\art\armarium\projects\pvz\`（plants/card·full·icon、backgrounds、fonts、封面图；2026-09 已从旧 features 独享目录迁入，DB 里存的是最终显示路径）。
+
+**报告单服务端 PDF 导出（2026-09-17 落地，双段式）**：预览页"导出 PDF"按钮 → `POST /api/armarium/export/anomaly/:id`（同步阻塞，后端用 puppeteer-core 驱动本机 Chrome 加载 `/print/armarium/anomaly/:id` 无 UI 路由渲染分页并 `printToPDF`，暂存 `backend/data/export-cache/`，TTL 15 分钟自动清理）→ 返回 `{id, filename}` → 前端让预开的空白页跳向 `GET /api/armarium/export/anomaly/file/<UUID>` 触发浏览器原生下载。纸面渲染器（前端）是唯一权威渲染源，后端零重复实现；其他模块将来做导出必须复用 `backend/src/features/pdf/`（见 CONVENTIONS §2.5）。依赖：前端 dev server 必须在线（`FRONTEND_URL` 环境变量可改指向）；"浏览器打印"按钮保留 `window.print()` 作为兜底。
 
 ---
 

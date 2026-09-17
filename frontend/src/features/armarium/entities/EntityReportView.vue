@@ -2,8 +2,9 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api } from '@/app/services/api'
-import { renderReportHtml } from '@/features/armarium/entities/reportRender'
-import { usePrintPageStyle } from '@/features/armarium/entities/printPageStyle'
+import { showToast } from '@/app/stores/toast'
+import ReportPaper from '@/features/armarium/entities/ReportPaper.vue'
+import { usePrintPageStyle } from '@/shared/paper/printPageStyle'
 import './paper.css'
 import {
   anomalyExportFilename,
@@ -47,8 +48,8 @@ function onMessage(event: MessageEvent): void {
   if (event.data === 'rtl:anomalies-updated') void load()
 }
 
-const html = computed(() =>
-  entity.value ? renderReportHtml(entity.value, parseAnomalyReport(entity.value.report)) : '',
+const parsedReport = computed(() =>
+  entity.value ? parseAnomalyReport(entity.value.report) : null,
 )
 
 function goBack(): void {
@@ -79,6 +80,39 @@ function printReport(): void {
   }, { once: true })
   window.print()
 }
+
+/* ---------- 服务端 PDF 导出（双段式：①POST 生成 ②GET 原生下载） ---------- */
+
+const exporting = ref(false)
+
+async function exportPdf(): Promise<void> {
+  if (!entity.value || exporting.value) return
+  exporting.value = true
+  // 空白下载页在用户手势的同步栈内先开（浏览器弹窗拦截只放行手势同步链），
+  // POST 返回后再让它跳向 GET 文件地址触发原生下载。
+  const w = window.open('', '_blank')
+  try {
+    const { fileUrl } = await api.exportAnomalyReport(entity.value.id)
+    if (!w) {
+      showToast('弹窗被浏览器拦截，请允许本站弹窗后重试')
+      return
+    }
+    w.location.href = fileUrl
+    // 下载发起后关闭空白中转页（浏览器可能拒绝脚本关窗，静默即可）
+    setTimeout(() => {
+      try {
+        w.close()
+      } catch {
+        /* 关不掉就留着空白页，无碍 */
+      }
+    }, 2500)
+  } catch (e) {
+    w?.close()
+    showToast(e instanceof Error ? `导出失败：${e.message}` : '导出失败', 4000)
+  } finally {
+    exporting.value = false
+  }
+}
 </script>
 
 <template>
@@ -86,7 +120,14 @@ function printReport(): void {
     <div class="scl-report__toolbar">
       <button type="button" class="scl-report__back" @click="goBack">← 返回异常实体库</button>
       <div class="scl-report__toolbar-side">
-        <button v-if="entity" type="button" class="scl-report__print" @click="printReport">打印 / 导出 PDF</button>
+        <button
+          v-if="entity"
+          type="button"
+          class="scl-report__print"
+          :disabled="exporting"
+          @click="exportPdf"
+        >{{ exporting ? '生成 PDF 中…' : '导出 PDF' }}</button>
+        <button v-if="entity" type="button" class="scl-report__print" @click="printReport">浏览器打印</button>
         <button
           v-if="entity"
           type="button"
@@ -98,6 +139,10 @@ function printReport(): void {
 
     <p v-if="loading" class="scl-report__hint">读取报告单中…</p>
     <p v-else-if="missing" class="scl-report__hint">未找到该异常实体档案，可能已被删除。</p>
-    <article v-else class="scl-paper" v-html="html"></article>
+    <ReportPaper
+      v-else-if="entity && parsedReport"
+      :entity="entity"
+      :report="parsedReport"
+    />
   </div>
 </template>

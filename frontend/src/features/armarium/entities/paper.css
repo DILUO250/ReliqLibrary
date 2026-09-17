@@ -1,5 +1,12 @@
-﻿/* 异常实体报告单 · 纸面样式（全局，scl- 前缀隔离）。
-   依据：草稿/1.2 §1–§6 Word 版式 + §9 屏幕增强/打印规则。 */
+﻿/* 异常实体报告单 · 纸面皮肤（全局，scl- 前缀隔离）。
+   依据：草稿/1.2 §1–§6 Word 版式 + §9 屏幕增强/打印规则。
+   分页机制（多页竖排/离屏度量/打印断页/shell 清零）在 shared/paper（通用骨架），
+   本文件只承载 SCL 的视觉皮肤与版式变量：
+   版式度量全部走 CSS 变量：屏幕轨（§9.1 增强值）为默认值，
+   打印轨（§1–§6 Word 精确值）经 @media print 与 .scl-paper--print-metrics
+   （分页引擎的第二遍度量镜像）双处覆盖，两处必须保持一致。
+   几何契约（ReportPaper.vue 的 geometry 须与之同步）：21cm 宽 × 29.7cm 高、
+   padding 2.54cm 上下、file-box 垂直开销 22pt、打印页高 29.65cm（防亚像素溢出空白页）。 */
 .scl-report {
   align-items: center;
   border-top: 1px solid var(--color-line);
@@ -48,7 +55,34 @@
   font-size: 13px;
 }
 
+/* ---------- 纸面（固定 A4，背景不再随内容拉伸） ----------
+   机制类（.paper-doc/.paper-measure/.paper-loose）来自 shared/paper/paper-base.css。 */
+
 .scl-paper {
+  --paper-min-h: 29.7cm; /* loose 兜底页的 min-height（paper-base.css 消费） */
+  --r-fs: 11pt;
+  --r-lh: 1.9;
+  --title-mb: 18pt;
+  --title-pb: 5pt;
+  --meta-mb: 16pt;
+  --meta-p-my: 0 0 2pt;
+  --meta-p-lh: 1.9;
+  --h-fs: 13pt;
+  --h-mt: 0.6cm;
+  --h-mb: 0.2cm;
+  --li-my: 0.18cm;
+  --entry-mt: 0.4cm;
+  --entry-mb: 0.15cm;
+  --box-my: 0.2cm;
+  --box-py: 10pt;
+  --box-px: 14pt;
+  --fig-my: 0.35cm;
+  --fig-maxh: 11cm;
+  --cap-fs: 10.5pt;
+  --cap-mt: 4pt;
+  --warn-fs: 11pt;
+  --warn-my: 0.5cm;
+
   background: #fffbfb url('/art/armarium/report/bg.png') center / 100% 100% no-repeat;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
   color: #000;
@@ -63,13 +97,42 @@
     'Microsoft YaHei',
     'PingFang SC',
     sans-serif;
-  font-size: 11pt;
-  line-height: 1.9;
-  min-height: 29.7cm;
+  font-size: var(--r-fs);
+  height: 29.7cm;
+  line-height: var(--r-lh);
+  overflow: hidden;
   padding: 2.54cm 3.17cm;
   width: 21cm;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
+}
+
+/* 单行超容量的兜底页/离屏度量容器：机制类已升舱 shared/paper（.paper-loose/.paper-measure）。 */
+
+/* 打印轨变量镜像：与下方 @media print 块保持一致（分页引擎第二遍度量用） */
+.scl-paper--print-metrics {
+  --r-fs: 9.5pt;
+  --r-lh: 1.15;
+  --title-mb: 15pt;
+  --title-pb: 4pt;
+  --meta-mb: 18pt;
+  --meta-p-my: 0;
+  --meta-p-lh: normal;
+  --h-fs: 9.5pt;
+  --h-mt: 0.28cm;
+  --h-mb: 0.28cm;
+  --li-my: 0.28cm;
+  --entry-mt: 0.28cm;
+  --entry-mb: 0.28cm;
+  --box-my: 0.28cm;
+  --box-py: 8pt;
+  --box-px: 12pt;
+  --fig-my: 0.28cm;
+  --fig-maxh: 9cm;
+  --cap-fs: 9.5pt;
+  --cap-mt: 0.28cm;
+  --warn-fs: 9.5pt;
+  --warn-my: 0.28cm;
 }
 
 .scl-paper .r-title {
@@ -78,19 +141,19 @@
   font-size: 20pt;
   font-weight: 700;
   letter-spacing: normal;
-  margin: 0 0 18pt;
-  padding-bottom: 5pt;
+  margin: 0 0 var(--title-mb);
+  padding-bottom: var(--title-pb);
   text-align: left;
 }
 
 .scl-paper .r-meta {
-  margin: 0 0 16pt;
+  margin: 0 0 var(--meta-mb);
 }
 
 .scl-paper .r-meta p {
   font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
-  line-height: 1.9;
-  margin: 0 0 2pt;
+  line-height: var(--meta-p-lh);
+  margin: var(--meta-p-my);
 }
 
 .scl-paper .r-meta strong {
@@ -101,10 +164,10 @@
   border-bottom: 1px solid #d8d2c4;
   border-left: 3pt solid #f6a21d;
   font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
-  font-size: 13pt;
+  font-size: var(--h-fs);
   font-weight: 700;
   letter-spacing: normal;
-  margin: 0.6cm 0 0.2cm;
+  margin: var(--h-mt) 0 var(--h-mb);
   padding: 0 0 3pt 8pt;
 }
 
@@ -131,7 +194,7 @@
 }
 
 .scl-paper .r-list > li {
-  margin: 0.18cm 0;
+  margin: var(--li-my) 0;
   padding-left: 14pt;
   position: relative;
 }
@@ -146,7 +209,7 @@
 .scl-paper .r-entry {
   border-left: 2pt solid rgba(246, 162, 29, 0.55);
   font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
-  margin: 0.4cm 0 0.15cm;
+  margin: var(--entry-mt) 0 var(--entry-mb);
   padding-left: 6pt;
 }
 
@@ -175,35 +238,35 @@
 .scl-paper .file-box {
   background: rgba(255, 255, 255, 0.4);
   border: 1pt solid #000;
-  margin: 0.2cm 0;
-  padding: 10pt 14pt;
+  margin: var(--box-my) 0;
+  padding: var(--box-py) var(--box-px);
 }
 
 .scl-paper .r-fig {
-  margin: 0.35cm auto;
+  margin: var(--fig-my) auto;
   text-align: center;
 }
 
 .scl-paper .r-fig img {
   background: #fff;
   border: none;
-  max-height: 11cm;
+  max-height: var(--fig-maxh);
   max-width: 70%;
   object-fit: contain;
 }
 
 .scl-paper .r-fig figcaption {
   font-family: SimSun, '华文细黑', 'STXihei', serif;
-  font-size: 10.5pt;
-  margin-top: 4pt;
+  font-size: var(--cap-fs);
+  margin-top: var(--cap-mt);
 }
 
 .scl-paper .r-warn {
   font-family: SimSun, 'Songti SC', serif;
-  font-size: 11pt;
+  font-size: var(--warn-fs);
   font-weight: 700;
   letter-spacing: normal;
-  margin: 0.5cm 0;
+  margin: var(--warn-my) 0;
   text-align: center;
 }
 
@@ -226,20 +289,17 @@
   transform: rotate(-4deg);
 }
 
-@media screen and (max-width: 900px) {
-  .scl-paper {
-    min-height: 0;
-    padding: 1cm 5%;
-    width: 100%;
-  }
+/* 多层受限嵌套（同一页内先后出现多条警告线）时，内层印章下移防重叠 */
+.scl-paper .r-restricted > .r-restricted > .r-seal {
+  top: 16pt;
 }
 
 @media print {
-  /* @page 无法被 :has 守卫（会泄漏到全站打印），由实体页挂载时动态注入/卸载时移除。 */
+  /* @page 无法被 :has 守卫（会泄漏到全站打印），由实体页挂载时动态注入/卸载时移除。
+     通用机制（body margin 0、site-nav/page-header/module-tabs 隐藏、module-shell__inner/
+     site-main 清零、.paper-pages 竖排、断页、末页豁免）已升舱 shared/paper/paper-base.css，
+     此处只保留 SCL 专属的部分。 */
 
-  body:has(.scl-paper) .site-nav,
-  body:has(.scl-paper) .module-shell .page-header,
-  body:has(.scl-paper) .module-shell .module-tabs,
   body:has(.scl-paper) .scl-report__toolbar,
   body:has(.scl-paper) .ent-edit .topbar,
   body:has(.scl-paper) .ent-edit .editor-pane {
@@ -253,6 +313,7 @@
 
   body:has(.scl-paper) .ent-edit .preview-pane {
     display: block;
+    overflow: visible;
     padding: 0;
   }
 
@@ -260,68 +321,38 @@
     min-height: 0;
   }
 
-  body:has(.scl-paper) .module-shell__inner {
-    margin: 0;
-    max-width: none;
+  body:has(.scl-paper) .scl-report {
+    border-top: none;
+    padding-top: 0;
   }
 
   .scl-paper {
-    background-position: top center;
-    background-repeat: repeat-y;
-    background-size: 100% 29.7cm;
-    box-shadow: none;
-    font-size: 9.5pt;
-    line-height: 1.15;
-    margin: 0;
-  }
+    /* 打印轨变量（与 .scl-paper--print-metrics 镜像保持一致） */
+    --r-fs: 9.5pt;
+    --r-lh: 1.15;
+    --title-mb: 15pt;
+    --title-pb: 4pt;
+    --meta-mb: 18pt;
+    --meta-p-my: 0;
+    --meta-p-lh: normal;
+    --h-fs: 9.5pt;
+    --h-mt: 0.28cm;
+    --h-mb: 0.28cm;
+    --li-my: 0.28cm;
+    --entry-mt: 0.28cm;
+    --entry-mb: 0.28cm;
+    --box-my: 0.28cm;
+    --box-py: 8pt;
+    --box-px: 12pt;
+    --fig-my: 0.28cm;
+    --fig-maxh: 9cm;
+    --cap-fs: 9.5pt;
+    --cap-mt: 0.28cm;
+    --warn-fs: 9.5pt;
+    --warn-my: 0.28cm;
 
-  .scl-paper .r-title {
-    margin: 0 0 15pt;
-    padding-bottom: 4pt;
-  }
-
-  .scl-paper .r-meta {
-    margin: 0 0 18pt;
-  }
-
-  .scl-paper .r-meta p {
-    line-height: normal;
-    margin: 0;
-  }
-
-  .scl-paper h3.r-h {
-    font-size: 9.5pt;
-    margin: 0.28cm 0;
-  }
-
-  .scl-paper .r-list > li {
-    margin: 0.28cm 0;
-  }
-
-  .scl-paper .r-entry {
-    margin: 0.28cm 0;
-  }
-
-  .scl-paper .file-box {
-    margin: 0.28cm 0;
-    padding: 8pt 12pt;
-  }
-
-  .scl-paper .r-fig {
-    margin: 0.28cm auto;
-  }
-
-  .scl-paper .r-fig img {
-    max-height: 9cm;
-  }
-
-  .scl-paper .r-fig figcaption {
-    font-size: 9.5pt;
-    margin-top: 0.28cm;
-  }
-
-  .scl-paper .r-warn {
-    font-size: 9.5pt;
-    margin: 0.28cm 0;
+    /* 页高微缩 0.05cm：防整页 + margin:0 的亚像素溢出挤出空白页；
+       底部约 0.5mm 露白在纸面上不可见（打印页高是 SCL 几何契约的一部分） */
+    height: 29.65cm;
   }
 }

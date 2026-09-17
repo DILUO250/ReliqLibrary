@@ -4,8 +4,8 @@ import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { api } from '@/app/services/api'
 import { showToast } from '@/app/stores/toast'
 import { useAnomaliesStore } from '@/features/armarium/store/anomalies'
-import { renderReportHtml } from '@/features/armarium/entities/reportRender'
-import { usePrintPageStyle } from '@/features/armarium/entities/printPageStyle'
+import ReportPaper from '@/features/armarium/entities/ReportPaper.vue'
+import { usePrintPageStyle } from '@/shared/paper/printPageStyle'
 import './paper.css'
 import {
   ANOMALY_PAGE_MAX,
@@ -166,8 +166,6 @@ const previewReport = computed<AnomalyReport>(() => ({
     url: f._pending?.objectUrl ?? f.url,
   })),
 }))
-
-const previewHtml = computed(() => renderReportHtml(previewAnomaly.value, previewReport.value))
 
 /* ---------- 展示层常量（草稿同款） ---------- */
 
@@ -720,7 +718,7 @@ function goBack(): void {
       </aside>
 
       <main class="preview-pane">
-        <article class="scl-paper" v-html="previewHtml"></article>
+        <ReportPaper :entity="previewAnomaly" :report="previewReport" />
       </main>
     </div>
 

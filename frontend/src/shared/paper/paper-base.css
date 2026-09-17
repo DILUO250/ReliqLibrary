@@ -1,0 +1,85 @@
+/* 通用多页纸面骨架（shared/paper，跨模块）。
+ * 本文件只承载"机制"：多页竖排容器、离屏度量、断页打印、shell 留白清零、
+ * 窄屏缩放由 PaperPages.vue 内联注入。各模块纸面的视觉皮肤
+ * （背景/字体/版式变量）留在各自 feature 的 paper.css，互不干涉。
+ * 约定：每张纸面元素同时挂 paperClass（模块皮肤）与 paper-doc（机制标记）。 */
+
+.paper-pages {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.paper-pages__hint {
+  color: var(--color-ink-faint);
+  font-size: 13px;
+}
+
+/* 离屏度量容器：复刻目标纸面盒模型（PaperPages 传入的 paperClass 提供内边距/字体），
+   只重定位/隐藏，其余交由皮肤类。覆盖属性加 !important：paper-base 与皮肤样式的
+   载入顺序不保证，机制属性必须赢。 */
+.paper-measure {
+  box-shadow: none !important;
+  height: auto !important;
+  left: -10000px;
+  min-height: 0 !important;
+  overflow: visible !important;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  visibility: hidden !important;
+  z-index: -1;
+}
+
+/* 单行超容量的兜底页：允许增高（见 paginate.ts 的 loose 标记） */
+.paper-loose {
+  height: auto !important;
+  min-height: var(--paper-min-h, auto);
+  overflow: visible !important;
+}
+
+@media print {
+  /* 打印时网站外壳会让内容整体下移/偏移 → 每个纸面溢出到下一张 PDF 页
+     （实测 site-main 40px padding-top 的事故），统一清零。 */
+  body:has(.paper-doc) {
+    margin: 0;
+  }
+
+  body:has(.paper-doc) .site-nav,
+  body:has(.paper-doc) .module-shell .page-header,
+  body:has(.paper-doc) .module-shell .module-tabs {
+    display: none !important;
+  }
+
+  body:has(.paper-doc) .module-shell__inner {
+    margin: 0;
+    max-width: none;
+  }
+
+  body:has(.paper-doc) .site-main {
+    padding: 0;
+  }
+
+  /* 一页一个 .paper-doc：末页不再断页（防尾部空白页） */
+  .paper-pages {
+    display: block;
+    zoom: 1 !important;
+  }
+
+  .paper-pages__hint {
+    display: none;
+  }
+
+  .paper-doc {
+    box-shadow: none;
+    break-after: page;
+    break-inside: avoid;
+    margin: 0;
+  }
+
+  .paper-doc:last-of-type {
+    break-after: auto;
+  }
+}

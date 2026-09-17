@@ -100,6 +100,20 @@ Vue 视图 (features/*/views, features/*/components)
 
 **没有可编辑的种子文件**——`seed/data.ts`（一次性迁移化石）已于 2026-09 删除。`seed:reset` 的唯一合法语义：**事务内清空全部表 → 从 `backend/data/db-snapshot.json` 无损恢复**（快照由自动备份实时维护，永远与库同步，所以这是无损操作）；不带 `--reset` 旗标运行必须拒绝执行。首条记录类数据（如 PVZ 项目行）直接通过 API/词典页写入库，随快照固化——**禁止**再为"引导数据"新建手写种子文件。
 
+### 2.5 服务端 PDF 导出（必须复用 features/pdf/，禁止另起炉灶）
+
+导出文件的终局形态是**服务端出文件**（plans/paper-engine-promote-shared.md §导出请求路径），双段式接口：
+
+```
+① POST /api/<模块>/export/<文档>/:id   （带 x-rtl-key；同步阻塞至 PDF 就绪，返回 {id, filename}）
+② GET  /api/<模块>/export/file/<UUID>  （GET 不设防；UUID 随机不可枚举 = 能力令牌；原生下载）
+```
+
+- **前端纸面渲染器 = 唯一权威渲染源（SSOT）**：后端 `features/pdf/pdfPrinter.ts` 只用 puppeteer-core 驱动本机 Chrome/Edge 加载前端 `/print` 无 UI 打印路由、等 `window.__PAPER_READY` 信号、`printToPDF`。**禁止**在后端重复实现任何分页/排版/绘制。
+- 各模块的新导出端点**必须**挂在 `backend/src/features/<模块>/exportRoutes.ts` 并复用 `features/pdf/`；暂存统一走 `backend/data/export-cache/`（UUID 命名 + TTL 过期清理，已 gitignore），TTL 清理逻辑复用 exportRoutes 里的 sweepExpired 模式。
+- 前端每模块一个无 UI 打印路由（`/print/<模块>/<文档>/:id`，chromeless），与预览页共用同一套纸面组件；**打印轨必须零偏移**——任何 wrapper 的上下 padding 都会把首张纸面顶出页界（一个 padding = 每页多一张 PDF，实测事故）。
+- 生成依赖前端 dev server 在线（`FRONTEND_URL` 配置）；不可达时必须返回明确错误提示，禁止静默失败。
+
 ---
 
 ## 3. 数据完整性与素材治理
@@ -254,7 +268,7 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 
 ## 7. 已知的待办（不在本次规范范围）
 
-- 藏书阁五 Tab 中：总览 / 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。**异常实体库已完成**（2026-09-16）：报告单整体存 `anomalies.report` JSON 列（结构见 `shared/src/index.ts` 的 `AnomalyReport`），格式权威依据 = `草稿\1.2-藏书阁异常实体报告单\03-异常实体报告单-格式规范.md`（Word 版式 + 屏幕增强双轨，§9）；报告插图不登记 `IMAGE_COLUMNS`（存在 JSON 内部，由 `anomalyArtRoutes` 的替换/删除通道 + anomalies 删行钩子集中回收）。
+- 藏书阁五 Tab 中：总览 / 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。**异常实体库已完成**（2026-09-16）：报告单整体存 `anomalies.report` JSON 列（结构见 `shared/src/index.ts` 的 `AnomalyReport`），格式权威依据 = `草稿\1.2-藏书阁异常实体报告单\03-异常实体报告单-格式规范.md`（Word 版式 + 屏幕增强双轨，§9）；报告插图不登记 `IMAGE_COLUMNS`（存在 JSON 内部，由 `anomalyArtRoutes` 的替换/删除通道 + anomalies 删行钩子集中回收）。**纸面分页引擎在 `frontend/src/shared/paper/`**（2026-09-17 升舱）：`paginate.ts`/`PaperPages.vue`/`printPageStyle.ts`/`paper-base.css` 为跨模块通用件（SCL 报告单已接入）；其它模块做"纸面文档/导出"时必须复用该层（禁止把分页机制复制进 feature 或升到后端——服务端 PDF 走无头浏览器加载纸面页面的路线，渲染逻辑零重复）。
 - `art/armarium/_trash/`（根级 `art/_trash/` 中的历史遗留文件）需要人工定期清理。
 - `term-backup-*.json` 由恢复脚本轮转（保留最近 3 份）并被 git 跟踪（备份策略待议）。
 
