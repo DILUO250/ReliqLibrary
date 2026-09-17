@@ -10,6 +10,7 @@ import RenderedText from '@/features/turris/terms/RenderedText.vue'
 import type { PrivateTerm } from '@/features/turris/terms/renderer'
 import { formatToCss } from '@/features/turris/terms/format'
 import FloorEditorModal from './FloorEditorModal.vue'
+import AnomalyCodeLink from '@/shared/components/AnomalyCodeLink.vue'
 import LibrarianEditorModal from './LibrarianEditorModal.vue'
 import EmotionEntityEditorModal from './EmotionEntityEditorModal.vue'
 import DeckPreviewModal from './DeckPreviewModal.vue'
@@ -652,7 +653,7 @@ onMounted(load)
                     <div v-else class="entity-list">
                       <div v-for="e in entitiesByFloor.get(f.id)" :key="e.id" class="entity-row">
                         <button type="button" class="entity-row__head" @click="toggleEntity(e.id)">
-                          <span class="entity-code">{{ e.code || 'SCL-' }}</span>
+                          <AnomalyCodeLink :code="e.code || 'SCL-'" />
                           <span class="entity-name">&lt;{{ e.name || '未命名' }}&gt;</span>
                           <span class="entity-summary">
                             <span class="chip">书页 {{ emotionSheetOf(e)?.pages.length ?? 0 }}</span>

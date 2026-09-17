@@ -9,6 +9,21 @@ const routes: RouteRecordRaw[] = [
     name: 'home',
     component: () => import('@/app/pages/HomeView.vue'),
   },
+  // 异常实体报告单整页（预览/编辑）：独立于 ModuleLayout——不带 page-header 与五 Tab，
+  // 报告纸面与草稿双栏编辑器需要完整视口（2026-09-16 二次决议：顶栏 SiteNav 保留）。
+  // 注意必须排在 '/armarium' 父路由之外（同级），静态段优先级不受影响。
+  {
+    path: '/armarium/entities/:id',
+    name: 'armarium-entity-report',
+    component: () => import('@/features/armarium/entities/EntityReportView.vue'),
+  },
+  {
+    path: '/armarium/entities/:id/edit',
+    name: 'armarium-entity-edit',
+    component: () => import('@/features/armarium/entities/EntityEditView.vue'),
+    // window.open 独立窗口：隐藏全站顶栏并解除 site-main 容器约束（App.vue 消费）
+    meta: { chromeless: true },
+  },
   {
     path: '/armarium',
     component: () => import('@/shared/components/ModuleLayout.vue'),

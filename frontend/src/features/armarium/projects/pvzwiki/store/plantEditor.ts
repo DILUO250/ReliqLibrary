@@ -7,7 +7,7 @@ export interface PlantEditData {
   toughness: number | null
   damage: number | null
   range: string | null
-  family: string | null
+  familyCode: string | null
   introduction: string | null
   chat: string | null
   ability: string[]

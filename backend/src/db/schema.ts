@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS floors (
   code TEXT DEFAULT '',
   designation TEXT DEFAULT '',
   theme TEXT DEFAULT '',
-  receptionType TEXT DEFAULT '',
   battleSystem TEXT DEFAULT 'base',
   description TEXT DEFAULT '',
   sortOrder INTEGER DEFAULT 0,
@@ -88,7 +87,8 @@ CREATE TABLE IF NOT EXISTS anomalies (
   containment TEXT DEFAULT '',
   appendix TEXT DEFAULT '',
   worldId INTEGER DEFAULT NULL,
-  note TEXT DEFAULT ''
+  note TEXT DEFAULT '',
+  report TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS literary_worlds (
@@ -195,7 +195,6 @@ CREATE TABLE IF NOT EXISTS energy_records (
   date TEXT DEFAULT '',
   amount REAL DEFAULT 0,
   source TEXT DEFAULT '',
-  expeditionId TEXT DEFAULT '',
   note TEXT DEFAULT ''
 );
 
@@ -244,6 +243,7 @@ CREATE TABLE IF NOT EXISTS term_entries (
   tagFormats TEXT DEFAULT '[]',
   format TEXT DEFAULT '{}',
   description TEXT DEFAULT '',
+  hasParam INTEGER DEFAULT 0,
   sortOrder INTEGER DEFAULT 0
 );
 
@@ -266,21 +266,39 @@ CREATE TABLE IF NOT EXISTS pvz_plants (
   toughness INTEGER,
   damage INTEGER,
   range TEXT,
-  family TEXT,
   introduction TEXT,
   chat TEXT,
   ability TEXT DEFAULT '[]',
   traits TEXT DEFAULT '[]',
   wikiFull TEXT,
-  wikiThumb TEXT,
   sortOrder INTEGER DEFAULT 0
 );
 
+-- PVZ 关键词：主键为英文代号（slug），植物行的 traits JSON 直接存这些代号，
+-- 因此主键必须保持 TEXT 且 NOT NULL——改数字自增会打断全部 traits 引用。
 CREATE TABLE IF NOT EXISTS pvz_keywords (
-  id TEXT PRIMARY KEY,
+  id TEXT PRIMARY KEY NOT NULL,
   name TEXT NOT NULL,
   description TEXT DEFAULT ''
 );
+
+-- 目录页（索引）：所有"所属关系"外键列 + 术语表的 sectionId。
+-- 数据量大时避免全表扫描；IF NOT EXISTS 保证幂等。
+CREATE INDEX IF NOT EXISTS idx_librarians_floor ON librarians(floorId);
+CREATE INDEX IF NOT EXISTS idx_emotion_entities_floor ON emotion_entities(floorId);
+CREATE INDEX IF NOT EXISTS idx_combat_pages_floor ON combat_pages(floorId);
+CREATE INDEX IF NOT EXISTS idx_combat_pages_owner ON combat_pages(ownerId);
+CREATE INDEX IF NOT EXISTS idx_core_pages_owner ON core_pages(ownerId);
+CREATE INDEX IF NOT EXISTS idx_books_world ON books(worldId);
+CREATE INDEX IF NOT EXISTS idx_anomalies_world ON anomalies(worldId);
+CREATE INDEX IF NOT EXISTS idx_literary_worlds_book ON literary_worlds(bookId);
+CREATE INDEX IF NOT EXISTS idx_literary_worlds_entity ON literary_worlds(holdsEntityId);
+CREATE INDEX IF NOT EXISTS idx_guests_invitation ON guests(invitationId);
+CREATE INDEX IF NOT EXISTS idx_guests_floor ON guests(floorId);
+CREATE INDEX IF NOT EXISTS idx_guests_book ON guests(bookId);
+CREATE INDEX IF NOT EXISTS idx_cards_pack ON cards(packId);
+CREATE INDEX IF NOT EXISTS idx_repositories_parent ON repositories(parentId);
+CREATE INDEX IF NOT EXISTS idx_term_entries_section ON term_entries(sectionId);
 `
 
 function ensureColumn(
@@ -295,6 +313,15 @@ function ensureColumn(
   }
 }
 
+// 删除幽灵列（存在才删，幂等）。仅用于"没人用、没人能编辑、来历不明"的遗留列；
+// 列被引用（前端读写/钩子/索引）时必须先清理引用再删。
+function dropColumn(db: Database.Database, table: string, column: string): void {
+  const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+  if (cols.some((c) => c.name === column)) {
+    db.exec(`ALTER TABLE ${table} DROP COLUMN ${column}`)
+  }
+}
+
 export function migrate(db: Database.Database): void {
   db.exec(DDL)
   ensureColumn(db, 'floors', 'artwork', "TEXT DEFAULT ''")
@@ -304,6 +331,16 @@ export function migrate(db: Database.Database): void {
   ensureColumn(db, 'librarians', 'sortOrder', 'INTEGER DEFAULT 0')
   ensureColumn(db, 'librarians', 'rarity', "TEXT DEFAULT ''")
   ensureColumn(db, 'term_entries', 'hasParam', 'INTEGER DEFAULT 0')
+  ensureColumn(db, 'anomalies', 'report', "TEXT DEFAULT ''")
+  // 2026-09 C组幽灵列清退（趁数据未进入这些列时删除，代价最低）：
+  // - floors.receptionType：导数据遗留，界面无消费，设定已放弃
+  // - pvz_plants.family：与 familyCode/familyName/familyIcon 双写同一信息
+  // - pvz_plants.wikiThumb：缩略图功能已死，前端从不读取
+  // - energy_records.expeditionId：指向从未存在的"远征表"，悬空
+  dropColumn(db, 'floors', 'receptionType')
+  dropColumn(db, 'pvz_plants', 'family')
+  dropColumn(db, 'pvz_plants', 'wikiThumb')
+  dropColumn(db, 'energy_records', 'expeditionId')
 }
 
 export const TABLES = [

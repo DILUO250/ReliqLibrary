@@ -115,6 +115,13 @@ a:hover {
   padding: 40px 24px 80px;
 }
 
+/* chromeless 独立窗口（编辑器等）：全窗口可用，无容器约束、无内边距 */
+.site-main--bleed {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 .page-header {
   margin-bottom: 32px;
   padding-bottom: 20px;

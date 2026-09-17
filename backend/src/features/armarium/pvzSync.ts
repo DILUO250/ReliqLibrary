@@ -44,7 +44,6 @@ interface PlantEditData {
   toughness: number | null
   damage: number | null
   range: string | null
-  family: string | null
   introduction: string | null
   chat: string | null
   ability: string[]
@@ -129,10 +128,23 @@ function findAsset(code: string, name: string): string | null {
   return match?.[0] ?? null
 }
 
+// 云端访问统一 15s 超时：官网挂了/网络中断时快速失败，同步按钮不会一直转圈。
+const FETCH_TIMEOUT_MS = 15_000
+
 async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url)
+  const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
   if (!response.ok) throw new Error(`fetch ${url} failed: ${response.status}`)
   return response.text()
+}
+
+async function fetchBuffer(url: string): Promise<Buffer | null> {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
+    if (!response.ok) return null
+    return Buffer.from(await response.arrayBuffer())
+  } catch {
+    return null
+  }
 }
 
 async function collectCloud(): Promise<CloudSnapshot> {
@@ -175,7 +187,6 @@ function buildDetail(entity: any, almanac: any, props: any): PlantEditData {
     toughness: props?.Toughness ?? null,
     damage: extractDamage(almanac, props),
     range: null,
-    family: entity.family?.name ?? null,
     introduction: value,
     chat,
     ability: extractAbility(almanac),
@@ -218,7 +229,17 @@ export async function pvzSyncCheck(): Promise<{ added: any[]; removed: any[] }> 
 
 // 只增删、不覆盖：新增云端条目插入 pvz_plants；移除只删官方条目（isCustom=0）。
 // 已有植物的字段（精修/编辑的最终值）永不被同步触碰。
-export async function pvzSyncApply(add: string[], remove: string[]): Promise<{ added: number; removed: number }> {
+//
+// 可靠性三防线（2026-09 C组）：
+// 1. 两阶段执行——先完成全部网络请求与文件落盘，再在单个事务里写库：
+//    任一环节失败即整体中止，绝不留"一半新一半旧"的中间态；
+// 2. 代号冲突（与本地官方或用户自建条目撞名）一律跳过并在结果中报告，不再报错卡死；
+// 3. 全部网络请求带超时（fetchText/fetchBuffer）。
+// 文件落盘在事务之前：若写库失败，磁盘可能留下孤儿图片，由 audit:art 报告人工处置。
+export async function pvzSyncApply(
+  add: string[],
+  remove: string[],
+): Promise<{ added: number; removed: number; skipped: string[] }> {
   const cloud = await collectCloud()
   const db = getDb()
 
@@ -226,20 +247,43 @@ export async function pvzSyncApply(add: string[], remove: string[]): Promise<{ a
     INSERT INTO pvz_plants (
       codename, numericId, name, englishName, image, world,
       familyCode, familyName, familyIcon, summary, path, isCustom,
-      sunCost, recharge, toughness, damage, range, family, introduction, chat,
-      ability, traits, wikiFull, wikiThumb, sortOrder
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?)
+      sunCost, recharge, toughness, damage, range, introduction, chat,
+      ability, traits, wikiFull, sortOrder
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
 
+  // 撞名对照含全部本地条目（官方 + 自建）：云端代号与任何本地代号撞名都跳过
   const localCodes = localOfficialCodes()
+  const allCodes = new Set(
+    (db.prepare('SELECT codename FROM pvz_plants').all() as Array<{ codename: string }>).map(
+      (r) => r.codename,
+    ),
+  )
   const maxOrder = (
     db.prepare('SELECT COALESCE(MAX(sortOrder), 0) AS m FROM pvz_plants').get() as { m: number }
   ).m
 
-  let added = 0
+  // ---- 阶段一：网络与文件（无 DB 写入，失败即整体中止） ----
+  interface PendingRow {
+    code: string
+    entity: any
+    detail: PlantEditData
+    imageUrl: string
+    iconUrl: string
+    order: number
+  }
+  const pending: PendingRow[] = []
+  const skipped: string[] = []
   let nextOrder = maxOrder + 1
+
   for (const code of add) {
+    // 已存在的官方条目：正常"无需新增"，静默跳过
     if (localCodes.has(code)) continue
+    // 与任何本地条目（含用户自建）撞名：跳过并报告，不再报错卡死
+    if (allCodes.has(code)) {
+      if (!skipped.includes(code)) skipped.push(code)
+      continue
+    }
     const entity = cloud.entities.find((item) => item.codename === code)
     if (!entity) continue
     const detail = buildDetail(entity, cloud.almanac[code], cloud.props[code])
@@ -248,70 +292,75 @@ export async function pvzSyncApply(add: string[], remove: string[]): Promise<{ a
     const img = cloudImageToLocal(String(entity.image ?? ''))
     let imageUrl = ''
     if (img) {
-      imageUrl = img.url
-      try {
-        const response = await fetch(`${CLOUD_BASE}${entity.image}`)
-        if (response.ok) {
-          mkdirSync(CARD_DIR, { recursive: true })
-          writeFileSync(join(CARD_DIR, img.file), Buffer.from(await response.arrayBuffer()))
-        } else {
-          imageUrl = ''
-        }
-      } catch {
-        // Image download failure does not invalidate the data update.
+      const buf = await fetchBuffer(`${CLOUD_BASE}${entity.image}`)
+      if (buf) {
+        mkdirSync(CARD_DIR, { recursive: true })
+        writeFileSync(join(CARD_DIR, img.file), buf)
+        imageUrl = img.url
       }
     }
     let iconUrl = ''
     const icon = cloudIconToLocal(String(entity.family?.icon ?? ''))
     if (icon) {
-      iconUrl = icon.url
-      try {
-        const response = await fetch(`${CLOUD_BASE}${entity.family?.icon}`)
-        if (response.ok) {
-          mkdirSync(ICON_DIR, { recursive: true })
-          writeFileSync(join(ICON_DIR, icon.file), Buffer.from(await response.arrayBuffer()))
-        } else {
-          iconUrl = ''
-        }
-      } catch {
-        // 同上：图标下载失败不影响数据行
+      const buf = await fetchBuffer(`${CLOUD_BASE}${entity.family?.icon}`)
+      if (buf) {
+        mkdirSync(ICON_DIR, { recursive: true })
+        writeFileSync(join(ICON_DIR, icon.file), buf)
+        iconUrl = icon.url
       }
     }
 
-    insertStmt.run(
+    pending.push({
       code,
-      entity.numericId ?? 0,
-      entity.name ?? '',
-      entity.englishName ?? '',
+      entity,
+      detail,
       imageUrl,
-      entity.world ?? '',
-      entity.family?.code ?? '',
-      entity.family?.name ?? '',
       iconUrl,
-      entity.summary ?? '',
-      entity.path ?? '',
-      detail.sunCost,
-      detail.recharge,
-      detail.toughness,
-      detail.damage,
-      detail.range,
-      detail.family,
-      detail.introduction,
-      detail.chat,
-      JSON.stringify(detail.ability ?? []),
-      JSON.stringify(detail.traits ?? []),
-      nextOrder++,
-    )
-    added++
+      order: nextOrder++,
+    })
+    // 加入 allCodes：同一次批量里重复出现的代号也会被跳过
+    allCodes.add(code)
   }
 
-  let removed = 0
-  if (remove.length > 0) {
-    const delStmt = db.prepare('DELETE FROM pvz_plants WHERE codename = ? AND isCustom = 0')
-    for (const code of remove) {
-      const info = delStmt.run(code)
-      removed += info.changes
+  // ---- 阶段二：单事务写库（INSERT + DELETE 原子提交，失败整体回滚） ----
+  const tx = db.transaction(() => {
+    for (const row of pending) {
+      insertStmt.run(
+        row.code,
+        row.entity.numericId ?? 0,
+        row.entity.name ?? '',
+        row.entity.englishName ?? '',
+        row.imageUrl,
+        row.entity.world ?? '',
+        row.entity.family?.code ?? '',
+        row.entity.family?.name ?? '',
+        row.iconUrl,
+        row.entity.summary ?? '',
+        row.entity.path ?? '',
+        row.detail.sunCost,
+        row.detail.recharge,
+        row.detail.toughness,
+        row.detail.damage,
+        row.detail.range,
+        row.detail.introduction,
+        row.detail.chat,
+        JSON.stringify(row.detail.ability ?? []),
+        JSON.stringify(row.detail.traits ?? []),
+        // wikiFull：云端条目不走高清立绘通道（用户在界面自行上传后才有值）
+        null,
+        row.order,
+      )
     }
+    if (remove.length > 0) {
+      const delStmt = db.prepare('DELETE FROM pvz_plants WHERE codename = ? AND isCustom = 0')
+      for (const code of remove) delStmt.run(code)
+    }
+  })
+  tx()
+
+  return {
+    added: pending.length,
+    removed: remove.length,
+    skipped,
   }
-  return { added, removed }
 }

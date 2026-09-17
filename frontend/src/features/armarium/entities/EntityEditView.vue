@@ -1,0 +1,1363 @@
+<script setup lang="ts">
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
+import { api } from '@/app/services/api'
+import { showToast } from '@/app/stores/toast'
+import { useAnomaliesStore } from '@/features/armarium/store/anomalies'
+import { renderReportHtml } from '@/features/armarium/entities/reportRender'
+import { usePrintPageStyle } from '@/features/armarium/entities/printPageStyle'
+import './paper.css'
+import {
+  ANOMALY_PAGE_MAX,
+  ANOMALY_WARNING_MAX,
+  anomalyExportFilename,
+  anomalyLevelText,
+  parseAnomalyReport,
+  type Anomaly,
+  type AnomalyLevel,
+  type AnomalyReport,
+  type AnomalyReportBlockKey,
+  type Floor,
+} from '@rtl/shared'
+
+const route = useRoute()
+const router = useRouter()
+const store = useAnomaliesStore()
+
+usePrintPageStyle()
+
+/** 编辑器内的图片：在 AnomalyFigure 之上叠加待上传文件（保存时才真正落盘）。 */
+interface DraftFigure {
+  caption: string
+  url: string
+  _pending?: { file: File; objectUrl: string }
+  _oldUrl?: string
+}
+
+const isNew = computed(() => String(route.params.id) === 'new')
+
+/** 编辑期报告单形态：figures 带待上传/待回收标记，其余与落库结构一致。 */
+type DraftReport = Omit<AnomalyReport, 'figures'> & { figures: DraftFigure[] }
+
+const form = reactive({
+  code: '',
+  name: '',
+  level: 'safe' as AnomalyLevel,
+  subLevel: 'safe-stable' as Anomaly['subLevel'],
+  status: 'discovered' as Anomaly['status'],
+  report: {
+    warnings: [],
+    description: [],
+    containment: [],
+    output: { incenseGrade: '', incenseRate: '', pages: [], egoCard: '', floorId: null, floorLabel: '' },
+    appendices: [],
+    files: [],
+    figures: [],
+    attachments: [],
+  } as DraftReport,
+})
+
+const floors = ref<Floor[]>([])
+const loading = ref(true)
+const missing = ref(false)
+const saving = ref(false)
+
+// 未保存守卫：首载完成后任何表单改动都算 dirty，离开前确认（保存成功后清零）
+const dirty = ref(false)
+
+// 编辑中删图/换图延后回收：URL 先记账，写库成功后才真正移进回收站——
+// 放弃编辑或写库失败时库里引用依然有效（防破图）。
+const removedUrls: string[] = []
+
+const mode = ref<'split' | 'preview'>('split')
+
+async function load(): Promise<void> {
+  loading.value = true
+  missing.value = false
+  try {
+    floors.value = await api.list<Floor>('floors').catch(() => [] as Floor[])
+    if (isNew.value) return
+    const a = await api.get<Anomaly>('anomalies', String(route.params.id))
+    applyEntity(a)
+  } catch {
+    missing.value = true
+  } finally {
+    loading.value = false
+  }
+}
+
+function applyEntity(a: Anomaly): void {
+  const report = parseAnomalyReport(a.report)
+  // 旧列软迁移：report 为空而旧文本列有值时，把旧文本带进编辑器当初始段落（一次性，无脚本）
+  if (!report.description.length && a.appearance) report.description = [a.appearance]
+  if (!report.containment.length && a.containment) report.containment = [a.containment]
+  if (!report.appendices.length && a.appendix) report.appendices = [{ source: '', body: [a.appendix] }]
+  form.code = a.code
+  form.name = a.name
+  form.level = a.level
+  form.subLevel = a.subLevel
+  form.status = a.status
+  form.report.warnings = report.warnings.map((w) => ({ ...w }))
+  form.report.description = [...report.description]
+  form.report.containment = [...report.containment]
+  form.report.output = { ...report.output }
+  form.report.appendices = report.appendices.map((x) => ({ source: x.source, body: [...x.body] }))
+  form.report.files = report.files.map((x) => ({ source: x.source, body: [...x.body], quoted: x.quoted }))
+  form.report.figures = report.figures.map((x) => ({ caption: x.caption, url: x.url }))
+  form.report.attachments = report.attachments.map((x) => ({ body: [...x.body] }))
+  dirty.value = false
+}
+
+// 表单任何改动都标脏（首载/重置时由 applyEntity 重置回 false）
+watch(
+  () => [form.code, form.name, form.level, form.subLevel, form.status, form.report],
+  () => {
+    if (!loading.value) dirty.value = true
+  },
+  { deep: true },
+)
+
+onMounted(() => {
+  void load()
+  window.addEventListener('beforeunload', onBeforeUnload)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('beforeunload', onBeforeUnload)
+  for (const f of form.report.figures) {
+    if (f._pending) URL.revokeObjectURL(f._pending.objectUrl)
+  }
+})
+
+onBeforeRouteLeave((to, _from) => {
+  if (!dirty.value || saving.value) return true
+  if (to.name === 'armarium-entity-report' && String(to.params.id ?? '') === String(route.params.id)) return true
+  return window.confirm('报告单尚未保存，离开将丢失本次修改。确定离开？')
+})
+
+// 编辑器是 window.open 开的独立窗口：窗口级"未保存"守卫（关闭/刷新前浏览器原生确认）
+function onBeforeUnload(e: BeforeUnloadEvent): void {
+  if (!dirty.value || saving.value) return
+  e.preventDefault()
+  e.returnValue = ''
+}
+
+/* ---------- 实时预览 ---------- */
+
+const previewAnomaly = computed<Anomaly>(() => ({
+  id: 0,
+  code: form.code,
+  name: form.name,
+  level: form.level,
+  subLevel: form.subLevel,
+  status: form.status,
+  appearance: '',
+  containment: '',
+  appendix: '',
+  worldId: null,
+  note: '',
+  report: '',
+}))
+
+const previewReport = computed<AnomalyReport>(() => ({
+  ...form.report,
+  figures: form.report.figures.map((f) => ({
+    caption: f.caption,
+    url: f._pending?.objectUrl ?? f.url,
+  })),
+}))
+
+const previewHtml = computed(() => renderReportHtml(previewAnomaly.value, previewReport.value))
+
+/* ---------- 展示层常量（草稿同款） ---------- */
+
+const SUB_LEVELS = [
+  'safe-stable',
+  'safe-neutralized',
+  'safe-explained',
+  'euclid-mystery',
+  'euclid-thaumiel',
+  'keter-zayin',
+  'keter-teth',
+  'keter-he',
+  'keter-waw',
+  'keter-aleph',
+] as const
+
+// 子等级跟随主等级（safe-* 只在 Safe 下出现等），避免存出 Safe-TETH 这类矛盾组合
+const subLevelOptions = computed(() =>
+  SUB_LEVELS.filter((s) => s.startsWith(form.level === 'keter' ? 'keter' : form.level)),
+)
+
+const STATUS_OPTIONS: Array<[Anomaly['status'], string]> = [
+  ['discovered', '已发现'],
+  ['assessing', '评估中'],
+  ['contained', '已收容'],
+  ['researching', '研究中'],
+  ['extracted', '已提取'],
+  ['neutralized', '已无效化'],
+  ['escaped', '突破收容'],
+]
+
+const WARN_POSITIONS: Array<[AnomalyReportBlockKey, string]> = [
+  ['head', '标题区之后（报告最前）'],
+  ['desc', '描述之后'],
+  ['contain', '特殊收容措施之后'],
+  ['output', '产出之后'],
+  ['appendix', '附录之后'],
+  ['files', '文件之后'],
+  ['figure-main', '实体影像资料之后（模板默认）'],
+  ['figures-rest', '图片块之后'],
+  ['attachments', '附件之后（报告末尾）'],
+]
+
+/* ---------- 通用行操作 ---------- */
+
+function move<T>(arr: T[], i: number, d: number): void {
+  const j = i + d
+  if (j < 0 || j >= arr.length) return
+  const [x] = arr.splice(i, 1)
+  if (x !== undefined) arr.splice(j, 0, x)
+}
+
+/** 主等级切换时，把子等级重置回该等级下的第一档（避免跨档组合）。 */
+function onLevelChange(level: AnomalyLevel): void {
+  form.level = level
+  if (!subLevelOptions.value.some((s) => s === form.subLevel)) {
+    form.subLevel = subLevelOptions.value[0] ?? 'safe-stable'
+  }
+}
+
+/** 文件条目次标（与渲染器同一规则）：a..z → aa, ab… */
+function fileIndexLabel(i: number): string {
+  const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+  let label = ''
+  let n = i
+  do {
+    label = LETTERS[n % 26] + label
+    n = Math.floor(n / 26) - 1
+  } while (n >= 0)
+  return label
+}
+
+/* ---------- 图片块（延迟上传；替换/删除只记账，写库成功后才回收旧文件） ---------- */
+
+function onFigurePicked(fig: DraftFigure, event: Event): void {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (fig._pending) URL.revokeObjectURL(fig._pending.objectUrl)
+  fig._pending = { file, objectUrl: URL.createObjectURL(file) }
+  // 库里已指向当前 url：换新图后旧文件要在写库成功后回收
+  if (fig.url.startsWith('/art/') && !fig._oldUrl) fig._oldUrl = fig.url
+}
+
+function addFigure(event: Event): void {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  form.report.figures.push({
+    caption: '',
+    url: '',
+    _pending: { file, objectUrl: URL.createObjectURL(file) },
+  })
+}
+
+function removeFigure(i: number): void {
+  const f = form.report.figures[i]
+  if (!f) return
+  if (f._pending) URL.revokeObjectURL(f._pending.objectUrl)
+  const saved = f._oldUrl ?? f.url
+  if (saved.startsWith('/art/')) removedUrls.push(saved)
+  form.report.figures.splice(i, 1)
+}
+
+function figureSrc(f: DraftFigure): string {
+  return f._pending?.objectUrl ?? f.url
+}
+
+/* ---------- 段落放大编辑（双击输入框 → 遮罩 + 居中大输入框，保存后写回） ---------- */
+
+const zoom = reactive({
+  open: false,
+  text: '',
+  apply: null as null | ((v: string) => void),
+})
+const zoomBox = ref<HTMLTextAreaElement | null>(null)
+
+function openZoom(get: () => string, set: (v: string) => void): void {
+  zoom.text = get()
+  zoom.apply = set
+  zoom.open = true
+  void nextTick(() => {
+    zoomBox.value?.focus()
+  })
+}
+
+function closeZoom(commit: boolean): void {
+  if (commit && zoom.apply) zoom.apply(zoom.text)
+  zoom.open = false
+  zoom.apply = null
+}
+
+/* ---------- 分配地（floors 表联动） ---------- */
+
+const floorOptions = computed(() => {
+  const opts = floors.value.map((f) => ({
+    value: f.id,
+    label: `迎书楼 – ${f.name}`,
+  }))
+  opts.push({ value: 0, label: 'N/A' })
+  return opts
+})
+
+const floorSelectValue = computed(() => {
+  const o = form.report.output
+  if (o.floorId != null && floors.value.some((f) => f.id === o.floorId)) return o.floorId
+  // floorId 无效（楼层被删/楼层表加载失败）但留有快照：展示快照选项，避免掩盖真实值
+  if (o.floorLabel) return -1
+  return 0
+})
+
+function onFloorChange(value: string): void {
+  const id = Number(value)
+  if (id === -1) return
+  const f = floors.value.find((x) => x.id === id)
+  form.report.output.floorId = f ? f.id : null
+  form.report.output.floorLabel = f ? `迎书楼 – ${f.name}` : ''
+}
+
+/* ---------- 保存（先上传暂存图片，再写库；成功后才回收旧图） ---------- */
+
+async function save(): Promise<void> {
+  if (saving.value) return
+  const digits = form.code.replace(/\D/g, '')
+  if (!digits) {
+    showToast('请先填写 SCL 数字编号')
+    return
+  }
+  if (!form.name.trim()) {
+    showToast('请先填写实体名称')
+    return
+  }
+  saving.value = true
+  const uploadedUrls: string[] = []
+  try {
+    const full = `SCL-${digits}`
+    // ① 上传暂存图（此刻才落盘）；失败时已上传的部分要在 catch 里回收防孤儿
+    for (const f of form.report.figures) {
+      if (!f._pending) continue
+      const res = await api.uploadAnomalyImage(f._pending.file, full)
+      f.url = res.url
+      uploadedUrls.push(res.url)
+      URL.revokeObjectURL(f._pending.objectUrl)
+      f._pending = undefined
+    }
+    // ② 写库（旧图仍在原位，此刻库里引用全部有效）
+    const payload = {
+      code: digits,
+      name: form.name,
+      level: form.level,
+      subLevel: form.subLevel,
+      status: form.status,
+      report: JSON.stringify({
+        warnings: form.report.warnings.map((w) => ({
+          sl: Math.min(99, Math.max(1, Math.trunc(Number(w.sl)) || 1)),
+          after: w.after,
+        })),
+        description: form.report.description,
+        containment: form.report.containment,
+        output: form.report.output,
+        appendices: form.report.appendices,
+        files: form.report.files,
+        figures: form.report.figures.map((f) => ({ caption: f.caption, url: f.url })),
+        attachments: form.report.attachments,
+      }),
+    }
+    let id: number
+    if (isNew.value) {
+      const created = await api.create<{ id: number }>('anomalies', payload)
+      id = Number(created.id)
+    } else {
+      await api.update('anomalies', String(route.params.id), payload)
+      id = Number(route.params.id)
+    }
+    // ③ 写库成功后统一回收：被替换/被删除的旧图
+    const trashUrls = [...removedUrls]
+    for (const f of form.report.figures) {
+      if (f._oldUrl && f._oldUrl !== f.url) trashUrls.push(f._oldUrl)
+      f._oldUrl = undefined
+    }
+    removedUrls.length = 0
+    for (const url of trashUrls) {
+      api.removeAnomalyImage(url).catch(() => {})
+    }
+    dirty.value = false
+    showToast('保存成功')
+    // 本窗口是独立编辑窗口：通知原列表页刷新（数据更新、浏览位置不动）
+    window.opener?.postMessage('rtl:anomalies-updated', window.location.origin)
+    store.reload().catch(() => {})
+    // replace 而非 push：把本窗口历史里的"编辑页"条目替换成预览页，
+    // 之后预览页的"返回"不会再 back 回编辑页
+    void router.replace(`/armarium/entities/${id}`)
+  } catch (e) {
+    // 写库失败：回收本次已上传的文件（库里从未引用过它们）
+    for (const url of uploadedUrls) {
+      api.removeAnomalyImage(url).catch(() => {})
+    }
+    showToast(`保存失败：${e instanceof Error ? e.message : String(e)}`)
+  } finally {
+    saving.value = false
+  }
+}
+
+function printReport(): void {
+  const prevTitle = document.title
+  if (form.code || form.name) {
+    document.title = anomalyExportFilename({ code: form.code, name: form.name })
+  }
+  // 只靠 afterprint 还原标题（print() 非阻塞的浏览器里同步还原会让文件名失效）
+  window.addEventListener('afterprint', () => {
+    document.title = prevTitle
+  }, { once: true })
+  window.print()
+}
+
+function goBack(): void {
+  // 独立窗口：直接关窗回原列表（原窗口滚动位置天然不动）；
+  // 直接粘贴 URL 打开的窗口没有 opener，退回应用内导航。
+  if (window.opener && !window.opener.closed) {
+    window.close()
+    return
+  }
+  if (window.history.state?.back) void router.back()
+  else void router.push('/armarium/entities')
+}
+</script>
+
+<template>
+  <div class="ent-edit" :class="{ 'mode-preview': mode === 'preview' }">
+    <header class="topbar">
+      <button type="button" class="back" @click="goBack">← 返回</button>
+      <h1>{{ isNew ? '新建异常实体报告单' : '编辑异常实体报告单' }}</h1>
+      <span v-if="form.code" class="tag">SCL-{{ form.code }}</span>
+      <div class="spacer"></div>
+      <nav class="modebar">
+        <button type="button" :class="{ 'is-active': mode === 'split' }" @click="mode = 'split'">编辑模式</button>
+        <button type="button" :class="{ 'is-active': mode === 'preview' }" @click="mode = 'preview'">预览模式</button>
+        <button type="button" @click="printReport">打印 / 导出 PDF</button>
+        <button type="button" class="save" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存' }}</button>
+      </nav>
+    </header>
+
+    <p v-if="loading" class="edit-hint">读取档案中…</p>
+    <p v-else-if="missing" class="edit-hint">未找到该异常实体档案，可能已被删除。</p>
+
+    <div v-else class="workbench">
+      <aside class="editor-pane">
+        <!-- 基础信息 -->
+        <details class="sec" open>
+          <summary>基础信息</summary>
+          <div class="sec-body">
+            <div class="field-row">
+              <div class="field">
+                <label>项目编号</label>
+                <div class="code-input">
+                  <span class="prefix">SCL-</span>
+                  <input v-model.trim="form.code" type="text" placeholder="位数不限" @input="form.code = form.code.replace(/\D/g, '')" />
+                </div>
+              </div>
+              <div class="field grow">
+                <label>名称</label>
+                <input v-model.trim="form.name" type="text" placeholder="实体名称" />
+              </div>
+              <div class="field">
+                <label>主等级</label>
+                <select :value="form.level" @change="onLevelChange(($event.target as HTMLSelectElement).value as AnomalyLevel)">
+                  <option value="safe">Safe</option>
+                  <option value="euclid">Euclid</option>
+                  <option value="keter">Keter</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>子等级</label>
+                <select :value="form.subLevel" @change="form.subLevel = ($event.target as HTMLSelectElement).value as Anomaly['subLevel']">
+                  <option v-for="sub in subLevelOptions" :key="sub" :value="sub">{{ anomalyLevelText(form.level, sub) }}</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>收容状态</label>
+                <select :value="form.status" @change="form.status = ($event.target as HTMLSelectElement).value as Anomaly['status']">
+                  <option v-for="[v, t] in STATUS_OPTIONS" :key="v" :value="v">{{ t }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- 描述 -->
+        <details class="sec" open>
+          <summary>描述</summary>
+          <div class="sec-body">
+            <div v-for="(_, i) in form.report.description" :key="i" class="para-item">
+              <textarea
+                v-model="form.report.description[i]"
+                title="双击可放大编辑"
+                placeholder="该实体的外貌特征、特性以及个性……"
+                @dblclick="openZoom(() => form.report.description[i] ?? '', v => { form.report.description[i] = v })"
+              ></textarea>
+              <button type="button" class="iconbtn" title="上移" @click="move(form.report.description, i, -1)">↑</button>
+              <button type="button" class="iconbtn" title="下移" @click="move(form.report.description, i, 1)">▾</button>
+              <button type="button" class="iconbtn danger" title="删除" @click="form.report.description.splice(i, 1)">✕</button>
+            </div>
+            <button type="button" class="addbtn" @click="form.report.description.push('')">＋ 添加段落</button>
+          </div>
+        </details>
+
+        <!-- 特殊收容措施 -->
+        <details class="sec" open>
+          <summary>特殊收容措施</summary>
+          <div class="sec-body">
+            <div v-for="(_, i) in form.report.containment" :key="i" class="para-item">
+              <textarea
+                v-model="form.report.containment[i]"
+                title="双击可放大编辑"
+                placeholder="采用常规【书中世界】方案：……"
+                @dblclick="openZoom(() => form.report.containment[i] ?? '', v => { form.report.containment[i] = v })"
+              ></textarea>
+              <button type="button" class="iconbtn" title="上移" @click="move(form.report.containment, i, -1)">↑</button>
+              <button type="button" class="iconbtn" title="下移" @click="move(form.report.containment, i, 1)">▾</button>
+              <button type="button" class="iconbtn danger" title="删除" @click="form.report.containment.splice(i, 1)">✕</button>
+            </div>
+            <button type="button" class="addbtn" @click="form.report.containment.push('')">＋ 添加段落</button>
+          </div>
+        </details>
+
+        <!-- 产出 -->
+        <details class="sec" open>
+          <summary>产出</summary>
+          <div class="sec-body">
+            <div class="out-grid">
+              <div class="field">
+                <label>① 薰陆香产能效率 · 等级词</label>
+                <input v-model.trim="form.report.output.incenseGrade" type="text" placeholder="N/A / 极低 / 低……" />
+              </div>
+              <div class="field">
+                <label>① 数值范围</label>
+                <input v-model.trim="form.report.output.incenseRate" type="text" placeholder="5~12单位/太阳日" />
+              </div>
+              <div class="field">
+                <label>③ EGO卡牌（【】内）</label>
+                <input v-model.trim="form.report.output.egoCard" type="text" placeholder="留空 = 【N/A】" />
+              </div>
+              <div class="field">
+                <label>④ 分配地（联动楼层表）</label>
+                <select :value="String(floorSelectValue)" @change="onFloorChange(($event.target as HTMLSelectElement).value)">
+                  <option v-if="floorSelectValue === -1" :value="-1">{{ form.report.output.floorLabel }}（快照）</option>
+                  <option v-for="f in floorOptions" :key="f.value" :value="String(f.value)">{{ f.label }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="slots-head">
+              <span>② 异常实体书页（1~{{ ANOMALY_PAGE_MAX }} 条）</span>
+              <span class="slot-count" :class="{ warn: form.report.output.pages.length >= ANOMALY_PAGE_MAX }">{{ form.report.output.pages.length }}/{{ ANOMALY_PAGE_MAX }}</span>
+              <button
+                v-if="form.report.output.pages.length < ANOMALY_PAGE_MAX"
+                type="button"
+                class="addbtn"
+                style="margin-left:auto"
+                @click="form.report.output.pages.push('')"
+              >＋ 添加槽位</button>
+            </div>
+            <div class="page-slots">
+              <div v-for="(_, i) in form.report.output.pages" :key="i" class="page-slot">
+                <span class="idx">{{ i + 1 }}</span>
+                <input v-model.trim="form.report.output.pages[i]" type="text" placeholder="书页名或 N/A" />
+                <button type="button" class="iconbtn danger" title="删除槽位" @click="form.report.output.pages.splice(i, 1)">✕</button>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- 附录 -->
+        <details class="sec" open>
+          <summary>附录</summary>
+          <div class="sec-body">
+            <div v-for="(item, i) in form.report.appendices" :key="i" class="subcard">
+              <div class="subcard-head">
+                <span class="badge">附录#{{ form.code || 'XXXX' }}-{{ i + 1 }}</span>
+                <input v-model.trim="item.source" type="text" placeholder="附录来源（选填）" />
+                <button type="button" class="iconbtn danger" title="删除条目" @click="form.report.appendices.splice(i, 1)">✕</button>
+              </div>
+              <div v-for="(_, j) in item.body" :key="j" class="para-item">
+                <textarea
+                  v-model="item.body[j]"
+                  title="双击可放大编辑"
+                  placeholder="对实体的文字补充……"
+                  @dblclick="openZoom(() => item.body[j] ?? '', v => { item.body[j] = v })"
+                ></textarea>
+                <button type="button" class="iconbtn" title="上移" @click="move(item.body, j, -1)">↑</button>
+                <button type="button" class="iconbtn" title="下移" @click="move(item.body, j, 1)">▾</button>
+                <button type="button" class="iconbtn danger" title="删除" @click="item.body.splice(j, 1)">✕</button>
+              </div>
+              <button type="button" class="addbtn" @click="item.body.push('')">＋ 添加段落</button>
+            </div>
+            <button type="button" class="addbtn" @click="form.report.appendices.push({ source: '', body: [''] })">＋ 添加附录</button>
+          </div>
+        </details>
+
+        <!-- 文件 -->
+        <details class="sec" open>
+          <summary>文件</summary>
+          <div class="sec-body">
+            <div v-for="(item, i) in form.report.files" :key="i" class="subcard">
+              <div class="subcard-head">
+                <span class="badge">文件#{{ form.code || 'XXXX' }}-{{ fileIndexLabel(i) }}</span>
+                <input v-model.trim="item.source" type="text" placeholder="文件来源（选填）" />
+                <button type="button" class="iconbtn danger" title="删除条目" @click="form.report.files.splice(i, 1)">✕</button>
+              </div>
+              <div v-for="(_, j) in item.body" :key="j" class="para-item">
+                <textarea
+                  v-model="item.body[j]"
+                  title="双击可放大编辑"
+                  placeholder="从别处引用的补充……"
+                  @dblclick="openZoom(() => item.body[j] ?? '', v => { item.body[j] = v })"
+                ></textarea>
+                <button type="button" class="iconbtn" title="上移" @click="move(item.body, j, -1)">↑</button>
+                <button type="button" class="iconbtn" title="下移" @click="move(item.body, j, 1)">▾</button>
+                <button type="button" class="iconbtn danger" title="删除" @click="item.body.splice(j, 1)">✕</button>
+              </div>
+              <label class="checkline">
+                <input v-model="item.quoted" type="checkbox" />
+                <span>直接引用（渲染为带边框引用框）</span>
+              </label>
+              <button type="button" class="addbtn" @click="item.body.push('')">＋ 添加段落</button>
+            </div>
+            <button type="button" class="addbtn" @click="form.report.files.push({ source: '', body: [''], quoted: false })">＋ 添加文件</button>
+          </div>
+        </details>
+
+        <!-- 图片 -->
+        <details class="sec" open>
+          <summary>图片（实体影像资料 + 插图块）</summary>
+          <div class="sec-body">
+            <div v-for="(fig, i) in form.report.figures" :key="i" class="figure-item">
+              <div class="fig-main">
+                <img :src="figureSrc(fig)" alt="" />
+                <div class="fig-fields">
+                  <span v-if="i === 0" class="mainfig-label">实体影像资料（图片1）</span>
+                  <span v-else class="mainfig-label mainfig-label--plain">图片{{ i + 1 }}</span>
+                  <input v-model.trim="fig.caption" type="text" placeholder="图注：描述图片内容" />
+                  <div class="fig-ops">
+                    <label class="addbtn">
+                      替换
+                      <input type="file" accept="image/*" hidden @change="onFigurePicked(fig, $event)" />
+                    </label>
+                    <button type="button" class="addbtn" :disabled="i === 0" @click="move(form.report.figures, i, -1)">上移</button>
+                    <button type="button" class="addbtn" :disabled="i === form.report.figures.length - 1" @click="move(form.report.figures, i, 1)">下移</button>
+                    <button type="button" class="addbtn danger-zone" @click="removeFigure(i)">删除</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <label class="addbtn">＋ 添加图片（本地选择，保存时才上传）
+              <input type="file" accept="image/*" hidden @change="addFigure($event)" />
+            </label>
+          </div>
+        </details>
+
+        <!-- 附件 -->
+        <details class="sec">
+          <summary>附件</summary>
+          <div class="sec-body">
+            <div v-for="(item, i) in form.report.attachments" :key="i" class="subcard">
+              <div class="subcard-head">
+                <span class="badge">附件#{{ form.code || 'XXXX' }}-{{ i + 1 }}</span>
+                <button type="button" class="iconbtn danger" title="删除条目" @click="form.report.attachments.splice(i, 1)">✕</button>
+              </div>
+              <div v-for="(_, j) in item.body" :key="j" class="para-item">
+                <textarea
+                  v-model="item.body[j]"
+                  title="双击可放大编辑"
+                  placeholder="过长或过于复杂的文件补充……"
+                  @dblclick="openZoom(() => item.body[j] ?? '', v => { item.body[j] = v })"
+                ></textarea>
+                <button type="button" class="iconbtn" title="上移" @click="move(item.body, j, -1)">↑</button>
+                <button type="button" class="iconbtn" title="下移" @click="move(item.body, j, 1)">▾</button>
+                <button type="button" class="iconbtn danger" title="删除" @click="item.body.splice(j, 1)">✕</button>
+              </div>
+              <button type="button" class="addbtn" @click="item.body.push('')">＋ 添加段落</button>
+            </div>
+            <button type="button" class="addbtn" @click="form.report.attachments.push({ body: [''] })">＋ 添加附件</button>
+          </div>
+        </details>
+
+        <!-- 权限警告线 -->
+        <details class="sec" open>
+          <summary>权限警告线 <span class="count">{{ form.report.warnings.length }}/{{ ANOMALY_WARNING_MAX }}</span></summary>
+          <div class="sec-body">
+            <p class="para-hint">每条警告线都是一道分割线：该线之下的内容需其标注的 SL 等级才能阅读。</p>
+            <div class="warn-list">
+              <div v-for="(w, i) in form.report.warnings" :key="i" class="warn-row">
+                <span class="idx">{{ i + 1 }}</span>
+                <input v-model.number="w.sl" type="number" min="1" max="99" title="安全权限等级（如 6 → SL-06）" />
+                <select :value="w.after" @change="w.after = ($event.target as HTMLSelectElement).value as AnomalyReportBlockKey">
+                  <option v-for="[v, t] in WARN_POSITIONS" :key="v" :value="v">{{ t }}</option>
+                </select>
+                <button type="button" class="iconbtn danger" title="删除警告线" @click="form.report.warnings.splice(i, 1)">✕</button>
+              </div>
+            </div>
+            <button
+              v-if="form.report.warnings.length < ANOMALY_WARNING_MAX"
+              type="button"
+              class="addbtn"
+              @click="form.report.warnings.push({ sl: 1, after: 'figure-main' })"
+            >＋ 添加警告线（最多 {{ ANOMALY_WARNING_MAX }} 条）</button>
+          </div>
+        </details>
+      </aside>
+
+      <main class="preview-pane">
+        <article class="scl-paper" v-html="previewHtml"></article>
+      </main>
+    </div>
+
+    <!-- 段落放大编辑：遮罩 + 居中大输入框（点保存才写回原段落） -->
+    <div v-if="zoom.open" class="zoom-overlay" @click.self="closeZoom(false)">
+      <div class="zoom-card" role="dialog" aria-modal="true">
+        <header class="zoom-head">
+          <span>段落放大编辑</span>
+          <button type="button" class="iconbtn" title="取消" @click="closeZoom(false)">✕</button>
+        </header>
+        <textarea
+          ref="zoomBox"
+          v-model="zoom.text"
+          class="zoom-textarea"
+          placeholder="在此编辑完整段落……"
+          @keydown.esc="closeZoom(false)"
+        ></textarea>
+        <footer class="zoom-foot">
+          <span class="zoom-count">{{ zoom.text.length }} 字</span>
+          <button type="button" class="addbtn" @click="closeZoom(false)">取消</button>
+          <button type="button" class="zoom-save" @click="closeZoom(true)">保存</button>
+        </footer>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+/* 编辑器独立窗口（chromeless）：严格对齐草稿 02-H5 原型的布局与尺寸。
+   草稿 token → 站点 token 映射：surface→--color-surface，surface2→--color-surface-2，
+   ink*→--color-ink*，line→--color-line，armarium→--armarium。 */
+.ent-edit {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  min-height: 100vh;
+  min-width: 0;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 18px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.topbar h1 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.topbar .tag {
+  border: 1px solid color-mix(in srgb, var(--armarium) 45%, transparent);
+  border-radius: 999px;
+  color: var(--armarium);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 2px 10px;
+}
+
+.topbar .spacer {
+  flex: 1;
+}
+
+.modebar {
+  display: flex;
+  gap: 8px;
+}
+
+.modebar button {
+  background: var(--color-surface-2, var(--color-surface));
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  color: var(--color-ink-dim);
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  padding: 5px 16px;
+  transition: all 0.15s ease;
+}
+
+.modebar button:hover {
+  border-color: var(--armarium);
+  color: var(--color-ink);
+}
+
+.modebar button.is-active {
+  background: color-mix(in srgb, var(--armarium) 16%, var(--color-surface-2, var(--color-surface)));
+  border-color: var(--armarium);
+  box-shadow: inset 0 0 0 1px var(--armarium);
+  color: var(--color-ink);
+}
+
+.modebar button.save {
+  border-color: var(--armarium);
+  color: var(--color-ink);
+}
+
+.modebar button.save:hover:not(:disabled) {
+  background: var(--armarium);
+  color: #10151c;
+}
+
+.modebar button.save:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.topbar .back {
+  background: transparent;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  color: var(--color-ink-dim);
+  cursor: pointer;
+  flex: none;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  padding: 5px 16px;
+  transition: all 0.15s ease;
+}
+
+.topbar .back:hover {
+  border-color: var(--armarium);
+  color: var(--color-ink);
+}
+
+.edit-hint {
+  color: var(--color-ink-faint);
+  font-size: 13px;
+  padding: 20px;
+}
+
+/* 草稿：.workbench{display:flex;align-items:flex-start;padding:0 0 60px}——
+   不定死窗口高度：预览纸面自然延伸撑开整页，页面级滚动。 */
+.workbench {
+  align-items: flex-start;
+  display: flex;
+  padding: 0 0 60px;
+}
+
+.ent-edit.mode-preview .workbench {
+  display: block;
+}
+
+/* 草稿：编辑栏 580px / padding 20px / 视口高内滚动 */
+.editor-pane {
+  border-right: 1px solid var(--color-line);
+  flex: none;
+  max-height: calc(100vh - 56px);
+  overflow-y: auto;
+  padding: 20px 30px 20px 60px;
+  scrollbar-width: thin;
+  width: 600px;
+}
+
+.ent-edit.mode-preview .editor-pane {
+  display: none;
+}
+
+.preview-pane {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+  overflow: auto;
+  padding: 22px 40px 60px;
+}
+
+.ent-edit.mode-preview .preview-pane {
+  padding-top: 30px;
+}
+
+/* 草稿：区块卡 */
+.sec {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: calc(var(--radius) + 2px);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.sec > summary {
+  align-items: center;
+  border-left: 3px solid var(--armarium);
+  color: var(--armarium);
+  cursor: pointer;
+  display: flex;
+  font-size: 15px;
+  gap: 8px;
+  letter-spacing: 0.08em;
+  list-style: none;
+  padding: 11px 14px;
+  user-select: none;
+}
+
+.sec > summary::before {
+  color: var(--color-ink-faint);
+  content: '▸';
+  font-size: 11px;
+  transition: transform 0.15s;
+}
+
+.sec[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.sec > summary .count {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+.sec-body {
+  border-top: 1px solid var(--color-line);
+  padding: 14px;
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.field > label {
+  color: var(--color-ink-faint);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.field.grow {
+  flex: 1;
+}
+
+/* 草稿：裸选择器统一编辑器内全部输入控件（14px / padding 8 10 / textarea 76px） */
+input[type='text'],
+input[type='number'],
+select,
+textarea {
+  background: var(--color-surface-2, var(--color-surface));
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--armarium);
+}
+
+textarea {
+  line-height: 1.8;
+  min-height: 76px;
+  resize: vertical;
+}
+
+.code-input {
+  align-items: center;
+  display: flex;
+  gap: 0;
+}
+
+.code-input .prefix {
+  background: var(--color-surface-2, var(--color-surface));
+  border: 1px solid var(--color-line);
+  border-radius: 6px 0 0 6px;
+  border-right: none;
+  color: var(--color-gold);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  padding: 7px 0 7px 9px;
+}
+
+.code-input input {
+  border-radius: 0 6px 6px 0;
+  width: 130px;
+}
+
+.para-item {
+  align-items: flex-start;
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.para-item textarea {
+  min-height: 64px;
+}
+
+.iconbtn {
+  background: var(--color-surface-2, var(--color-surface));
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  color: var(--color-ink-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 13px;
+  height: 34px;
+  line-height: 1;
+  padding: 0;
+  width: 28px;
+}
+
+.iconbtn:hover {
+  border-color: var(--armarium);
+  color: var(--color-ink);
+}
+
+.iconbtn.danger:hover {
+  background: color-mix(in srgb, #c04a32 35%, var(--color-surface-2, var(--color-surface)));
+  border-color: #c04a32;
+  color: #fff;
+}
+
+.addbtn {
+  background: transparent;
+  border: 1px dashed var(--color-line);
+  border-radius: 6px;
+  color: var(--color-ink-dim);
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  padding: 7px 14px;
+}
+
+.addbtn:hover {
+  border-color: var(--armarium);
+  color: var(--armarium);
+}
+
+.addbtn.danger-zone {
+  border-color: color-mix(in srgb, #c04a32 40%, transparent);
+  color: color-mix(in srgb, #c04a32 80%, var(--color-ink-dim));
+}
+
+.para-hint {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  margin: 4px 0 8px;
+}
+
+.subcard {
+  background: var(--color-surface-2, var(--color-surface));
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  padding: 10px 10px 8px;
+}
+
+.subcard-head {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.subcard-head .badge {
+  color: var(--color-gold);
+  flex: none;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.subcard-head input[type='text'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.checkline {
+  align-items: center;
+  color: var(--color-ink-dim);
+  display: flex;
+  font-size: 13px;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.checkline input {
+  accent-color: var(--armarium);
+  width: auto;
+}
+
+.warn-list {
+  margin-bottom: 10px;
+}
+
+.warn-row {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.warn-row .idx {
+  color: var(--color-ink-faint);
+  flex: none;
+  font-size: 12px;
+  text-align: right;
+  width: 14px;
+}
+
+.warn-row input[type='number'] {
+  flex: none;
+  width: 80px;
+}
+
+.warn-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.page-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-slot {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.page-slot .idx {
+  color: var(--color-ink-faint);
+  flex: none;
+  font-size: 11px;
+  text-align: right;
+  width: 14px;
+}
+
+.slot-count {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+}
+
+.slot-count.warn {
+  color: #c04a32;
+}
+
+.slots-head {
+  align-items: center;
+  color: var(--color-ink-faint);
+  display: flex;
+  font-size: 11px;
+  gap: 10px;
+  letter-spacing: 0.08em;
+  margin-top: 12px;
+}
+
+.figure-item {
+  background: var(--color-surface-2, var(--color-surface));
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  padding: 8px;
+}
+
+.figure-item .fig-main {
+  display: flex;
+  gap: 10px;
+}
+
+.figure-item img {
+  background: #000;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  flex: none;
+  height: 84px;
+  object-fit: cover;
+  width: 120px;
+}
+
+.figure-item .fig-fields {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.figure-item .fig-ops {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.figure-item .fig-ops .addbtn {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+.mainfig-label {
+  background: var(--armarium);
+  border-radius: 4px;
+  color: #fff;
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  margin-bottom: 4px;
+  padding: 1px 6px;
+  width: fit-content;
+}
+
+.mainfig-label--plain {
+  background: transparent;
+  color: var(--color-ink-faint);
+  padding: 1px 0;
+}
+
+.out-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 段落放大编辑遮罩（居中，参照全站弹窗约定：遮罩可滚、内容居中） */
+.zoom-overlay {
+  align-items: center;
+  background: rgba(16, 13, 9, 0.78);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 20px;
+  position: fixed;
+  z-index: 200;
+}
+
+.zoom-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: calc(var(--radius) * 2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 80px);
+  width: min(760px, 94vw);
+}
+
+.zoom-head {
+  align-items: center;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--armarium);
+  display: flex;
+  flex: none;
+  font-size: 14px;
+  justify-content: space-between;
+  letter-spacing: 0.08em;
+  padding: 12px 16px;
+}
+
+.zoom-textarea {
+  background: var(--color-surface-2, var(--color-surface));
+  border: none;
+  border-bottom: 1px solid var(--color-line);
+  border-radius: 0;
+  color: var(--color-ink);
+  flex: 1;
+  font-family: inherit;
+  font-size: 14px;
+  height: 56vh;
+  line-height: 1.8;
+  min-height: 280px;
+  outline: none;
+  padding: 14px 16px;
+  resize: none;
+  width: 100%;
+}
+
+.zoom-foot {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 16px;
+}
+
+.zoom-count {
+  color: var(--color-ink-faint);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  margin-right: auto;
+}
+
+.zoom-save {
+  background: var(--armarium);
+  border: 1px solid var(--armarium);
+  border-radius: var(--radius);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  padding: 7px 22px;
+  transition: filter 0.15s ease;
+}
+
+.zoom-save:hover {
+  filter: brightness(1.12);
+}
+
+/* 草稿：≤900px 双栏堆叠，编辑栏取消定高 */
+@media screen and (max-width: 900px) {
+  .workbench {
+    flex-direction: column;
+  }
+
+  .editor-pane {
+    border-bottom: 1px solid var(--color-line);
+    border-right: none;
+    max-height: none;
+    width: 100%;
+  }
+}
+</style>

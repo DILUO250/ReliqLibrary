@@ -5,6 +5,7 @@ import { RTL_TOKEN } from '../config/index.js'
 import { scheduleBackup, backupStatus } from '../db/backupScheduler.js'
 import { trashArt } from './artTrash.js'
 import { registerPvzArtRoutes } from '../features/armarium/artRoutes.js'
+import { registerAnomalyArtRoutes } from '../features/armarium/anomalyArtRoutes.js'
 import { registerTurrisArtRoutes } from '../features/turris/artRoutes.js'
 
 type IdParams = { id: string }
@@ -21,10 +22,14 @@ function columnsOf(table: string): string[] {
 
 function insertColumns(body: Record<string, unknown>, cols: string[]): string[] {
   // id 默认由 AUTOINCREMENT 生成，**但 body 显式提供非空 id 时照写**——
-  // TEXT 主键表（pvz_keywords）没有 id 列会插入 id=NULL 的幽灵行（审计 M5 的
-  // 实锤：POST 不写 id → 按 id 删除永远 404）。前端创建类调用从不发 id，零行为变化。
+  // TEXT 主键表（pvz_keywords，代号即身份）必须显式提供 id；POST 侧另有
+  // 无 id 拒绝门（见下方 TEXT_PK_TABLES），防止 id=NULL 幽灵行（审计 M5 实锤）。
   return cols.filter((c) => c in body && (c !== 'id' || body.id != null))
 }
+
+// TEXT 主键表：代号是身份（植物 traits JSON 直接存关键词代号），POST 不带 id 会
+// 插入"无身份"幽灵行——按代号 DELETE/PUT 永远打不中。新建必须显式提供代号。
+const TEXT_PK_TABLES: ReadonlySet<string> = new Set(['pvz_keywords'])
 
 // 各表可能存放 /art/ 图片 URL 的列。PUT 更新 / DELETE 整行时，
 // 旧文件将被移入 _trash（而不是永久删除），供人工复核后决定去留。
@@ -33,6 +38,29 @@ export const IMAGE_COLUMNS: Record<string, string[]> = {
   floors: ['artwork'],
   librarians: ['portrait', 'portraitPreview'],
   armarium_projects: ['cover'],
+  // pvz_plants 只登记每株植物独占的两列。豁免项及原因：
+  // - familyIcon：共享家族图标（一个图标最多被 22 株植物引用），登记会让
+  //   "删一株植物"把共享图标拖进回收站，殃及其余植株；
+  // - backgrounds/fonts：引用者是代码/静态文件而非 DB 行，与 art/turris/systems 同类。
+  pvz_plants: ['image', 'wikiFull'],
+  // anomalies 的报告插图存在 report JSON（figures[].url）内部而非独立图片列，
+  // IMAGE_COLUMNS 的"列级对比"机制覆盖不到——由 collectReportArt() 在
+  // PUT（trashReplacedImages 同期）/ DELETE 钩子里集中回收，豁免登记。
+}
+// anomalies.report JSON 内的 /art/ 图片 URL 收集（删行防孤儿）。
+function collectReportArt(id: number | string): string[] {
+  const row = getDb().prepare('SELECT report FROM anomalies WHERE id = ?').get(id) as
+    | { report?: string }
+    | undefined
+  if (!row?.report) return []
+  try {
+    const r = JSON.parse(row.report) as { figures?: Array<{ url?: unknown }> }
+    return (r.figures ?? [])
+      .map((f) => f?.url)
+      .filter((u): u is string => typeof u === 'string' && u.startsWith('/art/'))
+  } catch {
+    return []
+  }
 }
 
 function imageColumnsOf(table: string): string[] {
@@ -69,12 +97,50 @@ function trashRowImages(table: string, id: number | string): void {
 }
 
 // DELETE 级联置空钩子表：删除上级记录时，将子表外键置空（保留子数据，归入"未分配"区）。
-// 需要"连带删除子数据"的场景应当改用 DB 外键 ON DELETE CASCADE，并在提交说明中明确理由。
+// 金贵数据（司书/书页/卡牌/来宾/书中世界等）一律置空保留，禁止凭空消失。
 const DELETE_NULLIFY_HOOKS: Record<string, Array<{ table: string; fk: string }>> = {
   floors: [
     { table: 'librarians', fk: 'floorId' },
     { table: 'emotion_entities', fk: 'floorId' },
+    { table: 'combat_pages', fk: 'floorId' },
+    { table: 'guests', fk: 'floorId' },
   ],
+  librarians: [
+    { table: 'core_pages', fk: 'ownerId' },
+    { table: 'combat_pages', fk: 'ownerId' },
+  ],
+  invitations: [{ table: 'guests', fk: 'invitationId' }],
+  books: [
+    { table: 'literary_worlds', fk: 'bookId' },
+    { table: 'guests', fk: 'bookId' },
+  ],
+  // books.worldId / anomalies.worldId 的目标均为 literary_worlds（书中世界收容
+  // 单元：书是世界的外壳、异常住在世界里）。异常实体行同样被 literary_worlds.
+  // holdsEntityId 反向指着，属同一段收容关系的两个方向。
+  literary_worlds: [
+    { table: 'anomalies', fk: 'worldId' },
+    { table: 'books', fk: 'worldId' },
+  ],
+  anomalies: [{ table: 'literary_worlds', fk: 'holdsEntityId' }],
+}
+
+// DELETE 连带删除钩子表：仅用于"子数据离开上级就没有意义"的纯从属关系
+// （卡包里的卡、书库树的子书库）。删除即丢数据方向，新增条目前必须想清楚。
+// recursive = 子表自引用（树形），需先用递归 CTE 收集全部后代再删。
+const DELETE_CASCADE_HOOKS: Record<string, Array<{ table: string; fk: string; recursive?: boolean }>> = {
+  page_packs: [{ table: 'cards', fk: 'packId' }],
+  repositories: [{ table: 'repositories', fk: 'parentId', recursive: true }],
+}
+
+// 行内图片 URL 收集（连带删除的子行如果有图片列，也要走回收站防孤儿）。
+function rowImageUrls(table: string, id: number | string): string[] {
+  const cols = imageColumnsOf(table)
+  if (cols.length === 0) return []
+  const row = getDb().prepare(`SELECT * FROM ${table} WHERE id = ?`).get(id) as
+    | Record<string, unknown>
+    | undefined
+  if (!row) return []
+  return cols.map((c) => row[c]).filter((v): v is string => typeof v === 'string' && v !== '')
 }
 
 // SQLite 错误 → 人话：约束冲突（NOT NULL/UNIQUE/CHECK）是调用方的问题，返回 400；
@@ -112,6 +178,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
   await registerTurrisArtRoutes(app)
   await registerPvzArtRoutes(app)
+  await registerAnomalyArtRoutes(app)
 
   for (const table of TABLES) {
     const route = `/api/${table}`
@@ -130,6 +197,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
     app.post(route, async (req, reply) => {
       const body = (req.body ?? {}) as Record<string, unknown>
+      if (TEXT_PK_TABLES.has(table) && (typeof body.id !== 'string' || body.id.trim() === '')) {
+        return reply.code(400).send({ error: `新建 ${table} 必须显式提供 id（代号）` })
+      }
       const cols = columnsOf(table)
       const pick = insertColumns(body, cols)
       if (pick.length === 0) return reply.code(400).send({ error: 'no valid fields' })
@@ -169,10 +239,36 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // 先确认行存在再置空子表——旧实现对不存在的 id 也会先改子表，产生无源 nullify
       const exists = db.prepare(`SELECT id FROM ${table} WHERE id = ?`).get(id)
       if (!exists) return reply.code(404).send({ error: 'not found' })
+      const reportArt = table === 'anomalies' ? collectReportArt(id) : []
+      const cascadeArt: string[] = []
       try {
         const tx = db.transaction(() => {
           for (const hook of DELETE_NULLIFY_HOOKS[table] ?? []) {
             db.prepare(`UPDATE ${hook.table} SET ${hook.fk} = NULL WHERE ${hook.fk} = ?`).run(id)
+          }
+          for (const hook of DELETE_CASCADE_HOOKS[table] ?? []) {
+            const victimIds = hook.recursive
+              ? (
+                  db
+                    .prepare(
+                      `WITH RECURSIVE del(id) AS (
+                         SELECT id FROM ${hook.table} WHERE ${hook.fk} = ?
+                         UNION ALL
+                         SELECT c.id FROM ${hook.table} c JOIN del ON c.${hook.fk} = del.id
+                       ) SELECT id FROM del`,
+                    )
+                    .all(id) as Array<{ id: number | string }>
+                ).map((r) => r.id)
+              : (
+                  db.prepare(`SELECT id FROM ${hook.table} WHERE ${hook.fk} = ?`).all(id) as Array<{
+                    id: number | string
+                  }>
+                ).map((r) => r.id)
+            const delStmt = db.prepare(`DELETE FROM ${hook.table} WHERE id = ?`)
+            for (const vid of victimIds) {
+              cascadeArt.push(...rowImageUrls(hook.table, vid))
+              delStmt.run(vid)
+            }
           }
           db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(id)
         })
@@ -180,6 +276,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       } catch (e) {
         return sqliteErrorReply(e, reply)
       }
+      // 事务提交后才回收文件（回收失败不影响数据一致性）
+      for (const url of cascadeArt) trashArt(url)
+      for (const url of reportArt) trashArt(url)
       trashRowImages(table, id)
       return { deleted: 1 }
     })
@@ -219,8 +318,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       librarians: count('librarians'),
       anomalies: count('anomalies'),
       spaces: count('supernatural_spaces'),
-      // 馆藏 = 馆藏书目 + PVZ 图鉴植物（每株植物计 1 馆藏）
-      books: count('books') + count('pvz_plants'),
+      // 馆藏 = 馆藏书目 + PVZ 图鉴植物 + 异常实体（每个实体算 1 件馆藏，2026-09-16 决议）
+      books: count('books') + count('pvz_plants') + count('anomalies'),
       repositories: count('repositories'),
       guests: count('guests'),
       stations: count('rail_stations'),

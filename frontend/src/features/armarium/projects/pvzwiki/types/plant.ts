@@ -36,7 +36,8 @@ export interface PlantDetail {
   toughness: number | null
   damage: number | null
   range: string | null
-  family: string | null
+  /** 家族代号（familyCode），家族名/图标经 getFamilies 反查。 */
+  familyCode: string | null
   introduction: string | null
   ability: string[]
   chat: string | null

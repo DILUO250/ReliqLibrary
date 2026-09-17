@@ -50,4 +50,19 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ prompt }),
     }),
+  uploadAnomalyImage: async (file: File, code: string): Promise<{ url: string }> => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`${BASE}/armarium/anomaly-image?code=${encodeURIComponent(code)}`, {
+      method: 'POST',
+      headers: { 'x-rtl-key': WRITE_TOKEN },
+      body: fd,
+    })
+    if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
+    return (await res.json()) as { url: string }
+  },
+  removeAnomalyImage: (url: string) =>
+    request<{ ok: boolean }>(`/armarium/anomaly-image?url=${encodeURIComponent(url)}`, {
+      method: 'DELETE',
+    }),
 }

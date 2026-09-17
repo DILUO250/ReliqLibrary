@@ -1,0 +1,327 @@
+﻿/* 异常实体报告单 · 纸面样式（全局，scl- 前缀隔离）。
+   依据：草稿/1.2 §1–§6 Word 版式 + §9 屏幕增强/打印规则。 */
+.scl-report {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 22px;
+}
+
+.scl-report__toolbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.scl-report__toolbar-side {
+  display: flex;
+  gap: 10px;
+}
+
+.scl-report__back,
+.scl-report__print,
+.scl-report__edit {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: var(--radius);
+  color: var(--color-ink);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 8px 16px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.scl-report__back:hover,
+.scl-report__print:hover,
+.scl-report__edit:hover {
+  background: var(--accent);
+  color: #1b1408;
+}
+
+.scl-report__hint {
+  color: var(--color-ink-faint);
+  font-size: 13px;
+}
+
+.scl-paper {
+  background: #fffbfb url('/art/armarium/report/bg.png') center / 100% 100% no-repeat;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  color: #000;
+  flex: none;
+  font-family:
+    'Gill Sans MT',
+    'Gill Sans',
+    'Trebuchet MS',
+    Verdana,
+    '华文细黑',
+    'STXihei',
+    'Microsoft YaHei',
+    'PingFang SC',
+    sans-serif;
+  font-size: 11pt;
+  line-height: 1.9;
+  min-height: 29.7cm;
+  padding: 2.54cm 3.17cm;
+  width: 21cm;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.scl-paper .r-title {
+  border-bottom: 1pt solid #f6a21d;
+  font-family: Verdana, SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  font-size: 20pt;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: 0 0 18pt;
+  padding-bottom: 5pt;
+  text-align: left;
+}
+
+.scl-paper .r-meta {
+  margin: 0 0 16pt;
+}
+
+.scl-paper .r-meta p {
+  font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  line-height: 1.9;
+  margin: 0 0 2pt;
+}
+
+.scl-paper .r-meta strong {
+  font-weight: 700;
+}
+
+.scl-paper h3.r-h {
+  border-bottom: 1px solid #d8d2c4;
+  border-left: 3pt solid #f6a21d;
+  font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  font-size: 13pt;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: 0.6cm 0 0.2cm;
+  padding: 0 0 3pt 8pt;
+}
+
+.scl-paper .r-anno {
+  color: #6b655a;
+  font-family: 'Gill Sans MT', 'Gill Sans', 'Trebuchet MS', Verdana, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  margin-left: 5pt;
+  vertical-align: 1pt;
+}
+
+.scl-paper h3.r-h--out {
+  color: #1c1a17;
+  font-family: Verdana, SimSun, 'Songti SC', serif;
+  font-weight: 800;
+}
+
+.scl-paper .r-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.scl-paper .r-list > li {
+  margin: 0.18cm 0;
+  padding-left: 14pt;
+  position: relative;
+}
+
+.scl-paper .r-list > li::before {
+  content: '*';
+  left: 2pt;
+  position: absolute;
+  top: 0;
+}
+
+.scl-paper .r-entry {
+  border-left: 2pt solid rgba(246, 162, 29, 0.55);
+  font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  margin: 0.4cm 0 0.15cm;
+  padding-left: 6pt;
+}
+
+.scl-paper .r-entry strong {
+  font-weight: 800;
+}
+
+.scl-paper .r-entry .app-source {
+  color: #1c1a17;
+}
+
+.scl-paper .r-page-name {
+  font-style: italic;
+}
+
+.scl-paper .r-ego-name {
+  font-weight: 700;
+}
+
+.scl-paper .na {
+  color: #333;
+  font-style: normal;
+  letter-spacing: 0.05em;
+}
+
+.scl-paper .file-box {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1pt solid #000;
+  margin: 0.2cm 0;
+  padding: 10pt 14pt;
+}
+
+.scl-paper .r-fig {
+  margin: 0.35cm auto;
+  text-align: center;
+}
+
+.scl-paper .r-fig img {
+  background: #fff;
+  border: none;
+  max-height: 11cm;
+  max-width: 70%;
+  object-fit: contain;
+}
+
+.scl-paper .r-fig figcaption {
+  font-family: SimSun, '华文细黑', 'STXihei', serif;
+  font-size: 10.5pt;
+  margin-top: 4pt;
+}
+
+.scl-paper .r-warn {
+  font-family: SimSun, 'Songti SC', serif;
+  font-size: 11pt;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: 0.5cm 0;
+  text-align: center;
+}
+
+.scl-paper .r-restricted {
+  background: rgba(192, 74, 50, 0.03);
+  position: relative;
+}
+
+.scl-paper .r-seal {
+  border: 1px solid rgba(192, 74, 50, 0.5);
+  color: rgba(192, 74, 50, 0.68);
+  font-family: SimSun, serif;
+  font-size: 8pt;
+  letter-spacing: 0.15em;
+  padding: 2pt 8pt;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 2pt;
+  transform: rotate(-4deg);
+}
+
+@media screen and (max-width: 900px) {
+  .scl-paper {
+    min-height: 0;
+    padding: 1cm 5%;
+    width: 100%;
+  }
+}
+
+@media print {
+  /* @page 无法被 :has 守卫（会泄漏到全站打印），由实体页挂载时动态注入/卸载时移除。 */
+
+  body:has(.scl-paper) .site-nav,
+  body:has(.scl-paper) .module-shell .page-header,
+  body:has(.scl-paper) .module-shell .module-tabs,
+  body:has(.scl-paper) .scl-report__toolbar,
+  body:has(.scl-paper) .ent-edit .topbar,
+  body:has(.scl-paper) .ent-edit .editor-pane {
+    display: none !important;
+  }
+
+  body:has(.scl-paper) .ent-edit .workbench {
+    display: block;
+    padding: 0;
+  }
+
+  body:has(.scl-paper) .ent-edit .preview-pane {
+    display: block;
+    padding: 0;
+  }
+
+  body:has(.scl-paper) .ent-edit {
+    min-height: 0;
+  }
+
+  body:has(.scl-paper) .module-shell__inner {
+    margin: 0;
+    max-width: none;
+  }
+
+  .scl-paper {
+    background-position: top center;
+    background-repeat: repeat-y;
+    background-size: 100% 29.7cm;
+    box-shadow: none;
+    font-size: 9.5pt;
+    line-height: 1.15;
+    margin: 0;
+  }
+
+  .scl-paper .r-title {
+    margin: 0 0 15pt;
+    padding-bottom: 4pt;
+  }
+
+  .scl-paper .r-meta {
+    margin: 0 0 18pt;
+  }
+
+  .scl-paper .r-meta p {
+    line-height: normal;
+    margin: 0;
+  }
+
+  .scl-paper h3.r-h {
+    font-size: 9.5pt;
+    margin: 0.28cm 0;
+  }
+
+  .scl-paper .r-list > li {
+    margin: 0.28cm 0;
+  }
+
+  .scl-paper .r-entry {
+    margin: 0.28cm 0;
+  }
+
+  .scl-paper .file-box {
+    margin: 0.28cm 0;
+    padding: 8pt 12pt;
+  }
+
+  .scl-paper .r-fig {
+    margin: 0.28cm auto;
+  }
+
+  .scl-paper .r-fig img {
+    max-height: 9cm;
+  }
+
+  .scl-paper .r-fig figcaption {
+    font-size: 9.5pt;
+    margin-top: 0.28cm;
+  }
+
+  .scl-paper .r-warn {
+    font-size: 9.5pt;
+    margin: 0.28cm 0;
+  }
+}

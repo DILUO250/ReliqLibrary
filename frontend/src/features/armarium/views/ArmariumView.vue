@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SectionPlaceholder from '@/shared/components/SectionPlaceholder.vue'
+import EntitiesView from '@/features/armarium/views/EntitiesView.vue'
 import { api } from '@/app/services/api'
 import type { ArmariumProject } from '@rtl/shared'
 
@@ -61,14 +62,8 @@ function openProject(project: ArmariumProject): void {
       note="总览页 UI 待规划"
     />
 
-    <!-- Tab2 异常实体库（anomalies 表已就绪，UI 待建） -->
-    <SectionPlaceholder
-      v-else-if="active === 'entities'"
-      title="异常实体档案"
-      latin="Entitas Anomala"
-      desc="藏书阁研究的主要异常对象之一。主要产物：知识，生木髓，情感书页，EGO书页。"
-      note="异常实体档案数据待录入"
-    />
+    <!-- Tab2 异常实体库（anomalies 表 + report JSON 报告单） -->
+    <EntitiesView v-else-if="active === 'entities'" />
 
     <!-- Tab3 超自然空间库（supernatural_spaces 表已就绪，UI 待建） -->
     <SectionPlaceholder

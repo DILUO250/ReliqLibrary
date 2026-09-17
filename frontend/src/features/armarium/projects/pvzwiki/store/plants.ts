@@ -29,13 +29,11 @@ interface PvzPlantRow {
   toughness: number | null
   damage: number | null
   range: string | null
-  family: string | null
   introduction: string | null
   chat: string | null
   ability: string
   traits: string
   wikiFull: string | null
-  wikiThumb: string | null
   sortOrder: number
 }
 
@@ -130,7 +128,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       toughness: r.toughness ?? null,
       damage: r.damage ?? null,
       range: r.range ?? null,
-      family: r.family ?? null,
+      familyCode: r.familyCode || null,
       introduction: r.introduction ?? null,
       ability: parseArr<string>(r.ability),
       chat: r.chat ?? null,
@@ -148,7 +146,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       toughness: number | null
       damage: number | null
       range: string | null
-      family: string | null
+      familyCode: string | null
       introduction: string | null
       chat: string | null
       ability: string[]
@@ -157,13 +155,23 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
   ): Promise<void> {
     const r = findRow(codename)
     if (!r) throw new Error(`unknown plant: ${codename}`)
+    // 家族代号 → 三元组：familyCode 只存代号，名称与图标随代号一并落库，
+    // 保证 familyCode/familyName/familyIcon 三列永远同步（消灭旧的 family 双写）。
+    const family = data.familyCode
+      ? getFamilies(plants.value).find((f) => f.code === data.familyCode) ?? null
+      : null
+    const familyPatch = {
+      familyCode: family?.code ?? '',
+      familyName: family?.name ?? '',
+      familyIcon: family?.icon ?? '',
+    }
     await api.update('pvz_plants', r.id, {
       sunCost: data.sunCost,
       recharge: data.recharge,
       toughness: data.toughness,
       damage: data.damage,
       range: data.range,
-      family: data.family,
+      ...familyPatch,
       introduction: data.introduction,
       chat: data.chat,
       ability: JSON.stringify(data.ability),
@@ -175,7 +183,7 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       toughness: data.toughness,
       damage: data.damage,
       range: data.range,
-      family: data.family,
+      ...familyPatch,
       introduction: data.introduction,
       chat: data.chat,
       ability: JSON.stringify(data.ability),
@@ -240,13 +248,11 @@ export const usePvzPlantsStore = defineStore('pvzPlants', () => {
       toughness: null,
       damage: null,
       range: null,
-      family: null,
       introduction: null,
       chat: null,
       ability: '[]',
       traits: '[]',
       wikiFull: null,
-      wikiThumb: null,
       sortOrder: maxOrder + 1,
     })
     return {
@@ -398,12 +404,12 @@ export function getPrevNext(codename: string): { prev?: PlantEntity; next?: Plan
 export function getNeighbors(codename: string, limit = 5): PlantEntity[] {
   const s = store()
   const current = s.getEffectiveDetail(codename)
-  if (!current?.family) return []
+  if (!current?.familyCode) return []
   return s.plants
     .filter((p) => {
       if (p.codename === codename) return false
       const other = s.getEffectiveDetail(p.codename)
-      return !!other?.family && other.family === current.family
+      return !!other?.familyCode && other.familyCode === current.familyCode
     })
     .slice(0, limit)
 }

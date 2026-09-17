@@ -688,6 +688,185 @@ export interface Anomaly {
   appendix: string
   worldId: number | null
   note: string
+  /** 异常实体报告单（AnomalyReport 的 JSON 字符串；空串 = 未编辑过）。 */
+  report: string
+}
+
+/* ---------- 异常实体报告单（SCL 报告单） ----------
+ * 格式权威依据：草稿/1.2-藏书阁异常实体报告单/03-异常实体报告单-格式规范.md。
+ * 一切列表字段（描述/收容/附录/文件/图片/附件/书页/警告线）条数动态，不设死。 */
+
+/** 报告单区块键：警告线可插入到任一区块之后。 */
+export type AnomalyReportBlockKey =
+  | 'head'
+  | 'desc'
+  | 'contain'
+  | 'output'
+  | 'appendix'
+  | 'files'
+  | 'figure-main'
+  | 'figures-rest'
+  | 'attachments'
+
+/** 权限警告线：分割线，其下内容需 sl 等级权限才能阅读。 */
+export interface AnomalyWarning {
+  sl: number
+  after: AnomalyReportBlockKey
+}
+
+export interface AnomalyAppendix {
+  source: string
+  body: string[]
+}
+
+/** 引用文件：quoted = 直接引用（渲染为带边框引用框）。 */
+export interface AnomalyFile {
+  source: string
+  body: string[]
+  quoted: boolean
+}
+
+export interface AnomalyFigure {
+  caption: string
+  url: string
+}
+
+export interface AnomalyAttachment {
+  body: string[]
+}
+
+export interface AnomalyReportOutput {
+  /** 薰陆香产能效率 · 等级词（自由文本，空 = N/A）。 */
+  incenseGrade: string
+  /** 薰陆香产能效率 · 数值范围（如 "5~12单位/太阳日"）。 */
+  incenseRate: string
+  /** 异常实体书页 1~9 条（允许 "N/A"）。 */
+  pages: string[]
+  /** EGO卡牌名（【】内文本，空 = 【N/A】）。 */
+  egoCard: string
+  /** 分配地：floors 表联动 id；null = 用 floorLabel 快照（楼层被删时"留名不留链"）。 */
+  floorId: number | null
+  /** 分配地显示快照（"迎书楼 – 历史层"），落库即最终值，零翻译层。 */
+  floorLabel: string
+}
+
+export interface AnomalyReport {
+  warnings: AnomalyWarning[]
+  description: string[]
+  containment: string[]
+  output: AnomalyReportOutput
+  appendices: AnomalyAppendix[]
+  files: AnomalyFile[]
+  figures: AnomalyFigure[]
+  attachments: AnomalyAttachment[]
+}
+
+export const ANOMALY_PAGE_MAX = 9
+export const ANOMALY_WARNING_MAX = 6
+
+/** 合法区块键集合：警告线锚点必须命中其一，脏数据兜底到 figure-main（模板默认）。 */
+const ANOMALY_BLOCK_KEYS: ReadonlySet<string> = new Set<string>([
+  'head', 'desc', 'contain', 'output', 'appendix', 'files', 'figure-main', 'figures-rest', 'attachments',
+])
+
+function normalizeWarning(w: unknown): AnomalyWarning {
+  const w0 = (w ?? {}) as Partial<AnomalyWarning>
+  const sl = Math.max(1, Math.min(99, Math.trunc(Number(w0.sl)) || 1))
+  const after = typeof w0.after === 'string' && ANOMALY_BLOCK_KEYS.has(w0.after)
+    ? (w0.after as AnomalyReportBlockKey)
+    : 'figure-main'
+  return { sl, after }
+}
+
+export function emptyAnomalyReport(): AnomalyReport {
+  return {
+    warnings: [],
+    description: [],
+    containment: [],
+    output: {
+      incenseGrade: '',
+      incenseRate: '',
+      pages: [],
+      egoCard: '',
+      floorId: null,
+      floorLabel: '',
+    },
+    appendices: [],
+    files: [],
+    figures: [],
+    attachments: [],
+  }
+}
+
+/** 容错解析 anomalies.report JSON；空/坏数据返回空报告（永不抛错）。 */
+export function parseAnomalyReport(raw?: string | null): AnomalyReport {
+  if (!raw) return emptyAnomalyReport()
+  try {
+    const s = JSON.parse(raw) as Partial<AnomalyReport>
+    const strArr = (v: unknown): string[] =>
+      (Array.isArray(v) ? v : []).filter((x): x is string => typeof x === 'string')
+    const o = s.output
+    return {
+      warnings: (Array.isArray(s.warnings) ? s.warnings : [])
+        .slice(0, ANOMALY_WARNING_MAX)
+        .map(normalizeWarning),
+      description: strArr(s.description),
+      containment: strArr(s.containment),
+      output: {
+        incenseGrade: o?.incenseGrade ?? '',
+        incenseRate: o?.incenseRate ?? '',
+        pages: strArr(o?.pages).slice(0, ANOMALY_PAGE_MAX),
+        egoCard: o?.egoCard ?? '',
+        floorId: typeof o?.floorId === 'number' ? o.floorId : null,
+        floorLabel: o?.floorLabel ?? '',
+      },
+      appendices: (Array.isArray(s.appendices) ? s.appendices : []).map((a): AnomalyAppendix => ({
+        source: a?.source ?? '',
+        body: strArr(a?.body),
+      })),
+      files: (Array.isArray(s.files) ? s.files : []).map((f): AnomalyFile => ({
+        source: f?.source ?? '',
+        body: strArr(f?.body),
+        quoted: !!f?.quoted,
+      })),
+      figures: (Array.isArray(s.figures) ? s.figures : [])
+        .filter((f): f is AnomalyFigure => !!f && typeof f?.url === 'string')
+        .map((f) => ({ caption: f.caption ?? '', url: f.url })),
+      attachments: (Array.isArray(s.attachments) ? s.attachments : []).map((a): AnomalyAttachment => ({
+        body: strArr(a?.body),
+      })),
+    }
+  } catch {
+    return emptyAnomalyReport()
+  }
+}
+
+const ANOMALY_LOBOTOMY_SUBS = new Set(['zayin', 'teth', 'he', 'waw', 'aleph'])
+
+/** 主等级 + 子等级拼装显示（"keter" + "keter-teth" → "Keter-TETH"）。 */
+export function anomalyLevelText(level: string, subLevel: string): string {
+  const main = level ? level.charAt(0).toUpperCase() + level.slice(1) : 'Safe'
+  const sub = subLevel.split('-').slice(1).join('-')
+  if (!sub) return main
+  if (ANOMALY_LOBOTOMY_SUBS.has(sub)) return `${main}-${sub.toUpperCase()}`
+  return `${main}-${sub.charAt(0).toUpperCase() + sub.slice(1)}`
+}
+
+/** 编号全写：SCL- 前缀 + 数字（位数不限，空编号占位 XXXX）。 */
+export function anomalyFullCode(a: Pick<Anomaly, 'code'>): string {
+  const digits = (a.code || '').replace(/\D/g, '')
+  return `SCL-${digits || 'XXXX'}`
+}
+
+/** 报告单标题：SCL-XXXX 名称。 */
+export function anomalyReportTitle(a: Pick<Anomaly, 'code' | 'name'>): string {
+  return `${anomalyFullCode(a)}${a.name ? `　${a.name}` : ''}`
+}
+
+/** 导出 PDF 文件名：SCL-XXXX_名称_异常实体报告（清洗 Windows 非法文件名字符）。 */
+export function anomalyExportFilename(a: Pick<Anomaly, 'code' | 'name'>): string {
+  const safeName = (a.name || '未命名').replace(/[\\/:*?"<>|]/g, '')
+  return `${anomalyFullCode(a)}_${safeName}_异常实体报告`
 }
 
 export interface LiteraryWorld {
@@ -796,7 +975,6 @@ export interface EnergyRecord {
   date: string
   amount: number
   source: string
-  expeditionId: string
   note: string
 }
 
@@ -825,6 +1003,72 @@ export interface LoreEntry {
   category: string
   content: string
   sortOrder: number
+}
+
+/** 术语分区（词典页左侧目录）。 */
+export interface TermSection {
+  id: number
+  slug: string
+  title: string
+  /** 是否在词典页可见（0/1）。 */
+  visible: number
+  sortOrder: number
+}
+
+/** 术语条目：tags/tagColors/tagFormats/ability 类字段为 JSON 字符串，前端 store 负责往返。 */
+export interface TermEntry {
+  id: number
+  sectionId: number
+  groupTitle: string
+  name: string
+  tags: string
+  tagColors: string
+  tagFormats: string
+  format: string
+  description: string
+  /** 带参数位词条：插入面板据此生成 `“词条” X层` 形态（0/1）。 */
+  hasParam: number
+  sortOrder: number
+}
+
+/** PVZ 图鉴植物行（pvzwiki 前端另有运行时形态 PlantEntity，此处为 SQLite 行镜像）。 */
+export interface PvzPlant {
+  id: number
+  codename: string
+  numericId: number
+  name: string
+  englishName: string
+  image: string
+  world: string
+  familyCode: string
+  familyName: string
+  familyIcon: string
+  summary: string
+  path: string
+  isCustom: number
+  sunCost: number | null
+  recharge: number | null
+  toughness: number | null
+  damage: number | null
+  range: string | null
+  introduction: string | null
+  chat: string | null
+  /** JSON 字符串：string[]。 */
+  ability: string
+  /** JSON 字符串：string[]，存 pvz_keywords 的代号（slug）。 */
+  traits: string
+  wikiFull: string | null
+  sortOrder: number
+}
+
+/**
+ * PVZ 关键词。主键是英文代号（slug）且 NOT NULL——pvz_plants.traits JSON
+ * 直接存代号引用词条，**禁止**改成数字自增主键（会打断全部 traits 引用）。
+ */
+export interface PvzKeyword {
+  id: string
+  name: string
+  description: string
 }
 
 export interface OverviewStats {

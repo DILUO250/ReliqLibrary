@@ -254,7 +254,7 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 
 ## 7. 已知的待办（不在本次规范范围）
 
-- 藏书阁五 Tab 中：总览 / 异常实体库（`anomalies` 表就绪）/ 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。
+- 藏书阁五 Tab 中：总览 / 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。**异常实体库已完成**（2026-09-16）：报告单整体存 `anomalies.report` JSON 列（结构见 `shared/src/index.ts` 的 `AnomalyReport`），格式权威依据 = `草稿\1.2-藏书阁异常实体报告单\03-异常实体报告单-格式规范.md`（Word 版式 + 屏幕增强双轨，§9）；报告插图不登记 `IMAGE_COLUMNS`（存在 JSON 内部，由 `anomalyArtRoutes` 的替换/删除通道 + anomalies 删行钩子集中回收）。
 - `art/armarium/_trash/`（根级 `art/_trash/` 中的历史遗留文件）需要人工定期清理。
 - `term-backup-*.json` 由恢复脚本轮转（保留最近 3 份）并被 git 跟踪（备份策略待议）。
 

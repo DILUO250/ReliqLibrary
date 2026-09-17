@@ -12,7 +12,7 @@
 
 | 模块 | 主题色 | 现状                                                                                                                                     |
 |---|---|----------------------------------------------------------------------------------------------------------------------------------------|
-| 藏书阁 Armarium | 蓝 `#4a7fc4` | **五 Tab 结构**（总览/异常实体库/超自然空间库/研究项目/书库管理员）；**研究项目 Tab 已落库**（`armarium_projects` 表，PVZ 百科为首个项目，完整可用：181 株植物、编辑器、卡图生成器、云端同步）；其余 Tab 占位待建 UI |
+| 藏书阁 Armarium | 蓝 `#4a7fc4` | **五 Tab 结构**（总览/异常实体库/超自然空间库/研究项目/书库管理员）；**研究项目 Tab 已落库**（`armarium_projects` 表，PVZ 百科为首个项目，完整可用：181 株植物、编辑器、卡图生成器、云端同步）；**异常实体库完整可用**（`anomalies` 表 + `report` JSON 列：SCL 报告单编辑器、纸面预览/打印导出、实体卡片列表、报告插图上传）；其余 Tab 占位待建 UI |
 | 迎书楼 Turris | 红 `#c04a32` | **楼层/司书编辑器 + 术语词典 + 战斗系统页完整可用**（战斗系统 v2）；其余页面占位                                                                                        |
 | 寻书社 Collegium | 绿 `#55a05f` | 占位（数据表与 generic CRUD 已就绪，按需填充）                                                                                                         |
 | 馆长层 Director | 金 `#e0b564` | 暂无功能设计，空置                                                                                                                              |
@@ -212,7 +212,15 @@ frontend\src\features\armarium\
 ├─ views\
 │  ├─ ArmariumView.vue    # ★ 五 Tab 容器：按路由渲染 总览/异常实体库/超自然空间库/研究项目/书库管理员
 │  │                      #   （Tab 导航由 ModuleLayout 统一渲染，页面里禁止再画一层 Tab）
+│  ├─ EntitiesView.vue    # 异常实体库列表页：实体卡片（代号/等级/缩略图/预览/编辑），按 SCL 编号升序
 │  └─ ProjectView.vue     # /armarium/project/:projectId 的站内 SPA 项目页（未来小库用）
+├─ store\
+│  └─ anomalies.ts        # Pinia：anomalies 列表缓存（load/reload 幂等）
+├─ entities\              # ★ SCL 异常实体报告单（格式权威依据：草稿\1.2 的格式规范文档）
+│  ├─ EntityReportView.vue   # 报告单预览页（纸面 + 返回按钮 + 打印导出 PDF）
+│  ├─ EntityEditView.vue     # 报告单编辑器（左编辑/右实时预览双栏，保存时才上传图片）
+│  ├─ reportRender.ts        # 纯函数：Anomaly + report JSON → 纸面 HTML
+│  └─ paper.css              # 纸面样式（Word 版式 + 屏幕增强双轨，编辑页/预览页共用）
 └─ projects\pvzwiki\      # PVZ 百科（独立子项目，独立标签页打开）
    ├─ PvzProjectView.vue     #   壳 + 侧边导航
    ├─ views\                 #   植物图鉴页 / 植物详情页

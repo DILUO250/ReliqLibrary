@@ -57,7 +57,7 @@ const form = reactive({
   toughness: '',
   damage: '',
   range: '',
-  family: '',
+  familyCode: '',
   abilityText: '',
   introduction: '',
   chat: '',
@@ -80,7 +80,7 @@ function openEditor(): void {
   form.toughness = d.toughness != null ? String(d.toughness) : ''
   form.damage = d.damage != null ? String(d.damage) : ''
   form.range = d.range ?? ''
-  form.family = d.family ?? ''
+  form.familyCode = d.familyCode ?? ''
   form.abilityText = d.ability.join('\n')
   form.introduction = d.introduction ?? ''
   form.chat = d.chat ?? ''
@@ -97,7 +97,7 @@ async function save(): Promise<void> {
     toughness: form.toughness === '' ? null : Number(form.toughness),
     damage: form.damage === '' ? null : Number(form.damage),
     range: form.range.trim() || null,
-    family: form.family.trim() || null,
+    familyCode: form.familyCode || null,
     introduction: form.introduction.trim() || null,
     chat: form.chat.trim() || null,
     ability: form.abilityText.split('\n').map((s) => s.trim()).filter(Boolean),
@@ -215,9 +215,9 @@ defineExpose({ openEditor, closeEditor, isOpen: () => editorOpen.value })
             </label>
             <label class="editor-field">
               <span>家族</span>
-              <select v-model="form.family">
+              <select v-model="form.familyCode">
                 <option value="">不设置</option>
-                <option v-for="f in familyOptions" :key="f.code" :value="f.name">
+                <option v-for="f in familyOptions" :key="f.code" :value="f.code">
                   {{ f.name }}
                 </option>
               </select>

@@ -55,9 +55,9 @@ const worldBg = computed(() => {
 })
 
 const effectiveFamily = computed(() => {
-  const familyName = detail.value?.family
-  if (!familyName) return undefined
-  return getFamilies(plants).find((f) => f.name === familyName)
+  const familyCode = detail.value?.familyCode
+  if (!familyCode) return undefined
+  return getFamilies(plants).find((f) => f.code === familyCode)
 })
 
 const showcaseCandidates = computed(() =>
@@ -143,7 +143,7 @@ const stats = computed<StatRow[]>(() => {
     { label: '血量', icon: icon('Toughness2I.webp'), value: d?.toughness != null ? String(d.toughness) : '—' },
     { label: '伤害', icon: icon('Damage2I.webp'), value: d?.damage != null ? String(d.damage) : '—' },
     { label: '射程', icon: icon('Range2I.webp'), value: d?.range != null ? String(d.range) : '—' },
-    { label: '家族', icon: icon('Family2I.webp'), value: d?.family ?? '—' },
+    { label: '家族', icon: icon('Family2I.webp'), value: effectiveFamily.value?.name ?? '—' },
   ]
 })
 
