@@ -74,7 +74,7 @@ function toggleBgColor(e: Event): void {
   cursor: pointer;
 }
 .fe-color {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 4px 8px;
 }
@@ -97,7 +97,7 @@ function toggleBgColor(e: Event): void {
   font-family: inherit;
   background: var(--color-bg);
   color: var(--color-ink);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
 }
 </style>

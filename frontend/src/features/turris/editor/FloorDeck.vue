@@ -815,7 +815,7 @@ onMounted(load)
 .btn {
   padding: 8px 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   background: var(--color-surface);
   color: var(--color-ink);
   font-size: 14px;
@@ -855,7 +855,7 @@ onMounted(load)
   align-items: stretch;
   gap: 16px;
   min-height: 130px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) + 4px);
   background: var(--color-surface);
   overflow: hidden;
@@ -924,7 +924,7 @@ onMounted(load)
   opacity: 0;
 }
 .floor {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) + 4px);
   background: var(--color-surface);
   overflow: hidden;
@@ -987,7 +987,7 @@ onMounted(load)
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 999px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   color: var(--color-ink-dim);
   display: inline-flex;
   align-items: center;
@@ -1050,7 +1050,7 @@ onMounted(load)
   right: 0;
 }
 .floor-detail {
-  border-top: 1px solid var(--color-line);
+  border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   padding: 16px 18px 20px;
   background: rgba(16, 13, 9, 0.3);
 }
@@ -1068,7 +1068,7 @@ onMounted(load)
   gap: 10px;
 }
 .submenu {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-surface);
   overflow: hidden;
@@ -1109,7 +1109,7 @@ onMounted(load)
   font-size: 12px;
 }
 .submenu__body {
-  border-top: 1px solid var(--color-line);
+  border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   padding: 14px;
   background: rgba(16, 13, 9, 0.22);
 }
@@ -1168,7 +1168,7 @@ onMounted(load)
   font-family: var(--font-display);
   font-size: 11px;
   letter-spacing: 0.06em;
-  border: 1px solid;
+  border: var(--bd-w) var(--bd-style);
   white-space: nowrap;
 }
 .rarity--N {
@@ -1266,7 +1266,7 @@ onMounted(load)
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
-  border-top: 1px dashed rgba(233, 221, 198, 0.3);
+  border-top: var(--bd-w) dashed rgba(233, 221, 198, 0.3);
   padding: 14px;
   background: rgba(0, 0, 0, 0.35);
 }
@@ -1297,7 +1297,7 @@ onMounted(load)
   margin-left: auto;
 }
 .epage {
-  border: 1px solid rgba(233, 221, 198, 0.26);
+  border: var(--bd-w) var(--bd-style) rgba(233, 221, 198, 0.26);
   border-radius: var(--radius);
   background: #1b1a17;
   padding: 9px 12px 10px;
@@ -1332,7 +1332,7 @@ onMounted(load)
   line-height: 18px;
   border-radius: 999px;
   font-size: 11px;
-  border: 1px solid;
+  border: var(--bd-w) var(--bd-style);
   white-space: nowrap;
 }
 .cost--pos {
@@ -1393,7 +1393,7 @@ onMounted(load)
   gap: 8px;
   align-items: baseline;
   padding: 8px 12px;
-  border: 1px solid #f0c75e;
+  border: var(--bd-w) var(--bd-style) #f0c75e;
   border-radius: var(--radius);
   background: linear-gradient(90deg, rgba(240, 199, 94, 0.16), rgba(240, 199, 94, 0.04));
   font-size: 13px;
@@ -1419,7 +1419,7 @@ onMounted(load)
   font-family: var(--font-kai);
 }
 .sys-placeholder {
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: var(--radius);
   padding: 18px 16px;
   text-align: center;
@@ -1469,7 +1469,7 @@ onMounted(load)
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
@@ -1487,7 +1487,7 @@ onMounted(load)
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border-top: 1px dashed var(--color-line);
+  border-top: var(--bd-w) dashed var(--bd-color);
   padding-top: 8px;
 }
 .lib-roman {

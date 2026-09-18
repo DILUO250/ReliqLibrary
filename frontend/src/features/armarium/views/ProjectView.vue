@@ -18,7 +18,7 @@ const projectId = computed(() => String(route.params.projectId ?? ''))
 
 <style scoped>
 .project-placeholder {
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: calc(var(--radius) * 2);
   padding: 48px 24px;
   text-align: center;

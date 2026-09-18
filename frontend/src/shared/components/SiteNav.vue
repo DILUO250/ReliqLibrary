@@ -11,6 +11,7 @@ const links = [
   { to: '/collegium', label: MODULE_LABELS.collegium },
   { to: '/director', label: MODULE_LABELS.director },
   { to: '/factions', label: '相关势力' },
+  { to: '/settings', label: '设置' },
 ]
 
 function isActive(to: string): boolean {

@@ -175,7 +175,7 @@ function markImageFailed(img: string): void {
   min-width: 96px;
   padding: 10px 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   background: var(--color-surface);
   color: var(--color-ink);
   cursor: pointer;
@@ -205,12 +205,12 @@ function markImageFailed(img: string): void {
   right: 6px;
   font-size: 10px;
   color: var(--color-ink-faint);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 999px;
   padding: 0 5px;
 }
 .sys-empty {
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: calc(var(--radius) + 4px);
   padding: 48px 24px;
   text-align: center;
@@ -226,7 +226,7 @@ function markImageFailed(img: string): void {
   color: var(--color-ink-faint);
 }
 .sys-block {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) + 4px);
   background: var(--color-surface);
   padding: 18px;
@@ -293,7 +293,7 @@ function markImageFailed(img: string): void {
   gap: 14px;
 }
 .sys-pc__card {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 14px 16px;
 }
@@ -350,7 +350,7 @@ function markImageFailed(img: string): void {
 .sys-table {
   width: 100%;
   margin: 0 auto;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   border-collapse: separate;
   border-spacing: 0;
@@ -359,7 +359,7 @@ function markImageFailed(img: string): void {
 }
 .sys-table th,
 .sys-table td {
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
   padding: 10px 16px;
   text-align: left;
 }
@@ -391,7 +391,7 @@ function markImageFailed(img: string): void {
 }
 .sys-mech__figure {
   margin: 0;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--color-bg);

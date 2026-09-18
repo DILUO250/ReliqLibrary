@@ -1,0 +1,236 @@
+/*
+ * 全站主题换肤层（草稿 2.1 落地，2026-09-18）
+ * 两个正交维度，均为纯展示层常量（CONVENTIONS §4.4：不会运营编辑，允许静态文件）：
+ *   1. 主题色 html[data-color]   —— 颜色 token（底色/文字/强调/部门色/光晕/导航底色）
+ *   2. 主题设计 html[data-design] —— 视觉语言 token（边框粗细/样式/圆角/字体/卡片阴影）
+ * 属性由 index.html 内联脚本在首帧前写入（localStorage 持久化，key 见 app/theme.ts）。
+ * 未设置任何属性时全部回落 tokens.css 基线 = 现有视觉，零回归。
+ */
+
+/* ============================================================
+ * 一、主题色（7 套：默认基线由 tokens.css 承担，此处 6 套新色板）
+ * ============================================================ */
+
+/* 01 · 羊皮纸白昼（亮） */
+html[data-color='parchment'] {
+  --color-bg: #f4edde;
+  --color-surface: #ece2cc;
+  --color-surface-2: #e2d5b9;
+  --color-ink: #2b2317;
+  --color-ink-dim: #6e6250;
+  --color-ink-faint: #9c8f79;
+  --color-line: rgba(70, 55, 30, 0.18);
+  --color-gold: #a5762c;
+  --color-accent: #a5762c;
+  --accent: #a5762c;
+  --color-sanity: #3e6f9e;
+  --danger: #b3482f;
+  --error: #c05a40;
+  --director: #a5762c;
+  --turris: #b3482f;
+  --armarium: #3e6f9e;
+  --collegium: #4f8a45;
+  --glow-1: rgba(165, 118, 44, 0.1);
+  --glow-2: rgba(79, 138, 69, 0.08);
+  --nav-bg: rgba(244, 237, 222, 0.9);
+  --on-accent: #fdf8ec;
+}
+
+/* 02 · 翡翠枝影（暗） */
+html[data-color='jade'] {
+  --color-bg: #0b110e;
+  --color-surface: #121c17;
+  --color-surface-2: #182520;
+  --color-ink: #dfe8d9;
+  --color-ink-dim: #a5b5a0;
+  --color-ink-faint: #7b8a77;
+  --color-line: rgba(185, 215, 180, 0.14);
+  --color-gold: #d3ad5c;
+  --color-accent: #7bab6d;
+  --accent: #7bab6d;
+  --color-sanity: #6f9dc4;
+  --danger: #c05a40;
+  --error: #d26a50;
+  --director: #d3ad5c;
+  --turris: #c05a40;
+  --armarium: #5d8fc4;
+  --collegium: #7bab6d;
+  --glow-1: rgba(211, 173, 92, 0.1);
+  --glow-2: rgba(123, 171, 109, 0.12);
+  --nav-bg: rgba(8, 14, 11, 0.86);
+  --on-accent: #1b1408;
+}
+
+/* 03 · 月下冷杉（暗） */
+html[data-color='fir'] {
+  --color-bg: #0d1016;
+  --color-surface: #141a24;
+  --color-surface-2: #1b2230;
+  --color-ink: #d9e1ef;
+  --color-ink-dim: #99a6be;
+  --color-ink-faint: #707d93;
+  --color-line: rgba(190, 205, 230, 0.13);
+  --color-gold: #c2b077;
+  --color-accent: #8fa4d6;
+  --accent: #8fa4d6;
+  --color-sanity: #8ab4d8;
+  --danger: #c0604a;
+  --error: #d4705a;
+  --director: #c2b077;
+  --turris: #c0604a;
+  --armarium: #6d94cc;
+  --collegium: #6fb07a;
+  --glow-1: rgba(143, 164, 214, 0.1);
+  --glow-2: rgba(194, 176, 119, 0.08);
+  --nav-bg: rgba(10, 12, 18, 0.86);
+  --on-accent: #1b1408;
+}
+
+/* 04 · 琉璃青瓷（亮） */
+html[data-color='celadon'] {
+  --color-bg: #eae7db;
+  --color-surface: #e1ddcf;
+  --color-surface-2: #d6d1c0;
+  --color-ink: #2a2f2b;
+  --color-ink-dim: #5c665f;
+  --color-ink-faint: #93a09a;
+  --color-line: rgba(40, 60, 50, 0.15);
+  --color-gold: #9a8b56;
+  --color-accent: #5f8f7a;
+  --accent: #5f8f7a;
+  --color-sanity: #5d82a8;
+  --danger: #b04a3a;
+  --error: #c05a48;
+  --director: #9a8b56;
+  --turris: #b04a3a;
+  --armarium: #5d82a8;
+  --collegium: #5f8f7a;
+  --glow-1: rgba(154, 139, 86, 0.1);
+  --glow-2: rgba(95, 143, 122, 0.1);
+  --nav-bg: rgba(234, 231, 219, 0.9);
+  --on-accent: #f4f6ef;
+}
+
+/* 05 · 鎏金炭墨（暗） */
+html[data-color='charcoal'] {
+  --color-bg: #121312;
+  --color-surface: #1a1b1a;
+  --color-surface-2: #232423;
+  --color-ink: #e9e5db;
+  --color-ink-dim: #a9a395;
+  --color-ink-faint: #7e796c;
+  --color-line: rgba(233, 229, 219, 0.14);
+  --color-gold: #d6b45e;
+  --color-accent: #d6b45e;
+  --accent: #d6b45e;
+  --color-sanity: #7fa3c8;
+  --danger: #c05a45;
+  --error: #d46b52;
+  --director: #d6b45e;
+  --turris: #b8503a;
+  --armarium: #4f7fb8;
+  --collegium: #58a05f;
+  --glow-1: rgba(214, 180, 94, 0.08);
+  --glow-2: rgba(88, 160, 95, 0.06);
+  --nav-bg: rgba(15, 15, 14, 0.9);
+  --on-accent: #1b1408;
+}
+
+/* 06 · 绯霞砂金（亮） */
+html[data-color='sandstone'] {
+  --color-bg: #f0e7d8;
+  --color-surface: #e8dcc8;
+  --color-surface-2: #ded0b6;
+  --color-ink: #33261a;
+  --color-ink-dim: #7a684f;
+  --color-ink-faint: #a7977e;
+  --color-line: rgba(90, 65, 35, 0.16);
+  --color-gold: #b47a2e;
+  --color-accent: #b0472e;
+  --accent: #b0472e;
+  --color-sanity: #3e6f9e;
+  --danger: #a8432c;
+  --error: #bd5438;
+  --director: #b47a2e;
+  --turris: #b0472e;
+  --armarium: #3e6f9e;
+  --collegium: #4f8a45;
+  --glow-1: rgba(176, 71, 46, 0.09);
+  --glow-2: rgba(180, 122, 46, 0.1);
+  --nav-bg: rgba(240, 231, 216, 0.92);
+  --on-accent: #fdf8ec;
+}
+
+/* ============================================================
+ * 二、主题设计（0 基线由 tokens.css 承担，此处 A–F 六种视觉语言）
+ * ============================================================ */
+
+/* A · 雕版古籍（Woodcut）：2px 墨黑实线 + 双层框阴影，近乎直角，宋体 */
+html[data-design='woodcut'] {
+  --bd-w: 2px;
+  --bd-style: solid;
+  --bd-color: #1a1712;
+  --radius: 2px;
+  --font-display: 'Songti SC', 'SimSun', 'Noto Serif SC', serif;
+  --font-serif: 'Songti SC', 'SimSun', 'Noto Serif SC', serif;
+  --font-kai: 'Songti SC', 'SimSun', 'Noto Serif SC', serif;
+  --font-sans: 'Songti SC', 'SimSun', serif;
+  --card-shadow:
+    0 0 0 1px var(--color-bg), 0 0 0 3px #1a1712, 0 0 0 5px var(--color-bg);
+}
+
+/* B · 尖塔刻面（Faceted）：1px 紫线、零圆角、宝石投影，正文无衬线 */
+html[data-design='faceted'] {
+  --bd-w: 1px;
+  --bd-style: solid;
+  --bd-color: rgba(180, 165, 230, 0.35);
+  --radius: 0px;
+  --font-serif: 'Noto Serif SC', serif;
+  --font-sans: 'Noto Sans SC', system-ui, sans-serif;
+  --card-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* C · 铜版科学（Copperplate）：1.5px 铜线、3px 小圆角、仪表描边 */
+html[data-design='copperplate'] {
+  --bd-w: 1.5px;
+  --bd-style: solid;
+  --bd-color: rgba(200, 180, 120, 0.45);
+  --radius: 3px;
+  --card-shadow: 0 0 0 1px rgba(200, 180, 120, 0.12);
+}
+
+/* D · 和纸障子（Shoji）：1.5px 暖木线、2px 圆角、楷体、纸影 */
+html[data-design='shoji'] {
+  --bd-w: 1.5px;
+  --bd-style: solid;
+  --bd-color: rgba(176, 137, 104, 0.75);
+  --radius: 2px;
+  --font-serif: 'KaiTi', 'STKaiti', 'LXGW WenKai', 'Noto Serif SC', serif;
+  --font-kai: 'KaiTi', 'STKaiti', 'LXGW WenKai', serif;
+  --font-sans: 'KaiTi', 'STKaiti', 'LXGW WenKai', serif;
+  --card-shadow: 0 6px 18px rgba(90, 70, 40, 0.12);
+}
+
+/* E · 夜光符文（Runic）：1.5px 荧光线、14px 大圆角、辉光 */
+html[data-design='runic'] {
+  --bd-w: 1.5px;
+  --bd-style: solid;
+  --bd-color: rgba(110, 231, 216, 0.45);
+  --radius: 14px;
+  --card-shadow:
+    0 0 0 1px rgba(110, 231, 216, 0.18), 0 0 18px rgba(110, 231, 216, 0.14),
+    0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+/* F · 铁艺铸铁（Wrought）：3px 粗铁线、4px 圆角、黑体粗字、错位投影 */
+html[data-design='wrought'] {
+  --bd-w: 3px;
+  --bd-style: solid;
+  --bd-color: #3a3d42;
+  --radius: 4px;
+  --font-display: 'Noto Sans SC', 'Microsoft YaHei', 'SimHei', sans-serif;
+  --font-serif: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --font-kai: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --font-sans: 'Noto Sans SC', 'Microsoft YaHei', 'SimHei', sans-serif;
+  --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}

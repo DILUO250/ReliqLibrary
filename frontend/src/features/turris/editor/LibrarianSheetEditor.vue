@@ -714,7 +714,7 @@ const privateTerms = computed<PrivateTerm[]>(() => {
   gap: 18px;
 }
 .sec {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 16px;
   background: rgba(32, 26, 20, 0.3);
@@ -741,7 +741,7 @@ select,
 textarea {
   width: 100%;
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   padding: 9px 11px;
@@ -836,7 +836,7 @@ textarea:focus {
   margin-bottom: 8px;
 }
 .mech {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 10px;
   margin-bottom: 10px;
@@ -860,7 +860,7 @@ textarea:focus {
   gap: 6px;
   margin-top: 10px;
   padding-top: 8px;
-  border-top: 1px dashed var(--color-line);
+  border-top: var(--bd-w) dashed var(--bd-color);
 }
 .mech-preview {
   font-size: 15px;
@@ -868,7 +868,7 @@ textarea:focus {
 }
 .sys-reserve {
   padding: 14px;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-bg);
   display: flex;
@@ -878,7 +878,7 @@ textarea:focus {
 .tag {
   font-size: 12px;
   color: var(--accent);
-  border: 1px solid var(--accent);
+  border: var(--bd-w) var(--bd-style) var(--accent);
   border-radius: 999px;
   padding: 1px 8px;
   flex-shrink: 0;
@@ -914,7 +914,7 @@ textarea:focus {
   gap: 4px;
 }
 .sys-toggle {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 12px 14px;
   background: var(--color-bg);
@@ -945,7 +945,7 @@ textarea:focus {
   gap: 8px;
   margin-top: 8px;
   padding-top: 10px;
-  border-top: 1px dashed var(--color-line);
+  border-top: var(--bd-w) dashed var(--bd-color);
 }
 .lob-label {
   font-size: 12px;
@@ -968,7 +968,7 @@ textarea:focus {
 }
 .seg {
   display: inline-flex;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 999px;
   overflow: hidden;
   align-self: flex-start;
@@ -989,7 +989,7 @@ textarea:focus {
 }
 .mini {
   background: transparent;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   color: var(--color-ink-dim);
   border-radius: var(--radius);
   padding: 5px 12px;

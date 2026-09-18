@@ -321,7 +321,7 @@ input,
 select {
   width: 100%;
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   padding: 8px 10px;
@@ -340,7 +340,7 @@ select:focus {
 }
 .sys {
   padding: 10px 12px;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-bg);
   margin-bottom: 14px;
@@ -360,7 +360,7 @@ select:focus {
   position: relative;
   width: 140px;
   height: 180px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--color-bg);
@@ -412,7 +412,7 @@ select:focus {
 .btn {
   padding: 8px 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   background: var(--color-surface);
   color: var(--color-ink);
   font-size: 14px;

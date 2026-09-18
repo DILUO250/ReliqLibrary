@@ -746,7 +746,7 @@ function goBack(): void {
 .topbar {
   align-items: center;
   background: var(--color-surface);
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
   box-sizing: border-box;
   display: flex;
   gap: 14px;
@@ -765,7 +765,7 @@ function goBack(): void {
 }
 
 .topbar .tag {
-  border: 1px solid color-mix(in srgb, var(--armarium) 45%, transparent);
+  border: var(--bd-w) var(--bd-style) color-mix(in srgb, var(--armarium) 45%, transparent);
   border-radius: 999px;
   color: var(--armarium);
   font-size: 11px;
@@ -784,7 +784,7 @@ function goBack(): void {
 
 .modebar button {
   background: var(--color-surface-2, var(--color-surface));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink-dim);
   cursor: pointer;
@@ -823,7 +823,7 @@ function goBack(): void {
 
 .topbar .back {
   background: transparent;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink-dim);
   cursor: pointer;
@@ -860,7 +860,7 @@ function goBack(): void {
 /* 草稿：编辑栏 580px / padding 20px / 视口高内滚动；
    sticky 定位：预览区把页面撑长后编辑栏常驻视口（top = topbar 高度，单处定义）。 */
 .editor-pane {
-  border-right: 1px solid var(--color-line);
+  border-right: var(--bd-w) var(--bd-style) var(--bd-color);
   flex: none;
   max-height: calc(100vh - var(--topbar-h));
   overflow-y: auto;
@@ -891,7 +891,7 @@ function goBack(): void {
 /* 草稿：区块卡 */
 .sec {
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) + 2px);
   margin-bottom: 14px;
   overflow: hidden;
@@ -929,7 +929,7 @@ function goBack(): void {
 }
 
 .sec-body {
-  border-top: 1px solid var(--color-line);
+  border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   padding: 14px;
 }
 
@@ -962,7 +962,7 @@ input[type='number'],
 select,
 textarea {
   background: var(--color-surface-2, var(--color-surface));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 6px;
   color: var(--color-ink);
   font-family: inherit;
@@ -999,7 +999,7 @@ textarea {
 
 .code-input .prefix {
   background: var(--color-surface-2, var(--color-surface));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 6px 0 0 6px;
   border-right: none;
   color: var(--color-gold);
@@ -1022,7 +1022,7 @@ textarea {
 
 .iconbtn {
   background: var(--color-surface-2, var(--color-surface));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 6px;
   color: var(--color-ink-faint);
   cursor: pointer;
@@ -1050,7 +1050,7 @@ textarea {
 
 .addbtn {
   background: transparent;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: 6px;
   color: var(--color-ink-dim);
   cursor: pointer;
@@ -1077,7 +1077,7 @@ textarea {
 
 .subcard {
   background: var(--color-surface-2, var(--color-surface));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 8px;
   margin-bottom: 10px;
   padding: 10px 10px 8px;
@@ -1187,7 +1187,7 @@ textarea {
 
 .figure-item {
   background: var(--color-surface-2, var(--color-surface));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 8px;
   margin-bottom: 10px;
   padding: 8px;
@@ -1200,7 +1200,7 @@ textarea {
 
 .figure-item img {
   background: #000;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 6px;
   flex: none;
   height: 84px;
@@ -1267,7 +1267,7 @@ textarea {
 
 .zoom-card {
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) * 2);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   display: flex;
@@ -1278,7 +1278,7 @@ textarea {
 
 .zoom-head {
   align-items: center;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
   color: var(--armarium);
   display: flex;
   flex: none;
@@ -1291,7 +1291,7 @@ textarea {
 .zoom-textarea {
   background: var(--color-surface-2, var(--color-surface));
   border: none;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 0;
   color: var(--color-ink);
   flex: 1;
@@ -1324,7 +1324,7 @@ textarea {
 
 .zoom-save {
   background: var(--armarium);
-  border: 1px solid var(--armarium);
+  border: var(--bd-w) var(--bd-style) var(--armarium);
   border-radius: var(--radius);
   color: #fff;
   cursor: pointer;
@@ -1345,7 +1345,7 @@ textarea {
   }
 
   .editor-pane {
-    border-bottom: 1px solid var(--color-line);
+    border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
     border-right: none;
     max-height: none;
     position: static;

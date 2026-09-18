@@ -141,7 +141,7 @@ function groupColor(title: string): string {
   align-items: flex-start;
   background: linear-gradient(180deg, #2d2117, #271c14);
   color: #eee2cb;
-  border: 1px solid rgba(233, 221, 198, 0.16);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 12px;
   padding: 32px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
@@ -154,7 +154,7 @@ function groupColor(title: string): string {
   max-height: calc(100vh - var(--header-h) - 32px);
   overflow-y: auto;
   padding: 16px;
-  border: 1px solid rgba(233, 221, 198, 0.14);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 10px;
   background: #382b1d;
 }
@@ -170,7 +170,7 @@ function groupColor(title: string): string {
 }
 .toc-top {
   background: none;
-  border: 1px solid rgba(233, 221, 198, 0.18);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 999px;
   color: #e2c88a;
   font-size: 12px;
@@ -192,7 +192,7 @@ function groupColor(title: string): string {
   color: #cbc2b0;
   cursor: pointer;
   padding: 5px 2px;
-  border-bottom: 1px solid rgba(233, 221, 198, 0.12);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
 }
 .toc-sec:hover {
   color: #e0b564;
@@ -219,7 +219,7 @@ function groupColor(title: string): string {
 .dict__intro {
   margin-bottom: 28px;
   padding-bottom: 18px;
-  border-bottom: 1px solid rgba(233, 221, 198, 0.16);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
 }
 .dict__title {
   margin: 0 0 8px;
@@ -262,7 +262,7 @@ function groupColor(title: string): string {
   gap: 18px;
 }
 .entry {
-  border: 1px solid rgba(233, 221, 198, 0.14);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 8px;
   background: #3c2e1e;
   padding: 14px 16px;
@@ -277,7 +277,7 @@ function groupColor(title: string): string {
 .entry__edit {
   margin-left: auto;
   background: none;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 999px;
   color: var(--color-ink-faint);
   font-size: 11px;
@@ -306,7 +306,7 @@ function groupColor(title: string): string {
   font-size: 13px;
   padding: 2px 9px;
   border-radius: 999px;
-  border: 1px solid rgba(233, 221, 198, 0.16);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   color: #c6baa2;
   white-space: nowrap;
 }

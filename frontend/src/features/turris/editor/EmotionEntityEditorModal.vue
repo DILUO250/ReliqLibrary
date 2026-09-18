@@ -307,7 +307,7 @@ function submit(): void {
 .passive-grid input {
   width: 100%;
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   padding: 8px 10px;
@@ -339,7 +339,7 @@ function submit(): void {
   color: #f5d87e;
 }
 .ego-block {
-  border: 1px solid rgba(240, 199, 94, 0.35);
+  border: var(--bd-w) var(--bd-style) rgba(240, 199, 94, 0.35);
   border-radius: var(--radius);
   background: linear-gradient(150deg, rgba(38, 30, 10, 0.35), rgba(20, 17, 10, 0.5));
   padding: 12px;
@@ -360,7 +360,7 @@ function submit(): void {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  border-top: 1px dashed rgba(240, 199, 94, 0.35);
+  border-top: var(--bd-w) dashed rgba(240, 199, 94, 0.35);
   padding-top: 10px;
 }
 .passive-grid {
@@ -371,7 +371,7 @@ function submit(): void {
   align-items: center;
 }
 .page-block {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-bg);
   padding: 12px;
@@ -433,7 +433,7 @@ function submit(): void {
 .mech-item {
   margin-top: 8px;
   padding: 8px 10px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
@@ -459,7 +459,7 @@ function submit(): void {
 .mech-item__head select,
 .mech-item__desc textarea {
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   padding: 6px 10px;
@@ -502,7 +502,7 @@ function submit(): void {
 .btn {
   padding: 8px 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   background: var(--color-surface);
   color: var(--color-ink);
   font-size: 14px;
@@ -530,7 +530,7 @@ function submit(): void {
 }
 .mini {
   background: transparent;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   color: var(--color-ink-dim);
   border-radius: var(--radius);
   padding: 3px 10px;

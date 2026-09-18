@@ -176,7 +176,7 @@ function createEntity(): void {
 
 <style scoped>
 .entities {
-  border-top: 1px solid var(--color-line);
+  border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -217,7 +217,7 @@ function createEntity(): void {
 
 .entities__create {
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  border: var(--bd-w) var(--bd-style) color-mix(in srgb, var(--accent) 65%, transparent);
   border-radius: var(--radius);
   color: var(--color-ink);
   cursor: pointer;
@@ -245,7 +245,7 @@ function createEntity(): void {
 
 .entities__input {
   background: rgba(13, 10, 7, 0.6);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   flex: 1;
@@ -267,7 +267,7 @@ function createEntity(): void {
 
 .entities__select {
   background: rgba(13, 10, 7, 0.6);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   cursor: pointer;
@@ -306,7 +306,7 @@ function createEntity(): void {
 .entity-card {
   align-items: stretch;
   background: linear-gradient(135deg, rgba(55, 45, 32, 0.9), rgba(34, 27, 20, 0.92));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) * 2);
   display: flex;
   gap: 16px;
@@ -322,7 +322,7 @@ function createEntity(): void {
 
 .entity-card__thumb {
   background: #0d0a07;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   cursor: pointer;
   flex: none;
@@ -373,7 +373,7 @@ function createEntity(): void {
 }
 
 .entity-card__level {
-  border: 1px solid color-mix(in srgb, var(--lv) 60%, transparent);
+  border: var(--bd-w) var(--bd-style) color-mix(in srgb, var(--lv) 60%, transparent);
   border-radius: 999px;
   color: var(--lv);
   font-family: var(--font-sans);
@@ -391,7 +391,7 @@ function createEntity(): void {
 
 .entity-card__btn {
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border: var(--bd-w) var(--bd-style) color-mix(in srgb, var(--accent) 55%, transparent);
   border-radius: var(--radius);
   color: var(--color-ink);
   cursor: pointer;
@@ -412,7 +412,7 @@ function createEntity(): void {
 }
 
 .entities__empty {
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: calc(var(--radius) + 4px);
   color: var(--color-ink-dim);
   padding: 48px 24px;

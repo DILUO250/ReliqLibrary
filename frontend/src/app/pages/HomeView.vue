@@ -48,7 +48,7 @@ import LibraryTree from '@/shared/components/LibraryTree.vue'
   max-width: 520px;
   padding: 44px 40px 38px;
   background: linear-gradient(180deg, rgba(46, 37, 26, 0.55), rgba(34, 27, 20, 0.28));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) * 2);
 }
 

@@ -310,7 +310,7 @@ onBeforeUnmount(() => {
 }
 .pv-skel__block {
   height: 120px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
 }
 .pv-skel__block:nth-child(2) {
@@ -324,7 +324,7 @@ onBeforeUnmount(() => {
   max-width: 360px;
   min-width: 240px;
   min-height: 380px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
 }
 .skel-shimmer {
@@ -370,7 +370,7 @@ onBeforeUnmount(() => {
   min-width: 240px;
   height: calc(100vh - 240px);
   min-height: 380px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--color-bg);
@@ -429,7 +429,7 @@ onBeforeUnmount(() => {
   font-size: 14px;
 }
 .block {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 14px;
 }
@@ -493,7 +493,7 @@ onBeforeUnmount(() => {
 }
 .lobrow {
   padding: 8px 0;
-  border-bottom: 1px dashed var(--color-line);
+  border-bottom: var(--bd-w) dashed var(--bd-color);
 }
 .lobrow:last-child {
   border-bottom: none;
@@ -529,7 +529,7 @@ onBeforeUnmount(() => {
   display: inline-block;
   margin: 0 4px 2px 0;
   padding: 0 8px;
-  border: 1px solid var(--accent);
+  border: var(--bd-w) var(--bd-style) var(--accent);
   border-radius: 999px;
   font-size: 13px;
   color: var(--color-ink);

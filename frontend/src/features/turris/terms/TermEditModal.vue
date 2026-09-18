@@ -143,7 +143,7 @@ async function save(): Promise<void> {
   width: 100%;
   box-sizing: border-box;
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   padding: 8px 10px;
@@ -170,14 +170,14 @@ async function save(): Promise<void> {
   width: 36px;
   height: 26px;
   padding: 0;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   background: none;
   cursor: pointer;
 }
 .tag-remove {
   background: none;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink-dim);
   width: 26px;
@@ -191,7 +191,7 @@ async function save(): Promise<void> {
 .tag-add {
   justify-self: start;
   background: none;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: 999px;
   color: var(--color-ink-dim);
   padding: 4px 14px;
@@ -204,7 +204,7 @@ async function save(): Promise<void> {
 }
 .btn {
   background: none;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   padding: 7px 16px;

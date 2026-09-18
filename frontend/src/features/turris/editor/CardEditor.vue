@@ -232,7 +232,7 @@ normalizeCard(props.card)
   display: flex;
   gap: 20px;
   padding: 16px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-surface);
   margin-bottom: 14px;
@@ -316,7 +316,7 @@ normalizeCard(props.card)
   align-items: center;
 }
 .dice-line {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-bg);
   padding: 8px 10px;
@@ -359,7 +359,7 @@ normalizeCard(props.card)
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 999px;
   padding: 3px 5px 3px 10px;
 }
@@ -377,7 +377,7 @@ normalizeCard(props.card)
 .row input,
 .row select,
 .card-editor select {
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   background: var(--color-bg);
   color: var(--color-ink);
   border-radius: var(--radius);
@@ -415,7 +415,7 @@ normalizeCard(props.card)
 }
 .mini {
   background: transparent;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   color: var(--color-ink-dim);
   border-radius: var(--radius);
   padding: 4px 14px;

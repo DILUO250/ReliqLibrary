@@ -204,7 +204,7 @@ select,
 textarea {
   width: 100%;
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
   padding: 8px 10px;
@@ -223,7 +223,7 @@ textarea {
 }
 .sys {
   padding: 12px;
-  border: 1px dashed var(--color-line);
+  border: var(--bd-w) dashed var(--bd-color);
   border-radius: var(--radius);
   background: var(--color-bg);
   margin-bottom: 14px;
@@ -251,7 +251,7 @@ textarea {
 .art__preview {
   width: 220px;
   height: 132px;
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   overflow: hidden;
   background: var(--color-bg);
@@ -279,7 +279,7 @@ textarea {
 .btn {
   padding: 8px 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   background: var(--color-surface);
   color: var(--color-ink);
   font-size: 14px;

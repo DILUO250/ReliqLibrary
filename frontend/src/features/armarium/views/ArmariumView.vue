@@ -133,7 +133,7 @@ function openProject(project: ArmariumProject): void {
 }
 
 .project-register {
-  border-top: 1px solid var(--color-line);
+  border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   padding-top: 22px;
 }
 
@@ -176,7 +176,7 @@ function openProject(project: ArmariumProject): void {
 
 .project-card {
   background: linear-gradient(135deg, rgba(55, 45, 32, 0.9), rgba(34, 27, 20, 0.92));
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) * 2);
   display: grid;
   grid-template-columns: minmax(130px, 0.72fr) minmax(0, 1.28fr);
@@ -261,7 +261,7 @@ function openProject(project: ArmariumProject): void {
 }
 
 .project-card__meta {
-  border-top: 1px solid var(--color-line);
+  border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   color: var(--color-ink-faint);
   display: flex;
   font-size: 11px;
@@ -273,7 +273,7 @@ function openProject(project: ArmariumProject): void {
 .project-card__open {
   align-items: center;
   background: transparent;
-  border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  border: var(--bd-w) var(--bd-style) color-mix(in srgb, var(--accent) 65%, transparent);
   border-radius: var(--radius);
   color: var(--color-ink);
   cursor: pointer;

@@ -39,7 +39,7 @@ const emit = defineEmits<{ (e: 'close'): void }>()
   display: flex;
   flex-direction: column;
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) * 2);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
@@ -51,7 +51,7 @@ const emit = defineEmits<{ (e: 'close'): void }>()
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
   flex-shrink: 0;
 }
 .modal__head h2 {
@@ -72,7 +72,7 @@ const emit = defineEmits<{ (e: 'close'): void }>()
 }
 .modal__foot {
   padding: 14px 20px;
-  border-top: 1px solid var(--color-line);
+  border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   display: flex;
   justify-content: flex-end;
   gap: 10px;

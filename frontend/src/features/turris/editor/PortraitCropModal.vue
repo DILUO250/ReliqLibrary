@@ -216,7 +216,7 @@ function confirm(): void {
   position: relative;
   margin: 0 auto;
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   overflow: hidden;
   user-select: none;
@@ -264,7 +264,7 @@ function confirm(): void {
 .btn {
   padding: 8px 16px;
   border-radius: var(--radius);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   background: var(--color-surface);
   color: var(--color-ink);
   font-size: 14px;

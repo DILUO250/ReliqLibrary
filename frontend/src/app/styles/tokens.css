@@ -31,6 +31,17 @@
   --header-h: 52px;
   --radius: 8px;
 
+  /* 主题扩展基线（themes.css 的色板/设计层在此之上覆盖）：
+     光晕 / 导航底色 / 激活字色 / 边框语言 / 卡片阴影 */
+  --glow-1: rgba(201, 165, 60, 0.09);
+  --glow-2: rgba(74, 122, 74, 0.1);
+  --nav-bg: rgba(16, 13, 9, 0.86);
+  --on-accent: #1b1408;
+  --bd-w: 1px;
+  --bd-style: solid;
+  --bd-color: var(--color-line);
+  --card-shadow: none;
+
   /* 字体 */
   --font-display: 'Cinzel', 'EB Garamond', serif;
   --font-serif: 'EB Garamond', 'Noto Serif SC', serif;

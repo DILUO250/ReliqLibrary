@@ -246,7 +246,7 @@ function insertMech(name: string, hasParam: boolean): void {
 }
 .ins-btn {
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   color: var(--color-ink-dim);
   border-radius: var(--radius);
   padding: 4px 10px;
@@ -272,7 +272,7 @@ function insertMech(name: string, hasParam: boolean): void {
   max-height: 380px;
   overflow-y: auto;
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 8px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
@@ -281,7 +281,7 @@ function insertMech(name: string, hasParam: boolean): void {
   margin: 8px 0 4px;
   font-size: 12px;
   color: var(--accent);
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
   padding-bottom: 2px;
   letter-spacing: 0.04em;
 }
@@ -299,7 +299,7 @@ function insertMech(name: string, hasParam: boolean): void {
   font-size: 11px;
   color: var(--color-ink);
   background: var(--color-bg);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 4px;
   padding: 2px 6px;
   cursor: pointer;
@@ -330,7 +330,7 @@ function insertMech(name: string, hasParam: boolean): void {
   max-height: 80vh;
   overflow-y: auto;
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) * 2);
   padding: 16px;
 }
@@ -354,7 +354,7 @@ function insertMech(name: string, hasParam: boolean): void {
 }
 .back {
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
   color: var(--color-ink-dim);
   border-radius: var(--radius);
   padding: 2px 8px;
