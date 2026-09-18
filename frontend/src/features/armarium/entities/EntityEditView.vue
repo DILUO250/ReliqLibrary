@@ -11,12 +11,14 @@ import {
   ANOMALY_PAGE_MAX,
   ANOMALY_WARNING_MAX,
   anomalyExportFilename,
+  anomalyFileIndexLabel,
   anomalyLevelText,
+  anomalyWarningAnchors,
   parseAnomalyReport,
   type Anomaly,
   type AnomalyLevel,
   type AnomalyReport,
-  type AnomalyReportBlockKey,
+  type AnomalyWarningAnchor,
   type Floor,
 } from '@rtl/shared'
 
@@ -197,17 +199,11 @@ const STATUS_OPTIONS: Array<[Anomaly['status'], string]> = [
   ['escaped', '突破收容'],
 ]
 
-const WARN_POSITIONS: Array<[AnomalyReportBlockKey, string]> = [
-  ['head', '标题区之后（报告最前）'],
-  ['desc', '描述之后'],
-  ['contain', '特殊收容措施之后'],
-  ['output', '产出之后'],
-  ['appendix', '附录之后'],
-  ['files', '文件之后'],
-  ['figure-main', '实体影像资料之后（模板默认）'],
-  ['figures-rest', '图片块之后'],
-  ['attachments', '附件之后（报告末尾）'],
-]
+/**
+ * 警告线插入点（动态）：随附录/文件/图片/附件条目增减自动更新，
+ * 与渲染器（reportRender 的 landmark 表）共用 shared 的同一份插入点列表。
+ */
+const warnAnchorOptions = computed(() => anomalyWarningAnchors(form.report))
 
 /* ---------- 通用行操作 ---------- */
 
@@ -224,18 +220,6 @@ function onLevelChange(level: AnomalyLevel): void {
   if (!subLevelOptions.value.some((s) => s === form.subLevel)) {
     form.subLevel = subLevelOptions.value[0] ?? 'safe-stable'
   }
-}
-
-/** 文件条目次标（与渲染器同一规则）：a..z → aa, ab… */
-function fileIndexLabel(i: number): string {
-  const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
-  let label = ''
-  let n = i
-  do {
-    label = LETTERS[n % 26] + label
-    n = Math.floor(n / 26) - 1
-  } while (n >= 0)
-  return label
 }
 
 /* ---------- 图片块（延迟上传；替换/删除只记账，写库成功后才回收旧文件） ---------- */
@@ -363,7 +347,7 @@ async function save(): Promise<void> {
       report: JSON.stringify({
         warnings: form.report.warnings.map((w) => ({
           sl: Math.min(99, Math.max(1, Math.trunc(Number(w.sl)) || 1)),
-          after: w.after,
+          anchor: w.anchor,
         })),
         description: form.report.description,
         containment: form.report.containment,
@@ -612,7 +596,7 @@ function goBack(): void {
           <div class="sec-body">
             <div v-for="(item, i) in form.report.files" :key="i" class="subcard">
               <div class="subcard-head">
-                <span class="badge">文件#{{ form.code || 'XXXX' }}-{{ fileIndexLabel(i) }}</span>
+                <span class="badge">文件#{{ form.code || 'XXXX' }}-{{ anomalyFileIndexLabel(i) }}</span>
                 <input v-model.trim="item.source" type="text" placeholder="文件来源（选填）" />
                 <button type="button" class="iconbtn danger" title="删除条目" @click="form.report.files.splice(i, 1)">✕</button>
               </div>
@@ -696,13 +680,13 @@ function goBack(): void {
         <details class="sec" open>
           <summary>权限警告线 <span class="count">{{ form.report.warnings.length }}/{{ ANOMALY_WARNING_MAX }}</span></summary>
           <div class="sec-body">
-            <p class="para-hint">每条警告线都是一道分割线：该线之下的内容需其标注的 SL 等级才能阅读。</p>
+            <p class="para-hint">每条警告线开启一段受限区间：该线之下、直到下一条警告线或报告结尾的内容需其标注的 SL 等级；新警告线出现后，旧标签被最新权限覆盖。</p>
             <div class="warn-list">
               <div v-for="(w, i) in form.report.warnings" :key="i" class="warn-row">
                 <span class="idx">{{ i + 1 }}</span>
                 <input v-model.number="w.sl" type="number" min="1" max="99" title="安全权限等级（如 6 → SL-06）" />
-                <select :value="w.after" @change="w.after = ($event.target as HTMLSelectElement).value as AnomalyReportBlockKey">
-                  <option v-for="[v, t] in WARN_POSITIONS" :key="v" :value="v">{{ t }}</option>
+                <select :value="w.anchor" @change="w.anchor = ($event.target as HTMLSelectElement).value as AnomalyWarningAnchor">
+                  <option v-for="opt in warnAnchorOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
                 <button type="button" class="iconbtn danger" title="删除警告线" @click="form.report.warnings.splice(i, 1)">✕</button>
               </div>
@@ -711,7 +695,7 @@ function goBack(): void {
               v-if="form.report.warnings.length < ANOMALY_WARNING_MAX"
               type="button"
               class="addbtn"
-              @click="form.report.warnings.push({ sl: 1, after: 'figure-main' })"
+              @click="form.report.warnings.push({ sl: 1, anchor: 'block:figure-main' })"
             >＋ 添加警告线（最多 {{ ANOMALY_WARNING_MAX }} 条）</button>
           </div>
         </details>
@@ -756,18 +740,21 @@ function goBack(): void {
   font-family: var(--font-serif);
   min-height: 100vh;
   min-width: 0;
+  --topbar-h: 56px;
 }
 
 .topbar {
+  align-items: center;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
+  box-sizing: border-box;
+  display: flex;
+  gap: 14px;
+  height: var(--topbar-h);
+  padding: 8px 18px;
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 8px 18px;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-line);
 }
 
 .topbar h1 {
@@ -870,14 +857,17 @@ function goBack(): void {
   display: block;
 }
 
-/* 草稿：编辑栏 580px / padding 20px / 视口高内滚动 */
+/* 草稿：编辑栏 580px / padding 20px / 视口高内滚动；
+   sticky 定位：预览区把页面撑长后编辑栏常驻视口（top = topbar 高度，单处定义）。 */
 .editor-pane {
   border-right: 1px solid var(--color-line);
   flex: none;
-  max-height: calc(100vh - 56px);
+  max-height: calc(100vh - var(--topbar-h));
   overflow-y: auto;
   padding: 20px 30px 20px 60px;
+  position: sticky;
   scrollbar-width: thin;
+  top: var(--topbar-h);
   width: 600px;
 }
 
@@ -990,8 +980,15 @@ textarea:focus {
 
 textarea {
   line-height: 1.8;
-  min-height: 76px;
+  min-height: 96px;
   resize: vertical;
+}
+
+/* 段落框自适应增高：随内容自动增高（上限 320px），旧浏览器不支持时回退为固定 120px */
+.para-item textarea {
+  field-sizing: content;
+  max-height: 320px;
+  min-height: 120px;
 }
 
 .code-input {
@@ -1021,10 +1018,6 @@ textarea {
   display: flex;
   gap: 6px;
   margin-bottom: 8px;
-}
-
-.para-item textarea {
-  min-height: 64px;
 }
 
 .iconbtn {
@@ -1355,6 +1348,7 @@ textarea {
     border-bottom: 1px solid var(--color-line);
     border-right: none;
     max-height: none;
+    position: static;
     width: 100%;
   }
 }

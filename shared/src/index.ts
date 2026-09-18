@@ -696,22 +696,24 @@ export interface Anomaly {
  * 格式权威依据：草稿/1.2-藏书阁异常实体报告单/03-异常实体报告单-格式规范.md。
  * 一切列表字段（描述/收容/附录/文件/图片/附件/书页/警告线）条数动态，不设死。 */
 
-/** 报告单区块键：警告线可插入到任一区块之后。 */
-export type AnomalyReportBlockKey =
-  | 'head'
-  | 'desc'
-  | 'contain'
-  | 'output'
-  | 'appendix'
-  | 'files'
-  | 'figure-main'
-  | 'figures-rest'
-  | 'attachments'
+/* 警告线锚点（2026-09-18 区间覆盖制改造）：
+ * - block:* = 区块级插入点（线渲染在整块之前）；
+ * - entry:<区块>:<N> = 条目级插入点（线渲染在该区块第 N 条条目之前，N 从 1 起；
+ *   entry:figure 仅 N≥2 有意义——图片1 之前即影像资料标题之后，不单独提供）。
+ * - 警告线语义为"区间覆盖制"：每条警告线闭合上一个受限区、开启自己的区，
+ *   区间 governed SL = 最新一条警告线；可用插入点由 anomalyWarningAnchors(report)
+ *   按文档顺序动态生成（编辑器下拉与渲染器共用同一份）。 */
 
-/** 权限警告线：分割线，其下内容需 sl 等级权限才能阅读。 */
+export type AnomalyWarningBlockKey = 'head' | 'desc' | 'contain' | 'output' | 'figure-main'
+export type AnomalyWarningEntryBlockKey = 'appendix' | 'files' | 'figure' | 'attachment'
+export type AnomalyWarningAnchor =
+  | `block:${AnomalyWarningBlockKey}`
+  | `entry:${AnomalyWarningEntryBlockKey}:${number}`
+
+/** 权限警告线：分割线，该线之下直到下一条警告线（或报告结尾）的内容需 sl 等级权限。 */
 export interface AnomalyWarning {
   sl: number
-  after: AnomalyReportBlockKey
+  anchor: AnomalyWarningAnchor
 }
 
 export interface AnomalyAppendix {
@@ -764,18 +766,41 @@ export interface AnomalyReport {
 export const ANOMALY_PAGE_MAX = 9
 export const ANOMALY_WARNING_MAX = 6
 
-/** 合法区块键集合：警告线锚点必须命中其一，脏数据兜底到 figure-main（模板默认）。 */
-const ANOMALY_BLOCK_KEYS: ReadonlySet<string> = new Set<string>([
-  'head', 'desc', 'contain', 'output', 'appendix', 'files', 'figure-main', 'figures-rest', 'attachments',
+const ANOMALY_BLOCK_ANCHORS: ReadonlySet<string> = new Set<string>([
+  'head', 'desc', 'contain', 'output', 'figure-main',
 ])
+const ANOMALY_ENTRY_BLOCK_RE = /^entry:(appendix|files|figure|attachment):([1-9]\d*)$/
+
+/** 旧 `after`（区块键，before 语义）→ 新 anchor 的软映射（2026-09-18 前的数据零迁移）。 */
+function legacyWarningAnchor(after: unknown): AnomalyWarningAnchor {
+  switch (after) {
+    case 'head': return 'block:head'
+    case 'desc': return 'block:desc'
+    case 'contain': return 'block:contain'
+    case 'output': return 'block:output'
+    case 'appendix': return 'entry:appendix:1'
+    case 'files': return 'entry:files:1'
+    case 'figure-main': return 'block:figure-main'
+    case 'figures-rest': return 'entry:figure:2'
+    case 'attachments': return 'entry:attachment:1'
+    default: return 'block:figure-main' // 脏数据兜底（模板默认）
+  }
+}
+
+function parseWarningAnchor(anchor: unknown, legacyAfter: unknown): AnomalyWarningAnchor {
+  if (typeof anchor === 'string') {
+    if (anchor.startsWith('block:') && ANOMALY_BLOCK_ANCHORS.has(anchor.slice(6))) {
+      return anchor as AnomalyWarningAnchor
+    }
+    if (ANOMALY_ENTRY_BLOCK_RE.test(anchor)) return anchor as AnomalyWarningAnchor
+  }
+  return legacyWarningAnchor(legacyAfter)
+}
 
 function normalizeWarning(w: unknown): AnomalyWarning {
-  const w0 = (w ?? {}) as Partial<AnomalyWarning>
+  const w0 = (w ?? {}) as Partial<AnomalyWarning> & { after?: unknown }
   const sl = Math.max(1, Math.min(99, Math.trunc(Number(w0.sl)) || 1))
-  const after = typeof w0.after === 'string' && ANOMALY_BLOCK_KEYS.has(w0.after)
-    ? (w0.after as AnomalyReportBlockKey)
-    : 'figure-main'
-  return { sl, after }
+  return { sl, anchor: parseWarningAnchor(w0.anchor, w0.after) }
 }
 
 export function emptyAnomalyReport(): AnomalyReport {
@@ -839,6 +864,41 @@ export function parseAnomalyReport(raw?: string | null): AnomalyReport {
   } catch {
     return emptyAnomalyReport()
   }
+}
+
+/** 文件条目次标：a..z → aa, ab…（>26 条不越界出怪字符）。编号行与图注同用。 */
+export function anomalyFileIndexLabel(i: number): string {
+  const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+  let label = ''
+  let n = i
+  do {
+    label = LETTERS[n % 26] + label
+    n = Math.floor(n / 26) - 1
+  } while (n >= 0)
+  return label
+}
+
+/**
+ * 警告线可用插入点：按文档顺序动态生成（随附录/文件/图片/附件条目增减自动变化）。
+ * 编辑器下拉直接消费 {value,label}；渲染器（buildReportRows 的 landmark 表）按同一
+ * 文档序建表——两处顺序必须一致（单一权威 = 本函数）。
+ * 图片1 之前即影像资料标题之后，不单独提供（entry:figure 仅 N≥2）。
+ */
+export function anomalyWarningAnchors(report: AnomalyReport): Array<{ value: AnomalyWarningAnchor; label: string }> {
+  const list: Array<{ value: AnomalyWarningAnchor; label: string }> = [
+    { value: 'block:head', label: '报告最前（标题之前）' },
+    { value: 'block:desc', label: '描述区之前' },
+    { value: 'block:contain', label: '特殊收容措施之前' },
+    { value: 'block:output', label: '产出区之前' },
+  ]
+  report.appendices.forEach((_, i) => list.push({ value: `entry:appendix:${i + 1}`, label: `附录#${i + 1} 之前` }))
+  report.files.forEach((_, i) => list.push({ value: `entry:files:${i + 1}`, label: `文件#${anomalyFileIndexLabel(i)} 之前` }))
+  list.push({ value: 'block:figure-main', label: '实体影像资料区之前' })
+  report.figures.forEach((_, i) => {
+    if (i > 0) list.push({ value: `entry:figure:${i + 1}`, label: `图片${i + 1} 之前` })
+  })
+  report.attachments.forEach((_, i) => list.push({ value: `entry:attachment:${i + 1}`, label: `附件#${i + 1} 之前` }))
+  return list
 }
 
 const ANOMALY_LOBOTOMY_SUBS = new Set(['zayin', 'teth', 'he', 'waw', 'aleph'])

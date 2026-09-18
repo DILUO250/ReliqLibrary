@@ -231,7 +231,7 @@ frontend\src\features\armarium\
 │  │                         #   服务端导出时后端无头浏览器加载本页渲染并 printToPDF
 │  ├─ ReportPaper.vue        # 薄适配壳：SCL 行构造/页内重组 → shared/paper 分页组件
 │  ├─ reportRender.ts        # 纯函数：Anomaly + report JSON → 原子行序列 + 页 HTML（SCL 内容格式）
-│  └─ paper.css              # SCL 纸面皮肤（Word 版式 + 屏幕增强双轨，编辑页/预览页共用）
+│  └─ paper.css              # SCL 纸面皮肤（§9 屏幕增强版式一套，屏幕/打印/导出三处一致，编辑页/预览页共用）
 └─ projects\pvzwiki\      # PVZ 百科（独立子项目，独立标签页打开）
    ├─ PvzProjectView.vue     #   壳 + 侧边导航
    ├─ views\                 #   植物图鉴页 / 植物详情页

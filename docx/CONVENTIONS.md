@@ -268,7 +268,7 @@ npm run audit:art            # 只读扫描 art/ 孤儿，生成报告（不删�
 
 ## 7. 已知的待办（不在本次规范范围）
 
-- 藏书阁五 Tab 中：总览 / 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。**异常实体库已完成**（2026-09-16）：报告单整体存 `anomalies.report` JSON 列（结构见 `shared/src/index.ts` 的 `AnomalyReport`），格式权威依据 = `草稿\1.2-藏书阁异常实体报告单\03-异常实体报告单-格式规范.md`（Word 版式 + 屏幕增强双轨，§9）；报告插图不登记 `IMAGE_COLUMNS`（存在 JSON 内部，由 `anomalyArtRoutes` 的替换/删除通道 + anomalies 删行钩子集中回收）。**纸面分页引擎在 `frontend/src/shared/paper/`**（2026-09-17 升舱）：`paginate.ts`/`PaperPages.vue`/`printPageStyle.ts`/`paper-base.css` 为跨模块通用件（SCL 报告单已接入）；其它模块做"纸面文档/导出"时必须复用该层（禁止把分页机制复制进 feature 或升到后端——服务端 PDF 走无头浏览器加载纸面页面的路线，渲染逻辑零重复）。
+- 藏书阁五 Tab 中：总览 / 超自然空间库（`supernatural_spaces` 表就绪）/ 书库管理员（`librarians.department='armarium'`）的 **UI 待建**；寻书社全部页仍是占位。数据表均已建好（generic CRUD 就绪），按需填充。**异常实体库已完成**（2026-09-16）：报告单整体存 `anomalies.report` JSON 列（结构见 `shared/src/index.ts` 的 `AnomalyReport`），格式权威依据 = `草稿\1.2-藏书阁异常实体报告单\03-异常实体报告单-格式规范.md`（2026-09-16 二次决议：屏幕/打印/导出统一 §9.1 屏幕增强版式，双轨已合并；警告线为区间覆盖制 + 条目级锚点 anchor，见 shared/src/index.ts）；报告插图不登记 `IMAGE_COLUMNS`（存在 JSON 内部，由 `anomalyArtRoutes` 的替换/删除通道 + anomalies 删行钩子集中回收）。**纸面分页引擎在 `frontend/src/shared/paper/`**（2026-09-17 升舱）：`paginate.ts`/`PaperPages.vue`/`printPageStyle.ts`/`paper-base.css` 为跨模块通用件（SCL 报告单已接入）；其它模块做"纸面文档/导出"时必须复用该层（禁止把分页机制复制进 feature 或升到后端——服务端 PDF 走无头浏览器加载纸面页面的路线，渲染逻辑零重复）。
 - `art/armarium/_trash/`（根级 `art/_trash/` 中的历史遗留文件）需要人工定期清理。
 - `term-backup-*.json` 由恢复脚本轮转（保留最近 3 份）并被 git 跟踪（备份策略待议）。
 
