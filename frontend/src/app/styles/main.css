@@ -44,7 +44,7 @@ a:hover {
 
 .latin {
   font-family: var(--font-display);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--font-display-spacing);
 }
 
 .kai {

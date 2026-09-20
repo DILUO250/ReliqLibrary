@@ -137,13 +137,23 @@ async function measurePass(
   return result
 }
 
-/** 贪心装箱：顺序放置，keepWithNext 行与后行捆绑；断页边界回溯整条 keepWithNext 链。 */
-function pack(rows: ReportRow[], metrics: RowMetrics[], capPx: number): ReportPage[] {
+/** 贪心装箱：顺序放置，keepWithNext 行与后行捆绑；断页边界回溯整条 keepWithNext 链。
+ *  组框开销（groupExtraPx）按"片段一次"计：页内首次遇到某组行（openGroup 切换）时收取
+ *  整段框开销——compose 重组时每个同组连续行段恰好开一个框，两处语义严格同构。
+ *  逐行预留是错误模型（SCL-096 长 33 行引用文件实测事故：33 行 × 22pt ≈ 一整页
+ *  幻影高度，每页提前断页留大片空白），禁止回退。 */
+function pack(
+  rows: ReportRow[],
+  metrics: RowMetrics[],
+  capPx: number,
+  groupExtraPx?: (row: ReportRow) => number,
+): ReportPage[] {
   const pages: ReportPage[] = []
   let start = 0
   let y = 0 // 已放置内容的下边缘（含末行 post 的外边距盒底）
   let prevPost = 0
   let loose = false
+  let openGroup: string | null = null // 页内当前开着的组框（null = 无）
 
   const pushPage = (end: number, isLoose: boolean): void => {
     pages.push({ start, end, loose: isLoose })
@@ -151,6 +161,7 @@ function pack(rows: ReportRow[], metrics: RowMetrics[], capPx: number): ReportPa
     y = 0
     prevPost = 0
     loose = false
+    openGroup = null
   }
 
   for (let i = 0; i < rows.length; i++) {
@@ -158,14 +169,20 @@ function pack(rows: ReportRow[], metrics: RowMetrics[], capPx: number): ReportPa
     const row = rows[i]
     if (!m || !row) continue
     const junction = Math.max(prevPost, m.pre)
-    const tentative = y - prevPost + junction + m.content + m.post
+    const frag = row.group && row.group !== openGroup ? (groupExtraPx?.(row) ?? 0) : 0
+    const tentative = y - prevPost + junction + m.content + m.post + frag
 
     // keepWithNext 前瞻：标题/编号/警告行不能孤立页尾
     let tentativeNext = tentative
     const next = metrics[i + 1]
-    if (row.keepWithNext && next) {
+    const nextRow = rows[i + 1]
+    if (row.keepWithNext && next && nextRow) {
       const junction2 = Math.max(m.post, next.pre)
-      tentativeNext = tentative - m.post + junction2 + next.content + next.post
+      // 模拟放置本行后 openGroup 的变化，再计下一行的片段开销
+      const openAfterRow = row.group ?? openGroup
+      const nextFrag =
+        nextRow.group && nextRow.group !== openAfterRow ? (groupExtraPx?.(nextRow) ?? 0) : 0
+      tentativeNext = tentative - m.post + junction2 + next.content + next.post + nextFrag
     }
 
     if (i === start) {
@@ -176,6 +193,7 @@ function pack(rows: ReportRow[], metrics: RowMetrics[], capPx: number): ReportPa
       loose = tentative > capPx
       y = tentative
       prevPost = m.post
+      openGroup = row.group
       continue
     }
     if (tentativeNext > capPx) {
@@ -190,6 +208,7 @@ function pack(rows: ReportRow[], metrics: RowMetrics[], capPx: number): ReportPa
     }
     y = tentative
     prevPost = m.post
+    openGroup = row.group
   }
   if (start < rows.length) pages.push({ start, end: rows.length, loose })
   return pages
@@ -201,8 +220,14 @@ export interface PaginateOptions {
   geometry: PaperGeometry
   /** 装箱安全余量（pt），默认 2pt */
   safetyPt?: number
-  /** 行附加开销（px）：跨页重组的组框（如引用框）按最坏情况逐行预留 */
+  /** 行附加开销（px）：跨页重组的组框（如引用框）按最坏情况逐行预留。
+   *  ⚠️ 只适合极短组（1~2 行）；长引用文件必须改用 groupExtraPx（按片段一次计），
+   *  逐行预留会让幻影开销随组行数线性膨胀、每页提前断页（SCL-096 实测事故）。 */
   rowExtraPx?: (row: ReportRow) => number
+  /** 组框片段开销（px）：页内首次遇到某组行（片段打开）时一次性收取。
+   *  与模块 compose 的"每个同组连续行段恰好开一个框"语义一一对应，
+   *  开销值应为目标框的完整垂直开销（padding + margin + border）。 */
+  groupExtraPx?: (row: ReportRow) => number
   /** 行的度量挂载 HTML（缺省 = row.html 原样挂载）。
    *  item 行等有容器语义的行（裸 <li> 会被 HTML 解析器丢弃/退化）须由模块给出
    *  真实页内使用的容器包装（如 SCL 的 <ul class="r-list">），否则测高失真。 */
@@ -262,7 +287,7 @@ export async function paginateReportRows(
       return merged
     })
 
-    return pack(rows, combined, capPx)
+    return pack(rows, combined, capPx, options.groupExtraPx)
   } finally {
     holder.remove()
   }

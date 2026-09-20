@@ -165,7 +165,7 @@ html[data-color='sandstone'] {
  * 二、主题设计（0 基线由 tokens.css 承担，此处 A–F 六种视觉语言）
  * ============================================================ */
 
-/* A · 雕版古籍（Woodcut）：2px 墨黑实线 + 双层框阴影，近乎直角，宋体 */
+/* A · 雕版古籍（Woodcut）：2px 墨黑实线 + 双层框阴影，近乎直角，宋体（标题字距略宽） */
 html[data-design='woodcut'] {
   --bd-w: 2px;
   --bd-style: solid;
@@ -175,27 +175,38 @@ html[data-design='woodcut'] {
   --font-serif: 'Songti SC', 'SimSun', 'Noto Serif SC', serif;
   --font-kai: 'Songti SC', 'SimSun', 'Noto Serif SC', serif;
   --font-sans: 'Songti SC', 'SimSun', serif;
+  --font-display-spacing: 0.12em;
   --card-shadow:
     0 0 0 1px var(--color-bg), 0 0 0 3px #1a1712, 0 0 0 5px var(--color-bg);
 }
 
-/* B · 尖塔刻面（Faceted）：1px 紫线、零圆角、宝石投影，正文无衬线 */
+/* B · 尖塔刻面（Faceted）：1px 紫线、零圆角、宝石投影
+   字体：标题衬线窄字距大写，正文无衬线 */
 html[data-design='faceted'] {
   --bd-w: 1px;
   --bd-style: solid;
   --bd-color: rgba(180, 165, 230, 0.35);
   --radius: 0px;
-  --font-serif: 'Noto Serif SC', serif;
-  --font-sans: 'Noto Sans SC', system-ui, sans-serif;
+  --font-serif: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-kai: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-display: 'Cinzel', 'EB Garamond', Georgia, serif;
+  --font-display-spacing: 0.02em;
   --card-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
 
-/* C · 铜版科学（Copperplate）：1.5px 铜线、3px 小圆角、仪表描边 */
+/* C · 铜版科学（Copperplate）：1.5px 铜线、3px 小圆角、仪表描边
+   字体：Gill Sans 风格正文 + 表格化数字（tabular-nums 由 stat 组件消费） */
 html[data-design='copperplate'] {
   --bd-w: 1.5px;
   --bd-style: solid;
   --bd-color: rgba(200, 180, 120, 0.45);
   --radius: 3px;
+  --font-serif: 'Gill Sans', 'Gill Sans MT', 'Lato', 'Segoe UI', 'Noto Sans SC',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-sans: 'Gill Sans', 'Gill Sans MT', 'Lato', 'Segoe UI', 'Noto Sans SC',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
+  --font-display-spacing: 0.1em;
   --card-shadow: 0 0 0 1px rgba(200, 180, 120, 0.12);
 }
 
@@ -211,12 +222,17 @@ html[data-design='shoji'] {
   --card-shadow: 0 6px 18px rgba(90, 70, 40, 0.12);
 }
 
-/* E · 夜光符文（Runic）：1.5px 荧光线、14px 大圆角、辉光 */
+/* E · 夜光符文（Runic）：1.5px 荧光线、14px 大圆角、辉光
+   字体：标题衬线宽字距（Cinzel 天然宽字距），正文无衬线 */
 html[data-design='runic'] {
   --bd-w: 1.5px;
   --bd-style: solid;
   --bd-color: rgba(110, 231, 216, 0.45);
   --radius: 14px;
+  --font-serif: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-kai: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-display: 'Cinzel', 'EB Garamond', Georgia, serif;
+  --font-display-spacing: 0.14em;
   --card-shadow:
     0 0 0 1px rgba(110, 231, 216, 0.18), 0 0 18px rgba(110, 231, 216, 0.14),
     0 10px 26px rgba(0, 0, 0, 0.5);

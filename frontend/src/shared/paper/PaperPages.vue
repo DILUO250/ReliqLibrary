@@ -19,8 +19,10 @@ const props = defineProps({
   geometry: { type: Object as PropType<PaperGeometry>, required: true },
   /** 装箱安全余量（pt），默认 2pt */
   safetyPt: { type: Number, default: 2 },
-  /** 行附加开销（px）：跨页重组的组框按最坏情况预留（如 SCL 的 file-box 22pt） */
+  /** 行附加开销（px）：跨页重组的组框按最坏情况预留（只适合极短组，见 paginate.ts） */
   rowExtraPx: { type: Function as PropType<(row: ReportRow) => number> },
+  /** 组框片段开销（px）：页内首次遇到某组行时一次性收取（长组的正确计费模型） */
+  groupExtraPx: { type: Function as PropType<(row: ReportRow) => number> },
   /** 页内重组函数（受限包裹/列表重组/组框；缺省 = 行 HTML 直接拼接） */
   compose: { type: Function as PropType<(rows: ReportRow[], start: number, end: number) => string> },
   /** 行的度量挂载 HTML（缺省 = row.html；item 等容器语义行由模块提供包装） */
@@ -53,6 +55,7 @@ async function repaginate(): Promise<void> {
     geometry: props.geometry,
     safetyPt: props.safetyPt ?? undefined,
     rowExtraPx: props.rowExtraPx,
+    groupExtraPx: props.groupExtraPx,
     measureHtml: props.measureHtml,
   })
   if (mySeq !== seq) return // 过期结果丢弃（数据已再变）

@@ -48,4 +48,7 @@
   --font-kai: 'LXGW WenKai', 'Noto Serif SC', serif;
   --font-sans: 'Noto Sans SC', system-ui, sans-serif;
   --font-latin: 'EB Garamond', Georgia, serif;
+
+  /* 展示字体的字距（.latin 消费；B 窄字距 / E 宽字距等设计层覆盖） */
+  --font-display-spacing: 0.08em;
 }

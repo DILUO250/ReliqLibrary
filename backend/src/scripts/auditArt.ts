@@ -65,7 +65,7 @@ function suggestDisposition(rel: string): { action: string; reason: string } {
     return { action: '建议入回收站', reason: '司书立绘/缩略图替换遗留（回收站机制建立前的旧文件）' }
   }
   if (rel.startsWith('armarium/entities/')) {
-    return { action: '人工核对', reason: '异常实体库 UI 未建（anomalies 表当前无行）；若为未来 UI 备用素材请保留' }
+    return { action: '人工核对', reason: '报告插图目录：DB 引用以 anomalies.report JSON 为准（若确无引用则为替换/导入遗留）' }
   }
   return { action: '人工核对', reason: '无自动识别规则' }
 }
@@ -97,6 +97,28 @@ function collectReferencedUrls(): Map<string, Array<{ table: string; id: number 
           }
         }
       }
+    }
+  }
+  // anomalies.report JSON 内的插图（figures[].url）：不走 IMAGE_COLUMNS 列级机制
+  //（CONVENTIONS §7），由 collectReportArt / anomalyArtRoutes 集中回收，但审计必须
+  // 认账——否则全部报告插图会被误报为孤儿。
+  const anomalyRows = db.prepare('SELECT id, report FROM anomalies').all() as Array<{
+    id: number
+    report: string
+  }>
+  for (const row of anomalyRows) {
+    if (!row.report) continue
+    try {
+      const r = JSON.parse(row.report) as { figures?: Array<{ url?: unknown }> }
+      for (const fig of r.figures ?? []) {
+        if (typeof fig?.url !== 'string' || !fig.url.startsWith(ART_PREFIX)) continue
+        const rel = fig.url.slice(ART_PREFIX.length).replace(/\\/g, '/')
+        const arr = map.get(rel) ?? []
+        arr.push({ table: 'anomalies', id: row.id, refOnly: false })
+        map.set(rel, arr)
+      }
+    } catch {
+      // 坏 JSON 行：跳过（与 routes 的容错语义一致）
     }
   }
   return map

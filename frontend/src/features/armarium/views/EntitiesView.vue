@@ -33,13 +33,18 @@ function onMessage(event: MessageEvent): void {
 }
 
 // 按 SCL 编号数字升序存放（编号位数不限，纯数字比较才不会 10000 排在 999 前）；
-// 同号/无编号行按 id 次序稳定排列。缩略图在此一次性预解析，避免模板里重复 JSON.parse。
+// 同号/无编号行按 id 次序稳定排列。缩略图与摘要在此一次性预解析，避免模板里重复 JSON.parse。
+// 摘要：运营备注（note）优先，空则回退报告描述首段（方案A · 草稿 2.2）。
 const rows = computed(() =>
   store.list
-    .map((entity) => ({
-      entity,
-      thumb: parseAnomalyReport(entity.report).figures[0]?.url ?? '',
-    }))
+    .map((entity) => {
+      const report = parseAnomalyReport(entity.report)
+      return {
+        entity,
+        thumb: report.figures[0]?.url ?? '',
+        summary: (entity.note || '').trim() || report.description[0] || '',
+      }
+    })
     .sort((a, b) => {
       const da = Number(a.entity.code.replace(/\D/g, '')) || Number.MAX_SAFE_INTEGER
       const db = Number(b.entity.code.replace(/\D/g, '')) || Number.MAX_SAFE_INTEGER
@@ -148,18 +153,19 @@ function createEntity(): void {
           <span v-else class="latin">IMG</span>
         </button>
         <div class="entity-card__body">
-          <span class="entity-card__code latin">{{ anomalyFullCode(row.entity) }}</span>
-          <h3 class="entity-card__name">{{ row.entity.name || '未命名实体' }}</h3>
-          <div class="entity-card__meta">
+          <div class="entity-card__top">
+            <span class="entity-card__code latin">{{ anomalyFullCode(row.entity) }}</span>
             <span
               class="entity-card__level"
               :style="{ '--lv': levelColor(row.entity.level) }"
             >{{ anomalyLevelText(row.entity.level, row.entity.subLevel) }}</span>
           </div>
-          <div class="entity-card__actions">
-            <button type="button" class="entity-card__btn" @click="openReport(row.entity.id)">预览</button>
-            <button type="button" class="entity-card__btn entity-card__btn--edit" @click="openEditor(row.entity.id)">编辑</button>
-          </div>
+          <h3 class="entity-card__name">{{ row.entity.name || '未命名实体' }}</h3>
+          <p v-if="row.summary" class="entity-card__desc">{{ row.summary }}</p>
+        </div>
+        <div class="entity-card__actions">
+          <button type="button" class="entity-card__btn" @click="openReport(row.entity.id)">预览</button>
+          <button type="button" class="entity-card__btn entity-card__btn--edit" @click="openEditor(row.entity.id)">编辑</button>
         </div>
       </article>
     </div>
@@ -297,45 +303,54 @@ function createEntity(): void {
   color: var(--color-ink);
 }
 
+/* ---------- 方案A · 档案横条（草稿 2.2）----------
+ * 单列通栏、行间 1px 分割线、无盒子感；卡片高 164px 恒定（缩略图 140 + 上下 24）；
+ * 缩略图 160×140 固定像素 + 恒居左侧 + cover 居中裁切，绝不随影像比例调整；
+ * 信息区（编号+徽章 / 名称 / 一行摘要）实测 ~70px < 140，名称/摘要截断保证不破版。 */
 .entities__rail {
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .entity-card {
-  align-items: stretch;
-  background: linear-gradient(135deg, rgba(55, 45, 32, 0.9), rgba(34, 27, 20, 0.92));
-  border: var(--bd-w) var(--bd-style) var(--bd-color);
-  border-radius: calc(var(--radius) * 2);
+  align-items: center;
+  border-bottom: 1px solid var(--color-line);
+  box-sizing: border-box;
   display: flex;
   gap: 16px;
+  height: 164px;
+  min-width: 0;
   overflow: hidden;
-  padding: 16px;
-  transition: border-color 0.2s ease, transform 0.2s ease;
+  padding: 12px 2px;
+  transition: background 0.15s ease;
+}
+
+.entity-card:last-child {
+  border-bottom: none;
 }
 
 .entity-card:hover {
-  border-color: color-mix(in srgb, var(--accent) 70%, var(--color-line));
-  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 
 .entity-card__thumb {
   background: #0d0a07;
-  border: var(--bd-w) var(--bd-style) var(--bd-color);
-  border-radius: var(--radius);
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
   cursor: pointer;
   flex: none;
-  height: 118px;
-  object-fit: cover;
+  height: 140px;
   overflow: hidden;
   padding: 0;
   width: 160px;
 }
 
 .entity-card__thumb img {
+  display: block;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   width: 100%;
 }
 
@@ -350,6 +365,14 @@ function createEntity(): void {
   display: flex;
   flex: 1;
   flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.entity-card__top {
+  align-items: center;
+  display: flex;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -359,34 +382,45 @@ function createEntity(): void {
   letter-spacing: 0.1em;
 }
 
-.entity-card__name {
-  color: var(--color-ink);
-  font-size: 19px;
-  margin: 4px 0 8px;
-}
-
-.entity-card__meta {
-  align-items: center;
-  display: flex;
-  font-size: 12px;
-  gap: 10px;
-}
-
 .entity-card__level {
   border: var(--bd-w) var(--bd-style) color-mix(in srgb, var(--lv) 60%, transparent);
   border-radius: 999px;
   color: var(--lv);
+  flex: none;
   font-family: var(--font-sans);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  padding: 2px 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  padding: 1px 8px;
+}
+
+.entity-card__name {
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entity-card__desc {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  color: var(--color-ink-dim);
+  display: -webkit-box;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 2px 0 0;
+  overflow: hidden;
 }
 
 .entity-card__actions {
   display: flex;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 12px;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  width: 64px;
 }
 
 .entity-card__btn {
@@ -395,11 +429,11 @@ function createEntity(): void {
   border-radius: var(--radius);
   color: var(--color-ink);
   cursor: pointer;
-  flex: 1;
   font-family: var(--font-sans);
-  font-size: 13px;
-  padding: 7px 0;
-  transition: background 0.2s ease, color 0.2s ease;
+  font-size: 12px;
+  padding: 5px 0;
+  transition: background 0.15s ease, color 0.15s ease;
+  width: 100%;
 }
 
 .entity-card__btn:hover {
@@ -420,12 +454,27 @@ function createEntity(): void {
 }
 
 @media (max-width: 640px) {
+  /* 卡片转纵向堆叠，但缩略图保持 160×140 固定尺寸不拉伸（草稿要求⑥） */
   .entity-card {
+    align-items: flex-start;
     flex-direction: column;
+    gap: 10px;
+    height: auto;
   }
 
   .entity-card__thumb {
+    height: 140px;
+    width: 160px;
+  }
+
+  .entity-card__actions {
+    flex-direction: row;
+    gap: 10px;
     width: 100%;
+  }
+
+  .entity-card__btn {
+    flex: 1;
   }
 }
 </style>

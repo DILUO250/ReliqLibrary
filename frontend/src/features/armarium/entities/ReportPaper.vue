@@ -19,13 +19,27 @@ const emit = defineEmits<{ paginated: [pageCount: number] }>()
 
 const rows = computed(() => buildReportRows(props.entity, props.report))
 
-// quoted 文件的 body 行跨页时每页各自包一个完整 .file-box，按最坏情况预留边框开销
-const rowExtraPx = (row: ReportRow): number =>
-  row.group?.startsWith('file:') ? (22 * 96) / 72 : 0
+// quoted 文件的 body 行跨页时每页各自包一个完整 .file-box。开销按"每个片段一次"
+// 计（引擎在页内首次遇到该组行时收取），值为盒的完整垂直开销：
+// padding 10pt×2 + margin 0.2cm×2 + border 1pt×2 ≈ 44px（与 paper.css --box-* 一致）。
+// ⚠️ 禁止回退为逐行预留 rowExtraPx——长引用文件（SCL-096 33 行）会虚占一整页
+// 幻影高度，每页提前断页留大片空白（2026-09-18 实测事故）。
+const FILE_BOX_OVERHEAD_PX = Math.round((10 * 2 * 96) / 72 + (0.2 * 2 * 96) / 2.54 + (1 * 2 * 96) / 72)
+const groupExtraPx = (row: ReportRow): number =>
+  row.group?.startsWith('file:') ? FILE_BOX_OVERHEAD_PX : 0
 
-// item 行真实渲染包在 <ul class="r-list"> 里（裸 <li> 无此容器语义），度量须同构
-const measureHtml = (row: ReportRow): string =>
-  row.kind === 'item' ? `<ul class="r-list">${row.html}</ul>` : row.html
+// item 行真实渲染包在 <ul class="r-list"> 里（裸 <li> 无此容器语义），度量须同构。
+// 组行（引用框内）还须复刻 .file-box 的水平 padding（14pt×2）——否则孤立度量时文本
+// 可用宽度偏宽、换行数偏少，真实渲染每多折一行就多 ~28px，累计成页尾溢出
+// （2026-09-18 实测：096/049 溢出 9~22px）。垂直开销（margin/padding-y/border）
+// 不在此复刻——由 groupExtraPx 按片段一次计。
+const FILE_BOX_PAD_X = '14pt'
+const measureHtml = (row: ReportRow): string => {
+  if (row.kind === 'item' && row.group?.startsWith('file:')) {
+    return `<div class="file-box" style="margin:0;border:none;padding:0 ${FILE_BOX_PAD_X}"><ul class="r-list">${row.html}</ul></div>`
+  }
+  return row.kind === 'item' ? `<ul class="r-list">${row.html}</ul>` : row.html
+}
 </script>
 
 <template>
@@ -33,7 +47,7 @@ const measureHtml = (row: ReportRow): string =>
     :rows="rows"
     paper-class="scl-paper"
     :geometry="{ pageWidthCm: 21, pageHeightCm: 29.7, padVCm: 2.54 }"
-    :row-extra-px="rowExtraPx"
+    :group-extra-px="groupExtraPx"
     :measure-html="measureHtml"
     :compose="composePageHtml"
     hint="报告排版中…"

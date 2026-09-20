@@ -325,6 +325,9 @@ export function composePageHtml(rows: ReportRow[], start: number, end: number): 
       continue
     }
     if (row.kind === 'item') {
+      // 组切换（相邻行属于不同组/组→无组）必须先闭合旧框，与分页引擎的
+      // "片段 = 页内同组连续行段"开框计费语义严格同构
+      if (itemGroup !== row.group) flushItems()
       if (itemGroup === null) itemGroup = row.group
       items.push(row.html)
       continue

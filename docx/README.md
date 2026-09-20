@@ -58,9 +58,10 @@ D:\ReliqLibrary\
 ├─ 参考文档\                 # 世界观 docx、术语解析、设计图 —— 一切叙事内容的原始依据
 ├─ 草稿\                    # 设计草稿
 └─ reliqLibrary\            # ★ 项目本体（真正的代码仓库，含独立 git）
-   ├─ README.md             # 就是这份文档（项目根说明）
-   ├─ AGENTS.md             # AI 协作必读：架构速览 + 注意事项
-   ├─ CONVENTIONS.md        # 开发规范（硬性约束，违反 = 违规）
+   ├─ docx\                 # ★ 项目文档（含 README.md）
+   │   ├─ README.md             # 就是这份文档（项目根说明）
+   │   ├─ AGENTS.md             # AI 协作必读：架构速览 + 注意事项
+   │   └─ CONVENTIONS.md        # 开发规范（硬性约束，违反 = 违规）
    ├─ start.bat             # 一键启动脚本（GBK 编码 + CRLF，别乱改）
    ├─ frontend\             # 前端（Vue 3 + Vite + Pinia）
    ├─ backend\              # 后端（Fastify + better-sqlite3）
