@@ -504,6 +504,17 @@ export interface DeckZoneInfo {
   hint?: string
 }
 
+/** 楼层子模块 id：librarians/extras 为通用区，emotions 为 LOB 专属，reserved 为预留占位。 */
+export type FloorTabId = 'librarians' | 'extras' | 'emotions' | 'reserved'
+
+/** 楼层子模块配置：FloorDeck 按各系统的 floorTabs 渲染楼层卡下的二级菜单。 */
+export interface FloorTabInfo {
+  key: FloorTabId
+  label: string
+  icon: string
+  hint?: string
+}
+
 /** RHD 职业定义。 */
 export interface BattleProfession {
   emoji: string
@@ -564,6 +575,8 @@ export interface BattleSystemInfo {
   teamCapacity?: string
   /** 卡组区配置：编辑器/预览按此渲染（combat+special 为通用区，其余系统专属）。 */
   deckZones: DeckZoneInfo[]
+  /** 楼层子模块配置：楼层卡下的二级菜单按此渲染（librarians/extras 通用，emotions=LOB，其余系统预留）。 */
+  floorTabs: FloorTabInfo[]
   /** 卡牌前缀白名单（cardPrefixes 的 name）。 */
   cardPrefixes: string[]
   /** 被动名称可用前缀（如 RHD 的 ELIT1. ELIT2.）。 */
@@ -1152,10 +1165,10 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     desc: '所有体系中最普通的一个，无特殊形态，无特殊机制；所有无体系的单位都被算作该体系单位。',
     costLabel: '费用',
     costCap: 5,
-    regen: 2,
+    regen: 3,
     speedDice: 0,
     handLimit: 7,
-    draw: 2,
+    draw: 4,
     deckLimit: 16,
     keepHand: false,
     extraDeckZone: '无',
@@ -1164,14 +1177,18 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
       { key: 'combat', label: '战斗卡牌' },
       { key: 'special', label: '特殊卡牌' },
     ],
+    floorTabs: [
+      { key: 'librarians', label: '司书列表', icon: '📖' },
+      { key: 'extras', label: '附加单位', icon: '⭐' },
+    ],
     cardPrefixes: ['V.', 'GX.', 'EX.', 'DEF.'],
     statTables: [
       {
         rows: [
           { label: '起始费用上限', value: '5点' },
-          { label: '自动回费量', value: '2点/回合' },
+          { label: '自动回费量', value: '3点/回合' },
           { label: '起始手牌上限', value: '7张' },
-          { label: '自动抽牌数', value: '2张/回合' },
+          { label: '自动抽牌数', value: '4张/回合' },
           { label: '牌组容量', value: '16张' },
           { label: '手牌保留规则', value: '自动弃牌' },
           { label: '额外卡牌区', value: '无' },
@@ -1208,6 +1225,11 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
       { key: 'combat', label: '战斗卡牌' },
       { key: 'special', label: '特殊卡牌' },
       { key: 'ego', label: 'EGO 卡牌', hint: '仅 LOB 系统使用；情感等级达到Ⅲ/Ⅳ/Ⅴ级时从中抽取' },
+    ],
+    floorTabs: [
+      { key: 'librarians', label: '司书列表', icon: '📖' },
+      { key: 'extras', label: '附加单位', icon: '⭐' },
+      { key: 'emotions', label: '情感书页', icon: '📙', hint: 'LOB 专属：情感实体 = 异常实体名称 + 1~9 张情感书页 + EGO卡牌' },
     ],
     cardPrefixes: ['V.', 'GX.', 'DEF.', 'EGO.', 'DST.', 'SHM.'],
     statTables: [
@@ -1257,6 +1279,11 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
       { key: 'combat', label: '战斗卡牌' },
       { key: 'special', label: '特殊卡牌' },
       { key: 'energy', label: '能量卡牌', hint: 'PKM 宝可梦的能量区：携带奇迹能量的能量卡牌' },
+    ],
+    floorTabs: [
+      { key: 'librarians', label: '司书列表', icon: '📖' },
+      { key: 'extras', label: '附加单位', icon: '⭐' },
+      { key: 'reserved', label: '预留', icon: '🗃', hint: '该系统的专属子模块将在后续版本补充' },
     ],
     cardPrefixes: ['V.', 'GX.', 'EX.', 'DEF.'],
     statTables: [
@@ -1319,6 +1346,11 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
       { key: 'combat', label: '战斗卡牌' },
       { key: 'special', label: '特殊卡牌' },
       { key: 'modules', label: '模组卡牌', hint: 'RHD 专属模组区，定位同 LOB 的 EGO 栏' },
+    ],
+    floorTabs: [
+      { key: 'librarians', label: '司书列表', icon: '📖' },
+      { key: 'extras', label: '附加单位', icon: '⭐' },
+      { key: 'reserved', label: '预留', icon: '🗃', hint: '该系统的专属子模块将在后续版本补充' },
     ],
     cardPrefixes: ['V.', 'GX.', 'DEF.', 'ELIT1.', 'ELIT2.'],
     passivePrefixes: ['ELIT1.', 'ELIT2.'],

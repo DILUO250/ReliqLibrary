@@ -7,6 +7,7 @@ import { trashArt } from './artTrash.js'
 import { registerPvzArtRoutes } from '../features/armarium/artRoutes.js'
 import { registerAnomalyArtRoutes } from '../features/armarium/anomalyArtRoutes.js'
 import { registerAnomalyExportRoutes } from '../features/armarium/exportRoutes.js'
+import { registerArmariumOverviewRoutes } from '../features/armarium/overviewRoutes.js'
 import { registerTurrisArtRoutes } from '../features/turris/artRoutes.js'
 
 type IdParams = { id: string }
@@ -181,6 +182,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await registerPvzArtRoutes(app)
   await registerAnomalyArtRoutes(app)
   await registerAnomalyExportRoutes(app)
+  await registerArmariumOverviewRoutes(app)
 
   for (const table of TABLES) {
     const route = `/api/${table}`

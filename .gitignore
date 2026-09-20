@@ -8,6 +8,7 @@ dist/
 backend/data/*.db-shm
 backend/data/*.db-wal
 backend/data/export-cache/
+backend/data/thumb-cache/
 references/
 
 *.log

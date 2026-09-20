@@ -221,7 +221,7 @@ DELETE 钩子会在删父行前 `UPDATE <子表> SET <fk> = NULL WHERE <fk> = ?`
 
 - **设定层（代码常量，改数据 = 改代码）**：`shared/src/index.ts` 的 `BATTLE_SYSTEMS`（`deckZones` 卡组区、`cardPrefixes`/`passivePrefixes` 前缀白名单、`statTables` 开局数值表、`metrics`/`pros`/`cons`/`speedPassives`）与 `shared/src/battleMechanics.ts`（`MECHANICS_TEXT` 机制说明长文本、`MECHANICS_IMAGES` 表格图片路径）。这些是策划设定，不随运营变化，**禁止**为它们建数据库表。
 - **运营层（落库）**：司书/楼层/情感实体的战斗数据是 `librarians.sheet` / `emotion_entities.sheet` JSON 列（`battleSystem` + `systemData` 各系统专属字段），经 generic CRUD 读写。新增 `systemData` 字段**必须**可缺省（老数据零迁移）。
-- **编辑器 UI 由配置驱动**：卡牌区**禁止**手写 `v-if` 罗列——一律按 `system.deckZones` 循环渲染（`LibrarianSheetEditor.vue` / `DeckPreviewModal.vue` / `FloorDeck.vue`）；卡牌前缀下拉**必须**按 `system.cardPrefixes` 白名单过滤，**禁止**展示全量前缀。每个系统允许的前缀是设定决定，不是编辑器自由。
+- **编辑器 UI 由配置驱动**：卡牌区**禁止**手写 `v-if` 罗列——一律按 `system.deckZones` 循环渲染（`LibrarianSheetEditor.vue` / `DeckPreviewModal.vue` / `FloorDeck.vue`）；**楼层卡下的二级子菜单**一律按 `system.floorTabs` 渲染（`FloorDeck.vue`；librarians/extras 通用、emotions=LOB、未设计系统走 reserved 预留占位，未知 key 回退占位面板）；卡牌前缀下拉**必须**按 `system.cardPrefixes` 白名单过滤，**禁止**展示全量前缀。每个系统允许的前缀是设定决定，不是编辑器自由。
 - **机制说明表格图**：静态文件放 `frontend/public/art/turris/systems/`，文件名**必须**与 `MECHANICS_IMAGES`（`shared/src/battleMechanics.ts`）声明一致，替换图片直接换文件；此目录不经 `IMAGE_COLUMNS`/`trashArt()`（无 DB 图片列），`audit:art` 报告中的"孤儿"可能包含它们，处置前先对照 `MECHANICS_IMAGES`。
 - **新增系统专属字段**：加进 `LibrarianSystemData`（注明所属系统），并同步在 `LibrarianSheetEditor.vue` 的系统分支（`v-if="system.id === 'xxx'"`）补编辑 UI；未实现的系统走"预留"占位，**禁止**提前为未设计的系统堆字段 UI。
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import type { Floor, Librarian, LibrarianSheet, BattleSystemId, BattleCard } from '@rtl/shared'
+import type { Floor, Librarian, LibrarianSheet, BattleSystemId, BattleCard, FloorTabInfo } from '@rtl/shared'
 import { BATTLE_SYSTEMS, parseSheet, parseEmotionSheet, toRoman } from '@rtl/shared'
 import type { EmotionEntity, EmotionSheet, Mechanism } from '@rtl/shared'
 import { api } from '@/app/services/api'
@@ -211,6 +211,17 @@ function deckCount(row: Librarian): number {
 function systemCode(row: Librarian): string {
   const s = sheetOf(row)
   return s ? BATTLE_SYSTEMS[s.battleSystem]?.code ?? '' : ''
+}
+
+/** 楼层子模块：按楼层战斗系统取 floorTabs 配置；配置缺失时回退为通用两区 + 预留占位。 */
+function floorTabsOf(f: Floor): FloorTabInfo[] {
+  return (
+    BATTLE_SYSTEMS[f.battleSystem]?.floorTabs ?? [
+      { key: 'librarians', label: '司书列表', icon: '📖' },
+      { key: 'extras', label: '附加单位', icon: '⭐' },
+      { key: 'reserved', label: '预留', icon: '🗃', hint: '该系统的专属子模块将在后续版本补充' },
+    ]
+  )
 }
 
 async function load(): Promise<void> {
@@ -515,11 +526,13 @@ onMounted(load)
             </div>
 
             <div class="subnav">
-              <!-- ===== 二级菜单 1：司书列表 ===== -->
-              <div class="submenu">
+              <!-- 楼层子模块：按战斗系统 floorTabs 配置渲染（librarians/extras 通用，emotions=LOB，其余预留） -->
+              <template v-for="tab in floorTabsOf(f)" :key="tab.key + '-' + f.id">
+              <!-- ===== 子模块：司书列表 ===== -->
+              <div v-if="tab.key === 'librarians'" class="submenu">
                 <button type="button" class="submenu__head" @click="togglePanel(`libs-${f.id}`)">
-                  <span class="submenu__icon">📖</span>
-                  <span class="submenu__title">司书列表</span>
+                  <span class="submenu__icon">{{ tab.icon }}</span>
+                  <span class="submenu__title">{{ tab.label }}</span>
                   <span class="submenu__count">
                     <span class="chip">{{ regLibsByFloor.get(f.id)?.length ?? 0 }}</span>
                     <span class="submenu__arrow">{{ openPanels.has(`libs-${f.id}`) ? '▼' : '▶' }}</span>
@@ -581,11 +594,11 @@ onMounted(load)
                 </div>
               </div>
 
-              <!-- ===== 二级菜单 2：附加单位 ===== -->
-              <div class="submenu submenu--extra">
+              <!-- ===== 子模块：附加单位 ===== -->
+              <div v-else-if="tab.key === 'extras'" class="submenu submenu--extra">
                 <button type="button" class="submenu__head" @click="togglePanel(`extra-${f.id}`)">
-                  <span class="submenu__icon">⭐</span>
-                  <span class="submenu__title">附加单位</span>
+                  <span class="submenu__icon">{{ tab.icon }}</span>
+                  <span class="submenu__title">{{ tab.label }}</span>
                   <span class="submenu__count">
                     <span class="chip">{{ extraLibsByFloor.get(f.id)?.length ?? 0 }}</span>
                     <span class="submenu__arrow">{{ openPanels.has(`extra-${f.id}`) ? '▼' : '▶' }}</span>
@@ -629,11 +642,11 @@ onMounted(load)
                 </div>
               </div>
 
-              <!-- ===== 二级菜单 3：情感书页 ===== -->
-              <div class="submenu" :class="{ 'submenu--emotion': f.battleSystem === 'lob' }">
+              <!-- ===== 子模块：情感书页（LOB） ===== -->
+              <div v-else-if="tab.key === 'emotions'" class="submenu" :class="{ 'submenu--emotion': f.battleSystem === 'lob' }">
                 <button type="button" class="submenu__head" @click="togglePanel(`emotion-${f.id}`)">
-                  <span class="submenu__icon">📙</span>
-                  <span class="submenu__title">情感书页</span>
+                  <span class="submenu__icon">{{ tab.icon }}</span>
+                  <span class="submenu__title">{{ tab.label }}</span>
                   <span class="submenu__count">
                     <span class="chip">{{ BATTLE_SYSTEMS[f.battleSystem]?.code ?? f.battleSystem }}</span>
                     <span class="chip">{{ entitiesByFloor.get(f.id)?.length ?? 0 }}</span>
@@ -709,6 +722,27 @@ onMounted(load)
                   </div>
                 </div>
               </div>
+
+              <!-- ===== 子模块：预留占位（未设计的系统专属区） ===== -->
+              <div v-else class="submenu submenu--reserve">
+                <button type="button" class="submenu__head" @click="togglePanel(`reserved-${f.id}`)">
+                  <span class="submenu__icon">{{ tab.icon }}</span>
+                  <span class="submenu__title">{{ tab.label }}</span>
+                  <span class="submenu__count">
+                    <span class="chip">{{ BATTLE_SYSTEMS[f.battleSystem]?.code ?? f.battleSystem }}</span>
+                    <span class="submenu__arrow">{{ openPanels.has(`reserved-${f.id}`) ? '▼' : '▶' }}</span>
+                  </span>
+                </button>
+                <div v-show="openPanels.has(`reserved-${f.id}`)" class="submenu__body">
+                  <div class="sys-placeholder">
+                    <div class="sys-placeholder__title">
+                      「{{ BATTLE_SYSTEMS[f.battleSystem]?.zh ?? f.battleSystem }}」系统的专属子模块尚未设计
+                    </div>
+                    <p>{{ tab.hint || '此处已预留位置，将在设计完成后分发到对应的子编辑器。' }}</p>
+                  </div>
+                </div>
+              </div>
+              </template>
             </div>
           </div>
         </Transition>
@@ -1212,6 +1246,13 @@ onMounted(load)
 }
 .submenu--emotion .submenu__body {
   background: #0d0c0a;
+}
+.submenu--reserve {
+  border-style: dashed;
+  opacity: 0.75;
+}
+.submenu--reserve .submenu__head:hover {
+  background: rgba(233, 221, 198, 0.05);
 }
 .submenu--emotion .entity-list {
   margin-top: 4px;

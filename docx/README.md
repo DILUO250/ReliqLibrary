@@ -38,7 +38,21 @@ npm run dev:backend  # 开后端 http://127.0.0.1:3000
 npm run dev:frontend # 开前端 http://localhost:4290（另开一个终端）
 ```
 
-### 2.3 提交代码前必须跑的检查
+### 2.3 局域网访问（其他设备）
+
+自己开发用上面的 dev 模式；**别的电脑/手机访问时请用打包版**（dev 模式要把几百个零散代码文件逐个传给浏览器，跨设备首次加载会非常慢）：
+
+```bash
+npm run preview   # 打包前端并起静态服务：http://<本机IP>:4291
+```
+
+- 4291 端口照常连通后端：数据实时存库，**编辑功能与 dev 模式完全一致**；
+- 注意：改了前端代码后需要重跑 `npm run preview` 才能在 4291 看到新界面；你自己开发用的 4290 不受影响；
+- 若只开 4291 不开 dev，PDF 导出功能需要把环境变量 `FRONTEND_URL` 指到 `http://127.0.0.1:4291`。
+
+**列表图片走小图**：异常实体卡片等列表场景的缩略图经后端 `GET /api/armarium/anomaly-thumb?url=<图片地址>&w=<宽度>` 按需生成（WebP，磁盘缓存在 `backend/data/thumb-cache/`，键含源图 mtime——替换原图后小图自动失效重生成，整目录可随时删掉重建）。
+
+### 2.4 提交代码前必须跑的检查
 
 ```bash
 npm run type-check                    # 类型检查，必须零报错
@@ -50,7 +64,6 @@ npm run lint --workspace frontend     # 代码风格检查，必须零告警
 ---
 
 ## 3. 项目结构总览
-
 这是一个 **monorepo**（一个仓库里装了几个独立的小项目，用 npm workspaces 管理）。三大件：`frontend`（前端）、`backend`（后端）、`shared`（两边共用的类型和数据）。
 
 ```
@@ -93,7 +106,7 @@ backend\src\
 ├─ features\
 │  ├─ turris\artRoutes.ts    # 迎书楼专属接口：图片上传 + AI 立绘生成
 │  ├─ armarium\artRoutes.ts  # 藏书阁专属接口：PVZ 素材上传 + 云端同步
-│  ├─ armarium\anomalyArtRoutes.ts # 藏书阁专属接口：异常实体报告插图上传/删除
+│  ├─ armarium\anomalyArtRoutes.ts # 藏书阁专属接口：异常实体报告插图上传/删除 + 列表缩略图按需生成
 │  ├─ armarium\exportRoutes.ts     # 藏书阁专属接口：报告单服务端 PDF 导出（双段式）
 │  ├─ pdf\pdfPrinter.ts      # ★ 服务端 PDF 打印引擎（模块无关）：puppeteer-core 驱动
 │  │                         #   本机 Chrome/Edge 加载前端 /print 路由 → printToPDF；
@@ -312,6 +325,7 @@ frontend\src\features\armarium\
 npm run dev:backend          # 开后端
 npm run dev:frontend         # 开前端
 npm start                    # 等价于双击 start.bat
+npm run preview              # 打包前端 + 4291 局域网访问（其他设备用这个，见 §2.3）
 
 # 校验（提交前必跑）
 npm run type-check           # 类型检查，零报错

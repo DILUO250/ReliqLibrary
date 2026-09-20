@@ -3,8 +3,11 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SectionPlaceholder from '@/shared/components/SectionPlaceholder.vue'
 import EntitiesView from '@/features/armarium/views/EntitiesView.vue'
+import OverviewTwins from '@/features/armarium/overview/OverviewTwins.vue'
+import OverviewProjects from '@/features/armarium/overview/OverviewProjects.vue'
+import { useAnomaliesStore } from '@/features/armarium/store/anomalies'
 import { api } from '@/app/services/api'
-import type { ArmariumProject } from '@rtl/shared'
+import type { ArmariumProject, SupernaturalSpace } from '@rtl/shared'
 
 // 藏书阁五 Tab（2026-09 Tab 重构）：Tab 导航由 ModuleLayout 的 module-tabs 渲染
 // （路径前缀高亮），本组件只负责按当前路由渲染对应 Tab 的内容——
@@ -23,6 +26,18 @@ const active = computed<TabId>(() => {
   return 'overview'
 })
 
+/* ---------- Tab1 总览（草稿 2.4 方案 D「双子铭章」）：真实计数一律来自 DB ---------- */
+
+const anomaliesStore = useAnomaliesStore()
+
+// 实体计数复用 store/anomalies 缓存（草稿 §7：不重复请求，EntitiesView 同源）；
+// 进入总览即预热，与实体库页共用同一份列表。
+void anomaliesStore.load()
+const entityCount = computed(() => anomaliesStore.list.length)
+
+// 空间计数：supernatural_spaces 表当前 0 行，如实显示「待录入」诚实占位。
+const spaceCount = ref(0)
+
 /* ---------- Tab4 研究项目：armarium_projects 表（DB 权威，禁止再硬编码项目数组） ---------- */
 
 const projects = ref<ArmariumProject[]>([])
@@ -31,7 +46,12 @@ const loadingProjects = ref(false)
 async function loadProjects(): Promise<void> {
   loadingProjects.value = true
   try {
-    projects.value = await api.list<ArmariumProject>('armarium_projects')
+    const [list, spaces] = await Promise.all([
+      api.list<ArmariumProject>('armarium_projects'),
+      api.list<SupernaturalSpace>('supernatural_spaces'),
+    ])
+    projects.value = list
+    spaceCount.value = spaces.length
   } finally {
     loadingProjects.value = false
   }
@@ -53,14 +73,20 @@ function openProject(project: ArmariumProject): void {
 
 <template>
   <div class="armarium-page">
-    <!-- Tab1 总览（UI 待规划） -->
-    <SectionPlaceholder
-      v-if="active === 'overview'"
-      title="藏书阁总览"
-      latin="Conspectus"
-      desc="藏书阁的总体概览页。"
-      note="总览页 UI 待规划"
-    />
+    <!-- Tab1 总览（草稿 2.4 方案 D「双子铭章」）：上部双子铭章 + 下部研究项目横条 -->
+    <div v-if="active === 'overview'" class="overview">
+      <OverviewTwins
+        :entity-count="entityCount"
+        :space-count="spaceCount"
+        @enter-entities="router.push('/armarium/entities')"
+        @enter-spaces="router.push('/armarium/spaces')"
+      />
+      <OverviewProjects
+        :projects="projects"
+        :loading="loadingProjects"
+        @open="openProject"
+      />
+    </div>
 
     <!-- Tab2 异常实体库（anomalies 表 + report JSON 报告单） -->
     <EntitiesView v-else-if="active === 'entities'" />
@@ -130,6 +156,13 @@ function openProject(project: ArmariumProject): void {
   flex-direction: column;
   gap: 18px;
   min-width: 0;
+}
+
+/* 总览（方案 D）：上下两块的纵向节奏与草稿 .ov 一致 */
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
 .project-register {

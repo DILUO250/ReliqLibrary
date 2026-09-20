@@ -62,6 +62,22 @@ function levelColor(level: string): string {
   return LEVEL_COLORS[level as AnomalyLevel] ?? LEVEL_COLORS.safe
 }
 
+/* ---------- 列表缩略图（走后端按需小图接口，原图只在报告单/预览用）----------
+ * 后端第一次生成后连浏览器缓存一起长缓存；小图生成/加载失败时回退原图，绝不白块。 */
+const THUMB_WIDTH = 320
+
+function thumbUrl(url: string): string {
+  return `/api/armarium/anomaly-thumb?url=${encodeURIComponent(url)}&w=${THUMB_WIDTH}`
+}
+
+const thumbFailed = ref(new Set<number>())
+
+function onThumbError(entityId: number): void {
+  thumbFailed.value.add(entityId)
+  // Set 原地修改不触发响应式，替换一个新 Set 保证模板重算
+  thumbFailed.value = new Set(thumbFailed.value)
+}
+
 /* ---------- 搜索筛选（纯客户端过滤：名称模糊 / 编号 / 主等级） ---------- */
 
 const query = ref('')
@@ -149,7 +165,16 @@ function createEntity(): void {
           :class="{ 'entity-card__thumb--empty': !row.thumb }"
           @click="openReport(row.entity.id)"
         >
-          <img v-if="row.thumb" :src="row.thumb" :alt="row.entity.name" />
+          <img
+            v-if="row.thumb"
+            :src="thumbFailed.has(row.entity.id) ? row.thumb : thumbUrl(row.thumb)"
+            :alt="row.entity.name"
+            width="160"
+            height="140"
+            loading="lazy"
+            decoding="async"
+            @error="onThumbError(row.entity.id)"
+          />
           <span v-else class="latin">IMG</span>
         </button>
         <div class="entity-card__body">

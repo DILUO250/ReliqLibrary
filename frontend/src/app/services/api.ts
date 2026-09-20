@@ -25,6 +25,8 @@ export const api = {
   backupStatus: () => request<{ lastBackupAt: string | null; version: number; dirty: boolean }>('/backup/status'),
   list: <T>(resource: string) => request<T[]>(`/${resource}`),
   get: <T>(resource: string, id: number | string) => request<T>(`/${resource}/${id}`),
+  // 藏书阁总览页轻量计数（pvz_plants 条目数等派生统计，避免整表拉取）
+  armariumOverviewCounts: () => request<{ plants: number }>('/armarium/overview/counts'),
   create: <T>(resource: string, body: unknown) =>
     request<T>(`/${resource}`, { method: 'POST', body: JSON.stringify(body) }),
   update: <T>(resource: string, id: number | string, body: unknown) =>

@@ -1,7 +1,10 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance, FastifyReply } from 'fastify'
+import { createHash } from 'node:crypto'
 import { createWriteStream, mkdirSync } from 'node:fs'
-import { basename, extname, join } from 'node:path'
-import { ART_DIR } from '../../config/index.js'
+import { mkdir, readFile, rename, rm, stat } from 'node:fs/promises'
+import { basename, extname, join, resolve, sep } from 'node:path'
+import sharp from 'sharp'
+import { ART_DIR, THUMB_CACHE_DIR } from '../../config/index.js'
 import { trashArt } from '../../routes/artTrash.js'
 
 const IMAGE_EXT = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif'])
@@ -14,6 +17,32 @@ const ENTITIES_URL_PREFIX = '/art/armarium/entities/'
 function entityCode(input: unknown): string {
   const digits = String(input ?? '').replace(/^scl-/i, '').replace(/\D/g, '')
   return digits ? `SCL-${digits}` : ''
+}
+
+/* ---------- 列表缩略图（按需生成 + 磁盘缓存）----------
+ * GET /api/armarium/anomaly-thumb?url=/art/armarium/...&w=320
+ * 痛点：卡片列表的 160×140 小框一直在加载原图（单张可达 MB 级，局域网跨设备加载以分钟计）。
+ * 方案：第一次请求时用 sharp 现场压一张窄边 ~320px 的 WebP 存进 backend/data/thumb-cache/，
+ * 之后同键直接回缓存；缓存键含源图 mtime → 源图被替换后旧小图自动失效重生成，零人工维护。
+ * 缓存是纯派生数据：不进 art/（不触碰素材治理/回收站规则），整个目录可随时整删重建。 */
+
+const THUMB_URL_PREFIX = '/art/armarium/'
+const THUMB_WIDTH_DEFAULT = 320
+const THUMB_WIDTH_MIN = 64
+const THUMB_WIDTH_MAX = 640
+const THUMB_QUALITY = 78
+
+// 键 = 相对路径|宽度|源图mtime：同图同宽永远同键（浏览器可长缓存），换图即换键。
+function thumbKey(rel: string, width: number, mtimeMs: number): string {
+  return createHash('sha1').update(`${rel}|${width}|${mtimeMs}`).digest('hex')
+}
+
+function thumbReply(reply: FastifyReply, buf: Buffer): void {
+  reply
+    .code(200)
+    .header('Content-Type', 'image/webp')
+    .header('Cache-Control', 'public, max-age=31536000, immutable')
+    .send(buf)
 }
 
 export async function registerAnomalyArtRoutes(app: FastifyInstance): Promise<void> {
@@ -58,5 +87,52 @@ export async function registerAnomalyArtRoutes(app: FastifyInstance): Promise<vo
     }
     trashArt(url)
     return { ok: true }
+  })
+
+  // 列表缩略图：?url=/art/armarium/...（&w=宽度，缺省 320）。
+  // 只读接口不设 token 门（GET 本就放行）；路径守卫与删除通道同风格——前缀 + 解析后回穿断言。
+  app.get('/api/armarium/anomaly-thumb', async (req, reply) => {
+    const q = req.query as { url?: string; w?: string }
+    const url = String(q.url ?? '')
+    if (!url.startsWith(THUMB_URL_PREFIX)) {
+      return reply.code(400).send({ error: 'url 必须位于 /art/armarium/ 下' })
+    }
+    const rel = url.slice('/art/'.length)
+    const abs = resolve(ART_DIR, rel)
+    if (abs !== ART_DIR && !abs.startsWith(ART_DIR + sep)) {
+      return reply.code(400).send({ error: '非法的图片路径' })
+    }
+    const ext = extname(abs).toLowerCase()
+    if (!IMAGE_EXT.has(ext)) {
+      return reply.code(400).send({ error: `unsupported image type ${ext || '(none)'}` })
+    }
+    const width = Math.min(THUMB_WIDTH_MAX, Math.max(THUMB_WIDTH_MIN, Number(q.w) || THUMB_WIDTH_DEFAULT))
+    const source = await stat(abs).catch(() => null)
+    if (!source?.isFile()) return reply.code(404).send({ error: '原图不存在' })
+
+    const key = thumbKey(rel, width, source.mtimeMs)
+    const cached = join(THUMB_CACHE_DIR, `${key}.webp`)
+    const cachedBuf = await readFile(cached).catch(() => null)
+    if (cachedBuf) return thumbReply(reply, cachedBuf)
+
+    await mkdir(THUMB_CACHE_DIR, { recursive: true })
+    // 先写临时文件再改名：并发请求打到同一键时，rename 失败即说明赢家已就位，直接读它。
+    const tmp = join(THUMB_CACHE_DIR, `${key}.${process.pid}-${Date.now()}.tmp`)
+    try {
+      await sharp(abs)
+        .rotate()
+        .resize({ width, withoutEnlargement: true })
+        .webp({ quality: THUMB_QUALITY })
+        .toFile(tmp)
+      await rename(tmp, cached).catch(() => undefined)
+      const buf = await readFile(cached)
+      return thumbReply(reply, buf)
+    } catch (err) {
+      return reply.code(500).send({
+        error: `缩略图生成失败：${err instanceof Error ? err.message : String(err)}`,
+      })
+    } finally {
+      await rm(tmp, { force: true }).catch(() => {})
+    }
   })
 }

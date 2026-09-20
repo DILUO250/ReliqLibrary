@@ -7747,6 +7747,19 @@ export const generatedHiddenSections = [
             "desc": "情感等级战斗系统的基础成长资源"
           },
           {
+            "name": "真实伤害",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#1C1C1C",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
             "name": "情感点数",
             "tags": [],
             "tagColors": [],
@@ -7823,6 +7836,19 @@ export const generatedHiddenSections = [
               "underline": "none"
             },
             "desc": "储存理智值数值的容器"
+          },
+          {
+            "name": "法术伤害",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#1E90FF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": "法术类型伤害"
           }
         ]
       }

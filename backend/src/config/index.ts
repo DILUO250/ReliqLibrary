@@ -24,3 +24,8 @@ export const EXPORT_CACHE_DIR = fileURLToPath(new URL('../../data/export-cache',
 export const EXPORT_TTL_MS = Number(process.env.EXPORT_TTL_MS ?? 15 * 60 * 1000)
 // 无头浏览器可执行文件路径（缺省自动探测本机 Chrome → Edge；双浏览器皆无或路径特殊时用 env 指定）
 export const PDF_BROWSER_PATH = process.env.PDF_BROWSER_PATH ?? ''
+
+// ---- 列表缩略图（按需生成）----
+// 缩略图磁盘缓存目录（派生数据，不进 art/：键含源图 mtime，源图替换自动失效）。
+// 与 export-cache 同住 backend/data/，同为 gitignore 的运行时产物。
+export const THUMB_CACHE_DIR = fileURLToPath(new URL('../../data/thumb-cache', import.meta.url))

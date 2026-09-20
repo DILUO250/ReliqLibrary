@@ -150,6 +150,7 @@ async function generateArt(): Promise<void> {
         <span>抽牌 {{ currentSystem.draw }}</span>
         <span>牌组 {{ currentSystem.deckLimit }}</span>
       </div>
+      <p class="sys-tabs">楼层子模块：{{ currentSystem.floorTabs.map((t) => `${t.icon} ${t.label}`).join(' · ') }}</p>
     </div>
 
     <label class="fullline">描述</label>
@@ -240,6 +241,11 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 14px;
+  font-size: 12px;
+  color: var(--color-ink-faint);
+}
+.sys-tabs {
+  margin: 8px 0 0 !important;
   font-size: 12px;
   color: var(--color-ink-faint);
 }
