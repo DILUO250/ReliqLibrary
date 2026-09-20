@@ -1,0 +1,288 @@
+/* 超自然空间报告单 · 纸面皮肤（全局，spc- 前缀隔离）。
+   依据：草稿/2.5-超自然空间报告单/01-空间报告单-格式规范.md
+   （源头 = 参考文档\藏书阁素材\遗迹图书馆官方示例\@ 空间报告单 - 模板.docx）。
+   版式与异常实体报告单（entities/paper.css）同源同参数，差异只在背景纸：
+   空间报告单用项目自备的 bg2.png（白色档案纸），不取 docx 内嵌的羊皮纸背景。
+   分页机制（多页竖排/离屏度量/打印断页/shell 清零）在 shared/paper（通用骨架），
+   本文件只承载空间报告单的视觉皮肤与版式变量：
+   几何契约（SpacePaper.vue 的 geometry 须与之同步）：21cm 宽 × 29.7cm 高、
+   padding 2.54cm 上下、file-box 垂直开销 22pt、打印页高 29.65cm（防亚像素溢出空白页）。 */
+.spc-report {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-top: 22px;
+}
+
+.spc-report__toolbar {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.spc-report__toolbar-side {
+  display: flex;
+  gap: 10px;
+}
+
+.spc-report__back,
+.spc-report__print,
+.spc-report__edit {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: var(--radius);
+  color: var(--color-ink);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  padding: 8px 16px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.spc-report__back:hover,
+.spc-report__print:hover,
+.spc-report__edit:hover {
+  background: var(--accent);
+  color: #1b1408;
+}
+
+.spc-report__hint {
+  color: var(--color-ink-faint);
+  font-size: 13px;
+}
+
+/* ---------- 纸面（固定 A4，背景不再随内容拉伸） ----------
+   机制类（.paper-doc/.paper-measure/.paper-loose）来自 shared/paper/paper-base.css。 */
+
+.spc-paper {
+  --paper-min-h: 29.7cm; /* loose 兜底页的 min-height（paper-base.css 消费） */
+  --r-fs: 11pt;
+  --r-lh: 1.9;
+  --title-mb: 18pt;
+  --title-pb: 5pt;
+  --meta-mb: 16pt;
+  --meta-p-my: 0 0 2pt;
+  --meta-p-lh: 1.9;
+  --h-fs: 13pt;
+  --h-mt: 0.6cm;
+  --h-mb: 0.2cm;
+  --li-my: 0.18cm;
+  --entry-mt: 0.4cm;
+  --entry-mb: 0.15cm;
+  --box-my: 0.2cm;
+  --box-py: 10pt;
+  --box-px: 14pt;
+  --fig-my: 0.35cm;
+  --fig-maxh: 11cm;
+  --cap-fs: 10.5pt;
+  --cap-mt: 4pt;
+  --warn-fs: 11pt;
+  --warn-my: 0.5cm;
+
+  background: #fff url('/art/armarium/report/bg2.png') center / 100% 100% no-repeat;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  color: #000;
+  flex: none;
+  font-family:
+    'Gill Sans MT',
+    'Gill Sans',
+    'Trebuchet MS',
+    Verdana,
+    '华文细黑',
+    'STXihei',
+    'Microsoft YaHei',
+    'PingFang SC',
+    sans-serif;
+  font-size: var(--r-fs);
+  height: 29.7cm;
+  line-height: var(--r-lh);
+  overflow: hidden;
+  padding: 2.54cm 3.17cm;
+  width: 21cm;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.spc-paper .r-title {
+  border-bottom: 1pt solid #f6a21d;
+  font-family: Verdana, SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  font-size: 20pt;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: 0 0 var(--title-mb);
+  padding-bottom: var(--title-pb);
+  text-align: left;
+}
+
+.spc-paper .r-meta {
+  margin: 0 0 var(--meta-mb);
+}
+
+.spc-paper .r-meta p {
+  font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  line-height: var(--meta-p-lh);
+  margin: var(--meta-p-my);
+}
+
+.spc-paper .r-meta strong {
+  font-weight: 700;
+}
+
+.spc-paper h3.r-h {
+  border-bottom: 1px solid #d8d2c4;
+  border-left: 3pt solid #f6a21d;
+  font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  font-size: var(--h-fs);
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: var(--h-mt) 0 var(--h-mb);
+  padding: 0 0 3pt 8pt;
+}
+
+.spc-paper .r-anno {
+  color: #6b655a;
+  font-family: 'Gill Sans MT', 'Gill Sans', 'Trebuchet MS', Verdana, sans-serif;
+  font-size: 8.5pt;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  margin-left: 5pt;
+  vertical-align: 1pt;
+}
+
+.spc-paper .r-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+
+.spc-paper .r-list > li {
+  margin: var(--li-my) 0;
+  padding-left: 14pt;
+  position: relative;
+}
+
+.spc-paper .r-list > li::before {
+  content: '*';
+  left: 2pt;
+  position: absolute;
+  top: 0;
+}
+
+.spc-paper .r-entry {
+  border-left: 2pt solid rgba(246, 162, 29, 0.55);
+  font-family: SimSun, 'Songti SC', 'Noto Serif SC', serif;
+  margin: var(--entry-mt) 0 var(--entry-mb);
+  padding-left: 6pt;
+}
+
+.spc-paper .r-entry strong {
+  font-weight: 800;
+}
+
+.spc-paper .r-entry .app-source {
+  color: #1c1a17;
+}
+
+.spc-paper .na {
+  color: #333;
+  font-style: normal;
+  letter-spacing: 0.05em;
+}
+
+.spc-paper .file-box {
+  background: rgba(255, 255, 255, 0.4);
+  border: 1pt solid #000;
+  margin: var(--box-my) 0;
+  padding: var(--box-py) var(--box-px);
+}
+
+.spc-paper .r-fig {
+  margin: var(--fig-my) auto;
+  text-align: center;
+}
+
+.spc-paper .r-fig img {
+  background: #fff;
+  border: none;
+  max-height: var(--fig-maxh);
+  max-width: 70%;
+  object-fit: contain;
+}
+
+.spc-paper .r-fig figcaption {
+  font-family: SimSun, '华文细黑', 'STXihei', serif;
+  font-size: var(--cap-fs);
+  margin-top: var(--cap-mt);
+}
+
+.spc-paper .r-warn {
+  font-family: SimSun, 'Songti SC', serif;
+  font-size: var(--warn-fs);
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: var(--warn-my) 0;
+  text-align: center;
+}
+
+.spc-paper .r-restricted {
+  background: rgba(192, 74, 50, 0.03);
+  position: relative;
+}
+
+.spc-paper .r-seal {
+  border: 1px solid rgba(192, 74, 50, 0.5);
+  color: rgba(192, 74, 50, 0.68);
+  font-family: SimSun, serif;
+  font-size: 8pt;
+  letter-spacing: 0.15em;
+  padding: 2pt 8pt;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 2pt;
+  transform: rotate(-4deg);
+}
+
+/* 印章由 composeSpacePageHtml 延迟盖印：区间覆盖制下受限区深度恒 ≤1，
+   每页每区至多一枚印章（top 固定 2pt），空区不出印章，永不重叠。 */
+
+@media print {
+  /* @page 无法被 :has 守卫（会泄漏到全站打印），由空间页挂载时动态注入/卸载时移除。
+     通用机制已升舱 shared/paper/paper-base.css，此处只保留空间报告单专属的部分。 */
+
+  body:has(.spc-paper) .spc-report__toolbar,
+  body:has(.spc-paper) .spc-edit .topbar,
+  body:has(.spc-paper) .spc-edit .editor-pane {
+    display: none !important;
+  }
+
+  body:has(.spc-paper) .spc-edit .workbench {
+    display: block;
+    padding: 0;
+  }
+
+  body:has(.spc-paper) .spc-edit .preview-pane {
+    display: block;
+    overflow: visible;
+    padding: 0;
+  }
+
+  body:has(.spc-paper) .spc-edit {
+    min-height: 0;
+  }
+
+  body:has(.spc-paper) .spc-report {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .spc-paper {
+    /* 页高微缩 0.05cm：防整页 + margin:0 的亚像素溢出挤出空白页；
+       底部约 0.5mm 露白在纸面上不可见（打印页高是几何契约的一部分） */
+    height: 29.65cm;
+  }
+}

@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SectionPlaceholder from '@/shared/components/SectionPlaceholder.vue'
 import EntitiesView from '@/features/armarium/views/EntitiesView.vue'
+import SpacesView from '@/features/armarium/views/SpacesView.vue'
 import OverviewTwins from '@/features/armarium/overview/OverviewTwins.vue'
 import OverviewProjects from '@/features/armarium/overview/OverviewProjects.vue'
 import { useAnomaliesStore } from '@/features/armarium/store/anomalies'
@@ -91,14 +92,8 @@ function openProject(project: ArmariumProject): void {
     <!-- Tab2 异常实体库（anomalies 表 + report JSON 报告单） -->
     <EntitiesView v-else-if="active === 'entities'" />
 
-    <!-- Tab3 超自然空间库（supernatural_spaces 表已就绪，UI 待建） -->
-    <SectionPlaceholder
-      v-else-if="active === 'spaces'"
-      title="超自然空间"
-      latin="Spatium Supernaturale"
-      desc="遗迹图书馆研究的异常对象之一。主要产物：知识，丰富资源，异常实体。"
-      note="超自然空间档案数据待录入"
-    />
+    <!-- Tab3 超自然空间库（supernatural_spaces 表 + report JSON 空间报告单） -->
+    <SpacesView v-else-if="active === 'spaces'" />
 
     <!-- Tab5 书库管理员（librarians 表 department='armarium' 子集，UI 待建） -->
     <SectionPlaceholder

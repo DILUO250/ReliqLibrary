@@ -962,6 +962,180 @@ export interface SupernaturalSpace {
   resources: string
   anchorStatus: string
   note: string
+  /** 空间报告单（SpaceReport 的 JSON 字符串；空串 = 未编辑过）。 */
+  report: string
+}
+
+/* ---------- 超自然空间报告单（SCL 空间报告单） ----------
+ * 格式权威依据：草稿/2.5-超自然空间报告单/01-空间报告单-格式规范.md
+ * （源头 = 参考文档\藏书阁素材\遗迹图书馆官方示例\@ 空间报告单 - 模板.docx + 3 份示例）。
+ * 与异常实体报告单同族：SCL 前缀、警告线区间覆盖制、附录/文件/图片/附件动态列表；
+ * 差异：无「产出」区块，新增「入口与出口」（两个独立字段）、「超自然现象分布」
+ * 与「异常实体分布」（结构化条目 {名称, 描述}）、「特殊控制措施」。 */
+
+export type SpaceWarningBlockKey =
+  | 'head'
+  | 'desc'
+  | 'entry-exit'
+  | 'phenomena'
+  | 'entity-dist'
+  | 'contain'
+  | 'figure-main'
+export type SpaceWarningAnchor =
+  | `block:${SpaceWarningBlockKey}`
+  | `entry:appendix:${number}`
+  | `entry:files:${number}`
+  | `entry:figure:${number}`
+  | `entry:attachment:${number}`
+
+/** 权限警告线（语义与 AnomalyWarning 相同：区间覆盖制）。 */
+export interface SpaceWarning {
+  sl: number
+  anchor: SpaceWarningAnchor
+}
+
+/** 「超自然现象分布 / 异常实体分布」的结构化条目（渲染为 `1. 名称：描述`）。 */
+export interface SpaceNamedItem {
+  name: string
+  desc: string
+}
+
+export interface SpaceReport {
+  warnings: SpaceWarning[]
+  description: string[]
+  /** 入口：该空间的进入方式（多段，渲染为 `* 入口：…`）。 */
+  entry: string[]
+  /** 出口：该空间的离开方式（多段，渲染为 `* 出口：…`）。 */
+  exit: string[]
+  /** 超自然现象分布（空列表渲染 N/A）。 */
+  phenomena: SpaceNamedItem[]
+  /** 异常实体分布（空列表渲染 N/A）。 */
+  entityDistribution: SpaceNamedItem[]
+  /** 特殊控制措施。 */
+  containment: string[]
+  appendices: AnomalyAppendix[]
+  files: AnomalyFile[]
+  figures: AnomalyFigure[]
+  attachments: AnomalyAttachment[]
+}
+
+export const SPACE_WARNING_MAX = 6
+
+const SPACE_BLOCK_ANCHORS: ReadonlySet<string> = new Set<string>([
+  'head', 'desc', 'entry-exit', 'phenomena', 'entity-dist', 'contain', 'figure-main',
+])
+const SPACE_ENTRY_BLOCK_RE = /^entry:(appendix|files|figure|attachment):([1-9]\d*)$/
+
+function normalizeSpaceWarning(w: unknown): SpaceWarning {
+  const w0 = (w ?? {}) as Partial<SpaceWarning>
+  const sl = Math.max(1, Math.min(99, Math.trunc(Number(w0.sl)) || 1))
+  const anchor =
+    typeof w0.anchor === 'string' &&
+    ((w0.anchor.startsWith('block:') && SPACE_BLOCK_ANCHORS.has(w0.anchor.slice(6))) ||
+      SPACE_ENTRY_BLOCK_RE.test(w0.anchor))
+      ? w0.anchor
+      : 'block:figure-main' // 脏数据兜底（模板警告行默认位置）
+  return { sl, anchor: anchor as SpaceWarningAnchor }
+}
+
+export function emptySpaceReport(): SpaceReport {
+  return {
+    warnings: [],
+    description: [],
+    entry: [],
+    exit: [],
+    phenomena: [],
+    entityDistribution: [],
+    containment: [],
+    appendices: [],
+    files: [],
+    figures: [],
+    attachments: [],
+  }
+}
+
+/** 容错解析 supernatural_spaces.report JSON；空/坏数据返回空报告（永不抛错）。 */
+export function parseSpaceReport(raw?: string | null): SpaceReport {
+  if (!raw) return emptySpaceReport()
+  try {
+    const s = JSON.parse(raw) as Partial<SpaceReport>
+    const strArr = (v: unknown): string[] =>
+      (Array.isArray(v) ? v : []).filter((x): x is string => typeof x === 'string')
+    const namedArr = (v: unknown): SpaceNamedItem[] =>
+      (Array.isArray(v) ? v : [])
+        .filter((x): x is SpaceNamedItem => !!x && typeof x === 'object')
+        .map((x) => ({ name: x?.name ?? '', desc: x?.desc ?? '' }))
+    return {
+      warnings: (Array.isArray(s.warnings) ? s.warnings : [])
+        .slice(0, SPACE_WARNING_MAX)
+        .map(normalizeSpaceWarning),
+      description: strArr(s.description),
+      entry: strArr(s.entry),
+      exit: strArr(s.exit),
+      phenomena: namedArr(s.phenomena),
+      entityDistribution: namedArr(s.entityDistribution),
+      containment: strArr(s.containment),
+      appendices: (Array.isArray(s.appendices) ? s.appendices : []).map((a): AnomalyAppendix => ({
+        source: a?.source ?? '',
+        body: strArr(a?.body),
+      })),
+      files: (Array.isArray(s.files) ? s.files : []).map((f): AnomalyFile => ({
+        source: f?.source ?? '',
+        body: strArr(f?.body),
+        quoted: !!f?.quoted,
+      })),
+      figures: (Array.isArray(s.figures) ? s.figures : [])
+        .filter((f): f is AnomalyFigure => !!f && typeof f?.url === 'string')
+        .map((f) => ({ caption: f.caption ?? '', url: f.url })),
+      attachments: (Array.isArray(s.attachments) ? s.attachments : []).map((a): AnomalyAttachment => ({
+        body: strArr(a?.body),
+      })),
+    }
+  } catch {
+    return emptySpaceReport()
+  }
+}
+
+/**
+ * 空间报告单警告线可用插入点（与渲染器 landmark 同一文档序，单一权威 = 本函数）：
+ * head → 描述 → 入口与出口 → 现象分布 → 实体分布 → 控制措施 → 附录 → 文件 →
+ * 影像资料区（图片1）→ 图片2.. → 附件。
+ */
+export function spaceWarningAnchors(
+  report: SpaceReport,
+): Array<{ value: SpaceWarningAnchor; label: string }> {
+  const list: Array<{ value: SpaceWarningAnchor; label: string }> = [
+    { value: 'block:head', label: '报告最前（标题之前）' },
+    { value: 'block:desc', label: '描述区之前' },
+    { value: 'block:entry-exit', label: '入口与出口之前' },
+    { value: 'block:phenomena', label: '超自然现象分布之前' },
+    { value: 'block:entity-dist', label: '异常实体分布之前' },
+    { value: 'block:contain', label: '特殊控制措施之前' },
+  ]
+  report.appendices.forEach((_, i) => list.push({ value: `entry:appendix:${i + 1}`, label: `附录#${i + 1} 之前` }))
+  report.files.forEach((_, i) => list.push({ value: `entry:files:${i + 1}`, label: `文件#${anomalyFileIndexLabel(i)} 之前` }))
+  list.push({ value: 'block:figure-main', label: '实体影像资料区之前' })
+  report.figures.forEach((_, i) => {
+    if (i > 0) list.push({ value: `entry:figure:${i + 1}`, label: `图片${i + 1} 之前` })
+  })
+  report.attachments.forEach((_, i) => list.push({ value: `entry:attachment:${i + 1}`, label: `附件#${i + 1} 之前` }))
+  return list
+}
+
+/** 主等级 + 子等级拼装显示（"keter" + "keter-tg" → "Keter-TG"；"safe-soma" → "Safe-Soma"）。 */
+export function spaceLevelText(level: string, subLevel: string): string {
+  const main = level ? level.charAt(0).toUpperCase() + level.slice(1) : 'Safe'
+  const sub = subLevel.split('-').slice(1).join('-')
+  if (!sub) return main
+  // 两位字母缩写全大写（TG）；其余首字母大写（Soma / Logos / Naama / Exe…）
+  if (sub.length <= 2) return `${main}-${sub.toUpperCase()}`
+  return `${main}-${sub.charAt(0).toUpperCase() + sub.slice(1)}`
+}
+
+/** 导出 PDF 文件名：SCL-XXXX_名称_超自然空间报告（清洗 Windows 非法文件名字符）。 */
+export function spaceExportFilename(a: Pick<SupernaturalSpace, 'code' | 'name'>): string {
+  const safeName = (a.name || '未命名').replace(/[\\/:*?"<>|]/g, '')
+  return `${anomalyFullCode(a)}_${safeName}_超自然空间报告`
 }
 
 export interface Repository {

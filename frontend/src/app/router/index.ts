@@ -32,6 +32,27 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/features/armarium/entities/EntityPrintView.vue'),
     meta: { chromeless: true },
   },
+  // 超自然空间报告单整页（预览/编辑/打印）：与异常实体报告单同一套布局约定。
+  {
+    path: '/armarium/spaces/:id',
+    name: 'armarium-space-report',
+    component: () => import('@/features/armarium/spaces/SpaceReportView.vue'),
+  },
+  {
+    path: '/armarium/spaces/:id/edit',
+    name: 'armarium-space-edit',
+    component: () => import('@/features/armarium/spaces/SpaceEditView.vue'),
+    // window.open 独立窗口：隐藏全站顶栏并解除 site-main 容器约束（App.vue 消费）
+    meta: { chromeless: true },
+  },
+  {
+    // 服务端 PDF 导出的无 UI 打印路由（后端无头浏览器加载）：
+    // 分页完成信号 window.__PAPER_READY 由 SpacePrintView 发出。
+    path: '/print/armarium/space/:id',
+    name: 'print-armarium-space',
+    component: () => import('@/features/armarium/spaces/SpacePrintView.vue'),
+    meta: { chromeless: true },
+  },
   {
     path: '/armarium',
     component: () => import('@/shared/components/ModuleLayout.vue'),

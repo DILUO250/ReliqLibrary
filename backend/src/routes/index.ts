@@ -7,6 +7,8 @@ import { trashArt } from './artTrash.js'
 import { registerPvzArtRoutes } from '../features/armarium/artRoutes.js'
 import { registerAnomalyArtRoutes } from '../features/armarium/anomalyArtRoutes.js'
 import { registerAnomalyExportRoutes } from '../features/armarium/exportRoutes.js'
+import { registerSpaceArtRoutes } from '../features/armarium/spaceArtRoutes.js'
+import { registerSpaceExportRoutes } from '../features/armarium/spaceExportRoutes.js'
 import { registerArmariumOverviewRoutes } from '../features/armarium/overviewRoutes.js'
 import { registerTurrisArtRoutes } from '../features/turris/artRoutes.js'
 
@@ -50,8 +52,9 @@ export const IMAGE_COLUMNS: Record<string, string[]> = {
   // PUT（trashReplacedImages 同期）/ DELETE 钩子里集中回收，豁免登记。
 }
 // anomalies.report JSON 内的 /art/ 图片 URL 收集（删行防孤儿）。
-function collectReportArt(id: number | string): string[] {
-  const row = getDb().prepare('SELECT report FROM anomalies WHERE id = ?').get(id) as
+// supernatural_spaces 同理（空间报告单 figures 同构）——collectReportJsonArt 按表收集。
+function collectReportJsonArt(table: 'anomalies' | 'supernatural_spaces', id: number | string): string[] {
+  const row = getDb().prepare(`SELECT report FROM ${table} WHERE id = ?`).get(id) as
     | { report?: string }
     | undefined
   if (!row?.report) return []
@@ -182,6 +185,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await registerPvzArtRoutes(app)
   await registerAnomalyArtRoutes(app)
   await registerAnomalyExportRoutes(app)
+  await registerSpaceArtRoutes(app)
+  await registerSpaceExportRoutes(app)
   await registerArmariumOverviewRoutes(app)
 
   for (const table of TABLES) {
@@ -243,7 +248,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // 先确认行存在再置空子表——旧实现对不存在的 id 也会先改子表，产生无源 nullify
       const exists = db.prepare(`SELECT id FROM ${table} WHERE id = ?`).get(id)
       if (!exists) return reply.code(404).send({ error: 'not found' })
-      const reportArt = table === 'anomalies' ? collectReportArt(id) : []
+      const reportArt =
+        table === 'anomalies' || table === 'supernatural_spaces' ? collectReportJsonArt(table, id) : []
       const cascadeArt: string[] = []
       try {
         const tx = db.transaction(() => {

@@ -12,7 +12,7 @@
 
 | 模块 | 主题色 | 现状                                                                                                                                     |
 |---|---|----------------------------------------------------------------------------------------------------------------------------------------|
-| 藏书阁 Armarium | 蓝 `#4a7fc4` | **五 Tab 结构**（总览/异常实体库/超自然空间库/研究项目/书库管理员）；**研究项目 Tab 已落库**（`armarium_projects` 表，PVZ 百科为首个项目，完整可用：181 株植物、编辑器、卡图生成器、云端同步）；**异常实体库完整可用**（`anomalies` 表 + `report` JSON 列：SCL 报告单编辑器、纸面预览/打印导出、实体卡片列表、报告插图上传）；其余 Tab 占位待建 UI |
+| 藏书阁 Armarium | 蓝 `#4a7fc4` | **五 Tab 结构**（总览/异常实体库/超自然空间库/研究项目/书库管理员）；**研究项目 Tab 已落库**（`armarium_projects` 表，PVZ 百科为首个项目，完整可用：181 株植物、编辑器、卡图生成器、云端同步）；**异常实体库完整可用**（`anomalies` 表 + `report` JSON 列：SCL 报告单编辑器、纸面预览/打印导出、实体卡片列表、报告插图上传）；**超自然空间库完整可用**（`supernatural_spaces` 表 + `report` JSON 列：SCL 空间报告单编辑器/预览/导出、卡片列表、插图上传，bg2 档案纸皮肤，官方 3 示例已入库）；总览页双子铭章（方案 D，真实计数）；其余 Tab 占位待建 UI |
 | 迎书楼 Turris | 红 `#c04a32` | **楼层/司书编辑器 + 术语词典 + 战斗系统页完整可用**（战斗系统 v2）；其余页面占位                                                                                        |
 | 寻书社 Collegium | 绿 `#55a05f` | 占位（数据表与 generic CRUD 已就绪，按需填充）                                                                                                         |
 | 馆长层 Director | 金 `#e0b564` | 暂无功能设计，空置                                                                                                                              |
@@ -50,7 +50,7 @@ npm run preview   # 打包前端并起静态服务：http://<本机IP>:4291
 - 注意：改了前端代码后需要重跑 `npm run preview` 才能在 4291 看到新界面；你自己开发用的 4290 不受影响；
 - 若只开 4291 不开 dev，PDF 导出功能需要把环境变量 `FRONTEND_URL` 指到 `http://127.0.0.1:4291`。
 
-**列表图片走小图**：异常实体卡片等列表场景的缩略图经后端 `GET /api/armarium/anomaly-thumb?url=<图片地址>&w=<宽度>` 按需生成（WebP，磁盘缓存在 `backend/data/thumb-cache/`，键含源图 mtime——替换原图后小图自动失效重生成，整目录可随时删掉重建）。
+**列表图片走小图**：异常实体/超自然空间卡片等列表场景的缩略图经后端 `GET /api/armarium/anomaly-thumb?url=<图片地址>&w=<宽度>` 按需生成（路径守卫为 `/art/armarium/` 全模块级，两库共用；WebP，磁盘缓存在 `backend/data/thumb-cache/`，键含源图 mtime——替换原图后小图自动失效重生成，整目录可随时删掉重建）。
 
 ### 2.4 提交代码前必须跑的检查
 
@@ -235,9 +235,11 @@ frontend\src\features\armarium\
 │  ├─ ArmariumView.vue    # ★ 五 Tab 容器：按路由渲染 总览/异常实体库/超自然空间库/研究项目/书库管理员
 │  │                      #   （Tab 导航由 ModuleLayout 统一渲染，页面里禁止再画一层 Tab）
 │  ├─ EntitiesView.vue    # 异常实体库列表页：实体卡片（代号/等级/缩略图/预览/编辑），按 SCL 编号升序
+│  ├─ SpacesView.vue      # 超自然空间库列表页：空间卡片（同 EntitiesView 版式），按 SCL 编号升序
 │  └─ ProjectView.vue     # /armarium/project/:projectId 的站内 SPA 项目页（未来小库用）
 ├─ store\
-│  └─ anomalies.ts        # Pinia：anomalies 列表缓存（load/reload 幂等）
+│  ├─ anomalies.ts        # Pinia：anomalies 列表缓存（load/reload 幂等）
+│  └─ spaces.ts           # Pinia：supernatural_spaces 列表缓存（load/reload 幂等）
 ├─ entities\              # ★ SCL 异常实体报告单（格式权威依据：草稿\1.2 的格式规范文档）
 │  ├─ EntityReportView.vue   # 报告单预览页（纸面 + 返回按钮 + 服务端导出 PDF / 浏览器打印）
 │  ├─ EntityEditView.vue     # 报告单编辑器（左编辑/右实时预览双栏，保存时才上传图片）
@@ -245,7 +247,14 @@ frontend\src\features\armarium\
 │  │                         #   服务端导出时后端无头浏览器加载本页渲染并 printToPDF
 │  ├─ ReportPaper.vue        # 薄适配壳：SCL 行构造/页内重组 → shared/paper 分页组件
 │  ├─ reportRender.ts        # 纯函数：Anomaly + report JSON → 原子行序列 + 页 HTML（SCL 内容格式）
-│  └─ paper.css              # SCL 纸面皮肤（§9 屏幕增强版式一套，屏幕/打印/导出三处一致，编辑页/预览页共用）
+│  └─ paper.css              # SCL 纸面皮肤（bg 羊皮纸，§9 屏幕增强版式一套，屏幕/打印/导出三处一致，编辑页/预览页共用）
+├─ spaces\                 # ★ SCL 超自然空间报告单（格式权威依据：草稿\2.5 的格式规范文档）
+│  ├─ SpaceReportView.vue   # 报告单预览页（与实体报告单同套交互：返回/导出 PDF/浏览器打印/编辑）
+│  ├─ SpaceEditView.vue     # 报告单编辑器（双栏 + 延迟上传，区块含入口与出口/现象分布/实体分布）
+│  ├─ SpacePrintView.vue    # 无 UI 打印路由宿主（/print/armarium/space/:id）
+│  ├─ SpacePaper.vue        # 薄适配壳：空间行构造 → shared/paper 分页组件
+│  ├─ reportRender.ts       # 纯函数：SupernaturalSpace + report JSON → 原子行序列 + 页 HTML
+│  └─ paper.css             # 空间纸面皮肤（bg2 档案纸，spc- 前缀；版式变量与 SCL 同源）
 └─ projects\pvzwiki\      # PVZ 百科（独立子项目，独立标签页打开）
    ├─ PvzProjectView.vue     #   壳 + 侧边导航
    ├─ views\                 #   植物图鉴页 / 植物详情页
@@ -257,7 +266,7 @@ frontend\src\features\armarium\
 
 研究项目由数据库 `armarium_projects` 表驱动（每行一个项目卡片；`openMode:'tab'` 新窗口打开、`'spa'` 站内跳转）。**加新图鉴类小项目 = 库里加一行 + 一条路由，禁止把项目卡片硬编码进组件。** PVZ 的图片资产住在规范家 `public\art\armarium\projects\pvz\`（plants/card·full·icon、backgrounds、fonts、封面图；2026-09 已从旧 features 独享目录迁入，DB 里存的是最终显示路径）。
 
-**报告单服务端 PDF 导出（2026-09-17 落地，双段式）**：预览页"导出 PDF"按钮 → `POST /api/armarium/export/anomaly/:id`（同步阻塞，后端用 puppeteer-core 驱动本机 Chrome 加载 `/print/armarium/anomaly/:id` 无 UI 路由渲染分页并 `printToPDF`，暂存 `backend/data/export-cache/`，TTL 15 分钟自动清理）→ 返回 `{id, filename}` → 前端让预开的空白页跳向 `GET /api/armarium/export/anomaly/file/<UUID>` 触发浏览器原生下载。纸面渲染器（前端）是唯一权威渲染源，后端零重复实现；其他模块将来做导出必须复用 `backend/src/features/pdf/`（见 CONVENTIONS §2.5）。依赖：前端 dev server 必须在线（`FRONTEND_URL` 环境变量可改指向）；"浏览器打印"按钮保留 `window.print()` 作为兜底。
+**报告单服务端 PDF 导出（2026-09-17 落地，双段式）**：预览页"导出 PDF"按钮 → `POST /api/armarium/export/anomaly/:id`（同步阻塞，后端用 puppeteer-core 驱动本机 Chrome 加载 `/print/armarium/anomaly/:id` 无 UI 路由渲染分页并 `printToPDF`，暂存 `backend/data/export-cache/`，TTL 15 分钟自动清理）→ 返回 `{id, filename}` → 前端让预开的空白页跳向 `GET /api/armarium/export/anomaly/file/<UUID>` 触发浏览器原生下载。**超自然空间报告单（2026-09-20）同一套双段式**：`/api/armarium/export/space/:id` + `/print/armarium/space/:id`（复用 `features/pdf/pdfPrinter.ts`，后端零重复实现）。纸面渲染器（前端）是唯一权威渲染源；其他模块将来做导出必须复用 `backend/src/features/pdf/`（见 CONVENTIONS §2.5）。依赖：前端 dev server 必须在线（`FRONTEND_URL` 环境变量可改指向）；"浏览器打印"按钮保留 `window.print()` 作为兜底。
 
 ---
 

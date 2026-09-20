@@ -110,7 +110,8 @@ CREATE TABLE IF NOT EXISTS supernatural_spaces (
   rules TEXT DEFAULT '',
   resources TEXT DEFAULT '',
   anchorStatus TEXT DEFAULT '',
-  note TEXT DEFAULT ''
+  note TEXT DEFAULT '',
+  report TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS repositories (
@@ -332,6 +333,7 @@ export function migrate(db: Database.Database): void {
   ensureColumn(db, 'librarians', 'rarity', "TEXT DEFAULT ''")
   ensureColumn(db, 'term_entries', 'hasParam', 'INTEGER DEFAULT 0')
   ensureColumn(db, 'anomalies', 'report', "TEXT DEFAULT ''")
+  ensureColumn(db, 'supernatural_spaces', 'report', "TEXT DEFAULT ''")
   // 2026-09 C组幽灵列清退（趁数据未进入这些列时删除，代价最低）：
   // - floors.receptionType：导数据遗留，界面无消费，设定已放弃
   // - pvz_plants.family：与 familyCode/familyName/familyIcon 双写同一信息

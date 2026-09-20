@@ -67,6 +67,21 @@ export const api = {
     request<{ ok: boolean }>(`/armarium/anomaly-image?url=${encodeURIComponent(url)}`, {
       method: 'DELETE',
     }),
+  uploadSpaceImage: async (file: File, code: string): Promise<{ url: string }> => {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch(`${BASE}/armarium/space-image?code=${encodeURIComponent(code)}`, {
+      method: 'POST',
+      headers: { 'x-rtl-key': WRITE_TOKEN },
+      body: fd,
+    })
+    if (!res.ok) throw new Error(`API ${res.status}: ${res.statusText}`)
+    return (await res.json()) as { url: string }
+  },
+  removeSpaceImage: (url: string) =>
+    request<{ ok: boolean }>(`/armarium/space-image?url=${encodeURIComponent(url)}`, {
+      method: 'DELETE',
+    }),
   // 服务端 PDF 导出（双段式①）：同步阻塞至 PDF 就绪，返回暂存 id + 下载地址（双段式②）
   exportAnomalyReport: async (id: number | string): Promise<{ id: string; filename: string; fileUrl: string }> => {
     const res = await request<{ id: string; filename: string }>(
@@ -74,5 +89,13 @@ export const api = {
       { method: 'POST' },
     )
     return { ...res, fileUrl: `${BASE}/armarium/export/anomaly/file/${res.id}` }
+  },
+  // 超自然空间报告单导出（与 anomaly 双段式同构）
+  exportSpaceReport: async (id: number | string): Promise<{ id: string; filename: string; fileUrl: string }> => {
+    const res = await request<{ id: string; filename: string }>(
+      `/armarium/export/space/${id}`,
+      { method: 'POST' },
+    )
+    return { ...res, fileUrl: `${BASE}/armarium/export/space/file/${res.id}` }
   },
 }
