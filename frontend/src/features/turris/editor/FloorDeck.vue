@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import type { Floor, Librarian, LibrarianSheet, BattleSystemId, BattleCard, FloorTabInfo } from '@rtl/shared'
 import { BATTLE_SYSTEMS, parseSheet, parseEmotionSheet, toRoman } from '@rtl/shared'
 import type { EmotionEntity, EmotionSheet, Mechanism } from '@rtl/shared'
@@ -236,6 +237,10 @@ async function load(): Promise<void> {
     floors.value = fl
     librarians.value = lib
     emotions.value = ent
+    // 楼层 Tab 预展开：总览页塔楼横带 ?floor=<id> 跳转直达
+    if (!Number.isNaN(presetFloorId) && fl.some((f) => f.id === presetFloorId)) {
+      expandedId.value = presetFloorId
+    }
     // 清理已删除行的缓存项
     pruneMemos(libSheetMemo, new Set(lib.map((l) => l.id)))
     const entIds = new Set(ent.map((x) => x.id))
@@ -439,13 +444,18 @@ const nextRoman = computed(() => {
 })
 
 onMounted(load)
+
+// 总览页塔楼横带点击带过来的 ?floor=<id>：加载完成后预展开对应楼层。
+// 参数非法或指向不存在的楼层时静默忽略（保持全部收起）。
+const route = useRoute()
+const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
 </script>
 
 <template>
   <div>
     <header class="page-header">
-      <div class="page-header__eyebrow latin">Contignationes &amp; Curatores</div>
-      <h1 class="page-header__title">楼层 · 司书</h1>
+      <div class="page-header__eyebrow latin">Contignationes</div>
+      <h1 class="page-header__title">楼层</h1>
       <p class="page-header__desc">
         点击楼层卡片展开该楼层司书，拖动卡片角落的小三角可调整排序，编号会随展示顺序动态变化。
       </p>

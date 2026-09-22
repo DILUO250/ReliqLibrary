@@ -621,6 +621,8 @@ export interface Floor {
   description: string
   sortOrder: number
   artwork: string
+  /** 最近编辑时间（ISO 字符串，后端 PUT/POST/reorder 盖章）；'' = 从未编辑。 */
+  updatedAt: string
 }
 
 /** 情感实体：异常实体名称 + 书页/EGO（JSON）+ 实体编号，隶属楼层。 */

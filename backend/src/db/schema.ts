@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS floors (
   battleSystem TEXT DEFAULT 'base',
   description TEXT DEFAULT '',
   sortOrder INTEGER DEFAULT 0,
-  artwork TEXT DEFAULT ''
+  artwork TEXT DEFAULT '',
+  updatedAt TEXT DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS librarians (
@@ -326,6 +327,8 @@ function dropColumn(db: Database.Database, table: string, column: string): void 
 export function migrate(db: Database.Database): void {
   db.exec(DDL)
   ensureColumn(db, 'floors', 'artwork', "TEXT DEFAULT ''")
+  // 2026-09-22 迎书楼总览页：楼层"最近编辑"排序依据（PUT/POST/reorder 盖章，routes/index.ts）
+  ensureColumn(db, 'floors', 'updatedAt', "TEXT DEFAULT ''")
   ensureColumn(db, 'librarians', 'sheet', "TEXT DEFAULT ''")
   ensureColumn(db, 'librarians', 'portrait', "TEXT DEFAULT ''")
   ensureColumn(db, 'librarians', 'portraitPreview', "TEXT DEFAULT ''")

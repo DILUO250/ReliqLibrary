@@ -14,10 +14,10 @@ const meta = {
     desc: '研究司书 · 专注于对馆藏书籍进行深度解析与知识挖掘。',
     tabs: [
       { to: '/armarium', label: '总览' },
+      { to: '/armarium/librarians', label: '书库管理员' },
       { to: '/armarium/entities', label: '异常实体库' },
       { to: '/armarium/spaces', label: '超自然空间库' },
       { to: '/armarium/projects', label: '研究项目' },
-      { to: '/armarium/librarians', label: '书库管理员' },
     ],
   },
   turris: {
@@ -25,7 +25,8 @@ const meta = {
     latin: 'Turris Librorum Adventantium',
     desc: '战斗司书 · 驻守图书馆最前线，迎击挑战者与入侵者。',
     tabs: [
-      { to: '/turris/floors', label: '总览' },
+      { to: '/turris', label: '总览' },
+      { to: '/turris/floors', label: '楼层' },
       { to: '/turris/dictionary', label: '术语字典' },
       { to: '/turris/systems', label: '战斗系统' },
       { to: '/turris/invitations', label: '邀请函与来宾' },

@@ -91,9 +91,11 @@ const routes: RouteRecordRaw[] = [
     meta: { module: 'turris' },
     children: [
       {
+        // 总览（方案 B 塔楼剖面，2026-09-22）：/turris 根路径即主页，
+        // 原先"重定向到 /turris/floors"的旧形态已退役，楼层页独占「楼层」Tab。
         path: '',
         name: 'turris',
-        redirect: '/turris/floors',
+        component: () => import('@/features/turris/views/TurrisOverviewView.vue'),
       },
       {
         path: 'floors',

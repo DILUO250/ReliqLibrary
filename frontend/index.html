@@ -5,6 +5,15 @@
     <link rel="icon" href="data:," />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>遗迹图书馆 · Reliquiarum to Library</title>
+    <!-- 全站字体（2026-09-22 起随迎书楼总览页引入，与设计草稿一致）：
+         Cinzel 展示衬线 / EB Garamond 拉丁正文 / Noto Serif SC 宋体衬线 /
+         LXGW WenKai 楷体 / Noto Sans SC 无衬线。离线时按 tokens 字体链回退。 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:ital@0;1&family=Noto+Serif+SC:wght@400;600&family=LXGW+WenKai&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
     <script>
       // 防闪烁：首帧前从 localStorage 恢复主题（与 src/app/theme.ts 的 key/合法值保持一致）。
       // 设置页选择即刷新，故首帧即为目标主题；非法值静默忽略 = 回落默认基线。

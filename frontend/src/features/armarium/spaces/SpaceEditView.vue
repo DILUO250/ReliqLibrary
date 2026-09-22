@@ -111,11 +111,15 @@ function applySpace(s: SupernaturalSpace): void {
   dirty.value = false
 }
 
-// 表单任何改动都标脏（首载/重置时由 applySpace 重置回 false）
+// 表单任何改动都标脏（首载/重置时由 applySpace 重置回 false）。
+// ⚠️ saving 期间必须豁免：save() 会回填响应式字段（figures[].url/_pending/_oldUrl），
+// 这些变更把本 watcher 排进微任务队列；watcher 的 flush 先于 router.replace 的
+// 路由守卫执行，若此时把 dirty 置回 true，路由守卫会弹"尚未保存"确认框拦下导航，
+// 用户重按保存 → 新建场景第二次 POST = 重复档案（青色膝盖 ×2 实锤事故）。
 watch(
   () => [form.code, form.name, form.level, form.subLevel, form.status, form.report],
   () => {
-    if (!loading.value) dirty.value = true
+    if (!loading.value && !saving.value) dirty.value = true
   },
   { deep: true },
 )
@@ -355,6 +359,11 @@ async function save(): Promise<void> {
     // 本窗口是独立编辑窗口：通知原列表页刷新（数据更新、浏览位置不动）
     window.opener?.postMessage('rtl:spaces-updated', window.location.origin)
     store.reload().catch(() => {})
+    // 先 flush 掉保存期间排队进微任务的 dirty watcher（此刻 saving 仍为 true，
+    // watcher 被豁免不会置脏）——否则该 watcher 会在路由守卫之后、saving=false
+    // 之前 flush，把 dirty 置回 true 触发"尚未保存"确认框拦下导航
+    //（青色膝盖 ×2 实锤事故的根因）。
+    await nextTick()
     // replace 而非 push：把本窗口历史里的"编辑页"条目替换成预览页，
     // 之后预览页的"返回"不会再 back 回编辑页
     void router.replace(`/armarium/spaces/${id}`)

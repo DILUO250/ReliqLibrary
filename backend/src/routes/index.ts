@@ -35,6 +35,18 @@ function insertColumns(body: Record<string, unknown>, cols: string[]): string[] 
 // 插入"无身份"幽灵行——按代号 DELETE/PUT 永远打不中。新建必须显式提供代号。
 const TEXT_PK_TABLES: ReadonlySet<string> = new Set(['pvz_keywords'])
 
+// "最近编辑"盖章表：这些表的 PUT/POST/reorder 成功后由后端盖 updatedAt 时间戳。
+// 时间戳权威源在后端——前端 body 即使带 updatedAt 也会被盖章覆盖。
+// 目前仅 floors（迎书楼总览页塔楼剖面的"最近编辑 5 层"排序依据）。
+const TOUCH_UPDATED_AT: ReadonlySet<string> = new Set(['floors'])
+
+// 盖章动作：注意列必须真实存在（schema.ts ensureColumn 已迁移），失败不静默——
+// 事务外单跑，失败会顺着错误路径走。
+function touchUpdatedAt(table: string, id: number | string, db: ReturnType<typeof getDb>): void {
+  if (!TOUCH_UPDATED_AT.has(table)) return
+  db.prepare(`UPDATE ${table} SET updatedAt = ? WHERE id = ?`).run(new Date().toISOString(), id)
+}
+
 // 各表可能存放 /art/ 图片 URL 的列。PUT 更新 / DELETE 整行时，
 // 旧文件将被移入 _trash（而不是永久删除），供人工复核后决定去留。
 // 新表若含图片列，必须在此登记 —— 替换即回收，禁止让旧图变成孤儿资源。
@@ -217,6 +229,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
         const info = getDb()
           .prepare(`INSERT INTO ${table} (${pick.join(', ')}) VALUES (${placeholders})`)
           .run(...pick.map((c) => body[c]))
+        touchUpdatedAt(table, info.lastInsertRowid as number, getDb())
         return reply.code(201).send({ id: info.lastInsertRowid })
       } catch (e) {
         return sqliteErrorReply(e, reply)
@@ -236,6 +249,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
           .run(...pick.map((c) => body[c]), id)
         if (info.changes === 0) return reply.code(404).send({ error: 'not found' })
         trashReplacedImages(table, id, body)
+        touchUpdatedAt(table, id, getDb())
         return { updated: info.changes }
       } catch (e) {
         return sqliteErrorReply(e, reply)
@@ -301,6 +315,9 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       if (!Array.isArray(body)) return reply.code(400).send({ error: 'expected an array' })
       const db = getDb()
       const stmt = db.prepare(`UPDATE ${table} SET sortOrder = ? WHERE id = ?`)
+      const touch = TOUCH_UPDATED_AT.has(table)
+        ? db.prepare(`UPDATE ${table} SET updatedAt = ? WHERE id = ?`)
+        : null
       const tx = db.transaction(() => {
         for (const item of body) {
           if (item == null || typeof item !== 'object') continue
@@ -308,6 +325,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
           const order = (item as Record<string, unknown>).sortOrder
           if (id == null || order == null) continue
           stmt.run(order, id)
+          // 拖拽排序也是编辑：同一事务内盖章（目前仅 floors）
+          touch?.run(new Date().toISOString(), id)
         }
       })
       tx()
