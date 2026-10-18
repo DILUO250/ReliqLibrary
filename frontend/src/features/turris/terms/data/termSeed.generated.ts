@@ -1823,8 +1823,8 @@ export const generatedVisibleSections = [
             ],
             "format": {
               "color": "#FF8000",
-              "bold": false,
-              "italic": false,
+              "bold": true,
+              "italic": true,
               "underline": "none"
             },
             "desc": "该回合使随机1个抗性为0.5~1.0的攻击类型受到的伤害+1"
@@ -4887,7 +4887,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "thick"
             },
-            "desc": "特殊屏障；持有时被攻击造成2-4点反伤"
+            "desc": "特殊“屏障”；持有时被攻击造成2-4点反伤"
           },
           {
             "name": "体液屏障 X点",
@@ -4909,9 +4909,9 @@ export const generatedVisibleSections = [
               "color": "#3FA129",
               "bold": false,
               "italic": false,
-              "underline": "none"
+              "underline": "thick"
             },
-            "desc": "特殊屏障；持有时被攻击反施加1点混乱伤害/2点理智伤害/1层烟气"
+            "desc": "特殊“屏障”；持有时被攻击反施加1点混乱伤害/2点理智伤害/1层“烟气”"
           },
           {
             "name": "再生 X层",
@@ -5277,7 +5277,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "none"
             },
-            "desc": "获得 (X*3) 点“屏障”，每失去3点“屏障”则使该层数-1；\n- 每回合结束时解除 (X*3) 点“屏障”并获得X层“充能”"
+            "desc": "获得 (X*4) 点“护盾”，持有时每失去3点“护盾”则使该层数-1；\n- 每回合结束时解除所有层数并获得等量“充能”"
           },
           {
             "name": "负荷 X级",
@@ -5446,6 +5446,30 @@ export const generatedVisibleSections = [
               "underline": "none"
             },
             "desc": "仅对【机械融合生命体】生效；累积到50点时立刻陷入混乱，每回合结束时层数-2~4"
+          },
+          {
+            "name": "护盾",
+            "tags": [
+              "正面状态"
+            ],
+            "tagColors": [
+              "#00B0F0"
+            ],
+            "tagFormats": [
+              {
+                "color": "#00B0F0",
+                "bold": false,
+                "italic": false,
+                "underline": "none"
+              }
+            ],
+            "format": {
+              "color": "#40958a",
+              "bold": false,
+              "italic": false,
+              "underline": "thick"
+            },
+            "desc": "通过电能制造的护甲，能吸收X点体力条受到的伤害，每回合结束时解除所有“护盾”"
           }
         ]
       },
@@ -8382,6 +8406,7 @@ export const generatedHasParamTerms = {
   "乳汁 X层": 1,
   "爱液 X层": 1,
   "月笼 X层": 1,
+  "护盾": 1,
   "多重攻击 X次": 1,
   "重复投掷 X次": 1,
   "攻击容量": 1,
