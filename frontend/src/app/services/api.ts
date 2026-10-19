@@ -33,6 +33,9 @@ export const api = {
     request<T>(`/${resource}/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
   remove: (resource: string, id: number | string) =>
     request<void>(`/${resource}/${id}`, { method: 'DELETE' }),
+  // 批量拖拽排序：单请求单事务，禁止前端循环发 N 次 PUT（CONVENTIONS §2.2）。
+  reorder: <T>(resource: string, items: Array<{ id: number | string; sortOrder: number }>) =>
+    request<T>(`/${resource}/reorder`, { method: 'POST', body: JSON.stringify(items) }),
   uploadImage: async (
     file: File,
     kind: 'portrait' | 'preview' | 'floor',

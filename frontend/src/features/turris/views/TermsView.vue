@@ -134,17 +134,16 @@ function groupColor(title: string): string {
 </template>
 
 <style scoped>
-/* 暖色夜间（纸面偏暗、暖棕），融入全站暗色主题 */
+/* 全部颜色 / 边框 / 圆角来自全站主题 token：随主题色与主题设计联动。 */
 .dict {
   display: flex;
   gap: 32px;
   align-items: flex-start;
-  background: linear-gradient(180deg, #2d2117, #271c14);
-  color: #eee2cb;
+  background: linear-gradient(180deg, var(--color-surface), var(--color-bg));
+  color: var(--color-ink);
   border: var(--bd-w) var(--bd-style) var(--bd-color);
-  border-radius: 12px;
+  border-radius: calc(var(--radius) * 1.5);
   padding: 32px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 .dict__toc {
   position: sticky;
@@ -155,8 +154,8 @@ function groupColor(title: string): string {
   overflow-y: auto;
   padding: 16px;
   border: var(--bd-w) var(--bd-style) var(--bd-color);
-  border-radius: 10px;
-  background: #382b1d;
+  border-radius: calc(var(--radius) * 1.25);
+  background: var(--color-surface-2);
 }
 .dict__toc-head {
   display: flex;
@@ -164,7 +163,7 @@ function groupColor(title: string): string {
   justify-content: space-between;
   font-size: 15px;
   font-weight: 700;
-  color: #e0b564;
+  color: var(--accent);
   letter-spacing: 0.08em;
   margin-bottom: 12px;
 }
@@ -172,15 +171,15 @@ function groupColor(title: string): string {
   background: none;
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 999px;
-  color: #e2c88a;
+  color: var(--color-ink-dim);
   font-size: 12px;
   line-height: 1;
   padding: 4px 10px;
   cursor: pointer;
 }
 .toc-top:hover {
-  border-color: #e0b564;
-  color: #f2e7d2;
+  border-color: var(--accent);
+  color: var(--color-ink);
 }
 .dict__toc-nav {
   display: flex;
@@ -189,13 +188,13 @@ function groupColor(title: string): string {
 }
 .toc-sec {
   font-size: 15px;
-  color: #cbc2b0;
+  color: var(--color-ink-dim);
   cursor: pointer;
   padding: 5px 2px;
   border-bottom: var(--bd-w) var(--bd-style) var(--bd-color);
 }
 .toc-sec:hover {
-  color: #e0b564;
+  color: var(--accent);
 }
 .toc-sec-sub {
   display: grid;
@@ -205,11 +204,12 @@ function groupColor(title: string): string {
 }
 .toc-item {
   font-size: 13px;
-  color: #b6a687;
+  color: var(--color-ink-faint);
   cursor: pointer;
   white-space: nowrap;
 }
 .toc-item:hover {
+  color: var(--accent);
   text-decoration: underline;
 }
 .dict__content {
@@ -224,13 +224,13 @@ function groupColor(title: string): string {
 .dict__title {
   margin: 0 0 8px;
   font-size: 26px;
-  color: #f2e7d2;
+  color: var(--color-ink);
 }
 .dict__desc {
   margin: 0;
   font-size: 15px;
   line-height: 1.9;
-  color: #b6a687;
+  color: var(--color-ink-dim);
 }
 .dsec {
   margin-bottom: 44px;
@@ -240,8 +240,8 @@ function groupColor(title: string): string {
   margin: 0 0 18px;
   font-size: 24px;
   font-weight: 800;
-  color: #e0b564;
-  border-left: 4px solid #e0b564;
+  color: var(--accent);
+  border-left: 4px solid var(--accent);
   padding-left: 12px;
   scroll-margin-top: 14px;
 }
@@ -263,8 +263,8 @@ function groupColor(title: string): string {
 }
 .entry {
   border: var(--bd-w) var(--bd-style) var(--bd-color);
-  border-radius: 8px;
-  background: #3c2e1e;
+  border-radius: var(--radius);
+  background: var(--color-surface-2);
   padding: 14px 16px;
 }
 .entry__head {
@@ -307,14 +307,14 @@ function groupColor(title: string): string {
   padding: 2px 9px;
   border-radius: 999px;
   border: var(--bd-w) var(--bd-style) var(--bd-color);
-  color: #c6baa2;
+  color: var(--color-ink-dim);
   white-space: nowrap;
 }
 .entry__desc {
   margin: 0;
   font-size: 15px;
   line-height: 2;
-  color: #c4b493;
+  color: var(--color-ink-dim);
   white-space: pre-line;
 }
 @media (max-width: 900px) {

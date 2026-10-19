@@ -35,16 +35,57 @@ function insertColumns(body: Record<string, unknown>, cols: string[]): string[] 
 // 插入"无身份"幽灵行——按代号 DELETE/PUT 永远打不中。新建必须显式提供代号。
 const TEXT_PK_TABLES: ReadonlySet<string> = new Set(['pvz_keywords'])
 
-// "最近编辑"盖章表：这些表的 PUT/POST/reorder 成功后由后端盖 updatedAt 时间戳。
+// "最近编辑"盖章表：这些表的 PUT/POST 成功后由后端盖 updatedAt 时间戳。
 // 时间戳权威源在后端——前端 body 即使带 updatedAt 也会被盖章覆盖。
 // 目前仅 floors（迎书楼总览页塔楼剖面的"最近编辑 5 层"排序依据）。
 const TOUCH_UPDATED_AT: ReadonlySet<string> = new Set(['floors'])
 
+// 楼层子表 → 归属外键。通用 CRUD 不认识表间业务关系，必须在这里显式登记，
+// 才能在子数据增删改时刷新父楼层的 updatedAt（否则改司书/情感实体不会影响
+// 主页"最近编辑"排序）。
+const FLOOR_CHILD_TABLES: Readonly<Record<string, string>> = {
+  librarians: 'floorId',
+  emotion_entities: 'floorId',
+  combat_pages: 'floorId',
+}
+
 // 盖章动作：注意列必须真实存在（schema.ts ensureColumn 已迁移），失败不静默——
 // 事务外单跑，失败会顺着错误路径走。
-function touchUpdatedAt(table: string, id: number | string, db: ReturnType<typeof getDb>): void {
-  if (!TOUCH_UPDATED_AT.has(table)) return
+function touchUpdatedAt(
+  table: string,
+  id: number | string | null | undefined,
+  db: ReturnType<typeof getDb>,
+): void {
+  if (!TOUCH_UPDATED_AT.has(table) || id == null) return
   db.prepare(`UPDATE ${table} SET updatedAt = ? WHERE id = ?`).run(new Date().toISOString(), id)
+}
+
+/** 子表写入后刷新父楼层：旧楼层与新楼层都算（司书移动楼层时两层内容都变了）。 */
+function touchFloorsForChild(table: string, ...floorIds: unknown[]): void {
+  if (!FLOOR_CHILD_TABLES[table]) return
+  const db = getDb()
+  for (const floorId of floorIds) {
+    if (typeof floorId === 'number' || typeof floorId === 'string') {
+      touchUpdatedAt('floors', floorId, db)
+    }
+  }
+}
+
+/** 读取子数据当前归属楼层（PUT 处理移动 / DELETE 前取楼层用）。 */
+function childFloorId(table: string, id: number | string): unknown {
+  const fk = FLOOR_CHILD_TABLES[table]
+  if (!fk) return null
+  const row = getDb().prepare(`SELECT ${fk} AS floorId FROM ${table} WHERE id = ?`).get(id) as
+    | { floorId?: unknown }
+    | undefined
+  return row?.floorId ?? null
+}
+
+/** 把 updatedAt 并入同一条 INSERT/UPDATE（原子盖章，避免二次 UPDATE 的失败点）。 */
+function stampUpdatedAt(table: string, body: Record<string, unknown>, pick: string[]): void {
+  if (!TOUCH_UPDATED_AT.has(table)) return
+  if (!pick.includes('updatedAt')) pick.push('updatedAt')
+  body.updatedAt = new Date().toISOString()
 }
 
 // 各表可能存放 /art/ 图片 URL 的列。PUT 更新 / DELETE 整行时，
@@ -224,12 +265,15 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       const cols = columnsOf(table)
       const pick = insertColumns(body, cols)
       if (pick.length === 0) return reply.code(400).send({ error: 'no valid fields' })
+      stampUpdatedAt(table, body, pick)
       const placeholders = pick.map(() => '?').join(', ')
+      const fk = FLOOR_CHILD_TABLES[table]
       try {
         const info = getDb()
           .prepare(`INSERT INTO ${table} (${pick.join(', ')}) VALUES (${placeholders})`)
           .run(...pick.map((c) => body[c]))
-        touchUpdatedAt(table, info.lastInsertRowid as number, getDb())
+        // 子数据新增 = 所属楼层被编辑（父楼层同样计入主页"最近编辑"）。
+        if (fk) touchFloorsForChild(table, body[fk])
         return reply.code(201).send({ id: info.lastInsertRowid })
       } catch (e) {
         return sqliteErrorReply(e, reply)
@@ -242,6 +286,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       const cols = columnsOf(table)
       const pick = insertColumns(body, cols)
       if (pick.length === 0) return reply.code(400).send({ error: 'no valid fields' })
+      const fk = FLOOR_CHILD_TABLES[table]
+      // 移动归属时旧楼层也要刷新：先记住更新前的父楼层。
+      const oldFloorId = fk ? childFloorId(table, id) : null
+      stampUpdatedAt(table, body, pick)
       const set = pick.map((c) => `${c} = ?`).join(', ')
       try {
         const info = getDb()
@@ -249,7 +297,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
           .run(...pick.map((c) => body[c]), id)
         if (info.changes === 0) return reply.code(404).send({ error: 'not found' })
         trashReplacedImages(table, id, body)
-        touchUpdatedAt(table, id, getDb())
+        if (fk) touchFloorsForChild(table, oldFloorId, fk in body ? body[fk] : oldFloorId)
         return { updated: info.changes }
       } catch (e) {
         return sqliteErrorReply(e, reply)
@@ -262,6 +310,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       // 先确认行存在再置空子表——旧实现对不存在的 id 也会先改子表，产生无源 nullify
       const exists = db.prepare(`SELECT id FROM ${table} WHERE id = ?`).get(id)
       if (!exists) return reply.code(404).send({ error: 'not found' })
+      // 删除子数据也是编辑楼层：先记住归属，删除成功后刷新父楼层。
+      const oldFloorId = childFloorId(table, id)
       const reportArt =
         table === 'anomalies' || table === 'supernatural_spaces' ? collectReportJsonArt(table, id) : []
       const cascadeArt: string[] = []
@@ -304,6 +354,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       for (const url of cascadeArt) trashArt(url)
       for (const url of reportArt) trashArt(url)
       trashRowImages(table, id)
+      touchFloorsForChild(table, oldFloorId)
       return { deleted: 1 }
     })
   }
@@ -315,9 +366,6 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
       if (!Array.isArray(body)) return reply.code(400).send({ error: 'expected an array' })
       const db = getDb()
       const stmt = db.prepare(`UPDATE ${table} SET sortOrder = ? WHERE id = ?`)
-      const touch = TOUCH_UPDATED_AT.has(table)
-        ? db.prepare(`UPDATE ${table} SET updatedAt = ? WHERE id = ?`)
-        : null
       const tx = db.transaction(() => {
         for (const item of body) {
           if (item == null || typeof item !== 'object') continue
@@ -325,8 +373,8 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
           const order = (item as Record<string, unknown>).sortOrder
           if (id == null || order == null) continue
           stmt.run(order, id)
-          // 拖拽排序也是编辑：同一事务内盖章（目前仅 floors）
-          touch?.run(new Date().toISOString(), id)
+          // 排序只改展示顺序，不盖"最近编辑"——否则一次拖拽会把整批楼层
+          // 的 updatedAt 一起刷新，主页塔楼的最近编辑顺序就失去意义。
         }
       })
       tx()

@@ -394,8 +394,14 @@ function reorderFloors(srcId: number, targetId: number): void {
 }
 
 async function persistFloorsOrder(list: Floor[]): Promise<void> {
-  for (const f of list) {
-    await api.update('floors', f.id, { sortOrder: f.sortOrder })
+  try {
+    await api.reorder(
+      'floors',
+      list.map((f) => ({ id: f.id, sortOrder: f.sortOrder })),
+    )
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err)
+    await load()
   }
 }
 
@@ -417,8 +423,14 @@ function reorderLibs(srcId: number, targetId: number): void {
 }
 
 async function persistLibsOrder(list: Librarian[]): Promise<void> {
-  for (const l of list) {
-    await api.update('librarians', l.id, { sortOrder: l.sortOrder })
+  try {
+    await api.reorder(
+      'librarians',
+      list.map((l) => ({ id: l.id, sortOrder: l.sortOrder })),
+    )
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err)
+    await load()
   }
 }
 

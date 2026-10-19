@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Floor, Librarian, EmotionEntity } from '@rtl/shared'
 import { api } from '@/app/services/api'
@@ -21,7 +21,7 @@ const invitations = ref<unknown[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-onMounted(async () => {
+async function load(): Promise<void> {
   loading.value = true
   error.value = null
   try {
@@ -42,6 +42,22 @@ onMounted(async () => {
   }
   // 术语计数走既有 Pinia 缓存（load 幂等，不重复请求）
   void terms.load()
+}
+
+// 主页常驻在另一个标签页/窗口时，编辑完成后切回来也要拿到最新 floors.updatedAt。
+function refreshIfVisible(): void {
+  if (document.visibilityState === 'visible' && !loading.value) void load()
+}
+
+onMounted(() => {
+  void load()
+  document.addEventListener('visibilitychange', refreshIfVisible)
+  window.addEventListener('focus', refreshIfVisible)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('visibilitychange', refreshIfVisible)
+  window.removeEventListener('focus', refreshIfVisible)
 })
 
 /* ---- 计数（全部实时，空表如实显示 0 / 待录入） ---- */

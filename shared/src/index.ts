@@ -621,7 +621,7 @@ export interface Floor {
   description: string
   sortOrder: number
   artwork: string
-  /** 最近编辑时间（ISO 字符串，后端 PUT/POST/reorder 盖章）；'' = 从未编辑。 */
+  /** 最近编辑时间（ISO 字符串；楼层自身及所属司书/情感实体的增删改由后端盖章，排序不盖章）；'' = 从未编辑。 */
   updatedAt: string
 }
 
