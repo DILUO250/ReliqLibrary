@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-19T07:39:51.521Z",
-  "version": 1792395591521,
+  "generatedAt": "2026-10-19T08:26:24.351Z",
+  "version": 1792398384352,
   "tables": {
     "floors": [
       {
@@ -2243,7 +2243,7 @@
         "rarity": ""
       }
     ],
-    "emotion_entities": [
+    "anomaly_entities": [
       {
         "id": 1,
         "floorId": 1,

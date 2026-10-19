@@ -5,7 +5,7 @@ import { api } from '@/app/services/api'
 import type { Anomaly } from '@rtl/shared'
 
 /**
- * 跨模块的 SCL 编号链接（如 FloorDeck 情感实体 → 藏书阁异常实体报告单）。
+ * 跨模块的 SCL 编号链接（如 FloorDeck 异常实体 → 藏书阁异常实体报告单）。
  * 仅当编号数字能匹配到库内 anomalies 记录时渲染为可点击链接，
  * 点击在新标签页打开 /armarium/entities/:id 报告预览；否则保持纯文本。
  */

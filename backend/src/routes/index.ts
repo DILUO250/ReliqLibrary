@@ -41,11 +41,11 @@ const TEXT_PK_TABLES: ReadonlySet<string> = new Set(['pvz_keywords'])
 const TOUCH_UPDATED_AT: ReadonlySet<string> = new Set(['floors'])
 
 // 楼层子表 → 归属外键。通用 CRUD 不认识表间业务关系，必须在这里显式登记，
-// 才能在子数据增删改时刷新父楼层的 updatedAt（否则改司书/情感实体不会影响
+// 才能在子数据增删改时刷新父楼层的 updatedAt（否则改司书/异常实体不会影响
 // 主页"最近编辑"排序）。
 const FLOOR_CHILD_TABLES: Readonly<Record<string, string>> = {
   librarians: 'floorId',
-  emotion_entities: 'floorId',
+  anomaly_entities: 'floorId',
   combat_pages: 'floorId',
 }
 
@@ -159,7 +159,7 @@ function trashRowImages(table: string, id: number | string): void {
 const DELETE_NULLIFY_HOOKS: Record<string, Array<{ table: string; fk: string }>> = {
   floors: [
     { table: 'librarians', fk: 'floorId' },
-    { table: 'emotion_entities', fk: 'floorId' },
+    { table: 'anomaly_entities', fk: 'floorId' },
     { table: 'combat_pages', fk: 'floorId' },
     { table: 'guests', fk: 'floorId' },
   ],
@@ -360,7 +360,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   }
 
   // 批量重排序：单事务内更新一批行的 sortOrder，避免前端 N 次串行 PUT。
-  for (const table of ['floors', 'librarians', 'emotion_entities'] as const) {
+  for (const table of ['floors', 'librarians', 'anomaly_entities'] as const) {
     app.post(`/api/${table}/reorder`, async (req, reply) => {
       const body = req.body as Array<{ id: number | string; sortOrder: number }>
       if (!Array.isArray(body)) return reply.code(400).send({ error: 'expected an array' })

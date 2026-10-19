@@ -195,7 +195,7 @@ DELETE 钩子会在删父行前 `UPDATE <子表> SET <fk> = NULL WHERE <fk> = ?`
 
 **SQLite 的 `term_sections` / `term_entries` 是术语的唯一权威源**（2026-09 术语源合并，前身项目的双轨制已废除；那次事故的直接原因正是破坏性重灌，见 §2.3 事故条款）：
 
-- **渲染器**（`terms/renderer.ts`）、**插入术语面板**（`editor/TermInserter.vue`）、**卡牌编辑器表单下拉**（`CardEditor.vue` 的类型/骰子/标签候选/前缀兜底）、**机制分类下拉**（`LibrarianSheetEditor.vue` / `EmotionEntityEditorModal.vue`）全部从 `store/terms`（Pinia）读取同一份库数据；**禁止**再从前端任何静态 TS/JSON 文件 import 词条数据。
+- **渲染器**（`terms/renderer.ts`）、**插入术语面板**（`editor/TermInserter.vue`）、**卡牌编辑器表单下拉**（`CardEditor.vue` 的类型/骰子/标签候选/前缀兜底）、**机制分类下拉**（`LibrarianSheetEditor.vue` / `AnomalyEntityEditorModal.vue`）全部从 `store/terms`（Pinia）读取同一份库数据；**禁止**再从前端任何静态 TS/JSON 文件 import 词条数据。
 - `term_entries.hasParam` 列标记"带参数位"词条；插入面板据此插入 `“词条” X层`（普通词条插入 `“词条”`，自带引号，渲染器立即可识别）。
 - 修改术语内容/格式：词典页直接改库（PUT `term_entries`），**以库为准**；新增词条也在词典页直接建，`import:terms` 仅是新机引导/灾难恢复的合并恢复工具。
 - **备份自动跟随每次写操作**（§2.3）：`db-snapshot.json` 全表快照 + `termSeed.generated.ts` 生成种子（禁止手改），右上角"数据已备份"提示。
@@ -220,8 +220,8 @@ DELETE 钩子会在删父行前 `UPDATE <子表> SET <fk> = NULL WHERE <fk> = ?`
 战斗系统采用"**设定层代码常量 + 运营层 JSON 落库**"的双层结构：
 
 - **设定层（代码常量，改数据 = 改代码）**：`shared/src/index.ts` 的 `BATTLE_SYSTEMS`（`deckZones` 卡组区、`cardPrefixes`/`passivePrefixes` 前缀白名单、`statTables` 开局数值表、`metrics`/`pros`/`cons`/`speedPassives`）与 `shared/src/battleMechanics.ts`（`MECHANICS_TEXT` 机制说明长文本、`MECHANICS_IMAGES` 表格图片路径）。这些是策划设定，不随运营变化，**禁止**为它们建数据库表。
-- **运营层（落库）**：司书/楼层/情感实体的战斗数据是 `librarians.sheet` / `emotion_entities.sheet` JSON 列（`battleSystem` + `systemData` 各系统专属字段），经 generic CRUD 读写。新增 `systemData` 字段**必须**可缺省（老数据零迁移）。
-- **编辑器 UI 由配置驱动**：卡牌区**禁止**手写 `v-if` 罗列——一律按 `system.deckZones` 循环渲染（`LibrarianSheetEditor.vue` / `DeckPreviewModal.vue` / `FloorDeck.vue`）；**楼层卡下的二级子菜单**一律按 `system.floorTabs` 渲染（`FloorDeck.vue`；librarians/extras 通用、emotions=LOB、未设计系统走 reserved 预留占位，未知 key 回退占位面板）；卡牌前缀下拉**必须**按 `system.cardPrefixes` 白名单过滤，**禁止**展示全量前缀。每个系统允许的前缀是设定决定，不是编辑器自由。
+- **运营层（落库）**：司书/楼层/异常实体的战斗数据是 `librarians.sheet` / `anomaly_entities.sheet` JSON 列（`battleSystem` + `systemData` 各系统专属字段），经 generic CRUD 读写。新增 `systemData` 字段**必须**可缺省（老数据零迁移）。
+- **编辑器 UI 由配置驱动**：卡牌区**禁止**手写 `v-if` 罗列——一律按 `system.deckZones` 循环渲染（`LibrarianSheetEditor.vue` / `DeckPreviewModal.vue` / `FloorDeck.vue`）；**楼层卡下的二级子菜单**一律按 `system.floorTabs` 渲染（`FloorDeck.vue`；librarians/extras 通用、abnormalEntities=LOB、未设计系统走 reserved 预留占位，未知 key 回退占位面板）；卡牌前缀下拉**必须**按 `system.cardPrefixes` 白名单过滤，**禁止**展示全量前缀。每个系统允许的前缀是设定决定，不是编辑器自由。
 - **机制说明表格图**：静态文件放 `frontend/public/art/turris/systems/`，文件名**必须**与 `MECHANICS_IMAGES`（`shared/src/battleMechanics.ts`）声明一致，替换图片直接换文件；此目录不经 `IMAGE_COLUMNS`/`trashArt()`（无 DB 图片列），`audit:art` 报告中的"孤儿"可能包含它们，处置前先对照 `MECHANICS_IMAGES`。
 - **新增系统专属字段**：加进 `LibrarianSystemData`（注明所属系统），并同步在 `LibrarianSheetEditor.vue` 的系统分支（`v-if="system.id === 'xxx'"`）补编辑 UI；未实现的系统走"预留"占位，**禁止**提前为未设计的系统堆字段 UI。
 

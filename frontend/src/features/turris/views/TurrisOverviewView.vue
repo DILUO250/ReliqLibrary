@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { Floor, Librarian, EmotionEntity } from '@rtl/shared'
+import type { Floor, Librarian, AnomalyEntity } from '@rtl/shared'
 import { api } from '@/app/services/api'
 import { useTermsStore } from '@/features/turris/store/terms'
 
@@ -16,7 +16,7 @@ const terms = useTermsStore()
 
 const floors = ref<Floor[]>([])
 const librarians = ref<Librarian[]>([])
-const emotions = ref<EmotionEntity[]>([])
+const anomalyEntities = ref<AnomalyEntity[]>([])
 const invitations = ref<unknown[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -28,12 +28,12 @@ async function load(): Promise<void> {
     const [fl, lib, ent, inv] = await Promise.all([
       api.list<Floor>('floors'),
       api.list<Librarian>('librarians'),
-      api.list<EmotionEntity>('emotion_entities'),
+      api.list<AnomalyEntity>('anomaly_entities'),
       api.list<unknown>('invitations'),
     ])
     floors.value = fl
     librarians.value = lib
-    emotions.value = ent
+    anomalyEntities.value = ent
     invitations.value = inv
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
@@ -62,7 +62,7 @@ onBeforeUnmount(() => {
 
 /* ---- 计数（全部实时，空表如实显示 0 / 待录入） ---- */
 const librarianCount = computed(() => librarians.value.filter((l) => l.department === 'turris').length)
-const emotionCount = computed(() => emotions.value.length)
+const anomalyEntityCount = computed(() => anomalyEntities.value.length)
 const floorCount = computed(() => floors.value.length)
 
 const termCount = computed(() =>
@@ -187,8 +187,8 @@ function enterFloor(f: Floor): void {
             <span class="cstat__label">迎书楼司书</span>
           </div>
           <div class="cstat">
-            <span class="cstat__num">{{ emotionCount }}<small>体</small></span>
-            <span class="cstat__label">情感实体</span>
+            <span class="cstat__num">{{ anomalyEntityCount }}<small>体</small></span>
+            <span class="cstat__label">异常实体</span>
           </div>
           <div class="cstat">
             <span class="cstat__num">{{ floorCount }}<small>层</small></span>

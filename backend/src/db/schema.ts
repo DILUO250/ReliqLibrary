@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS librarians (
   sortOrder INTEGER DEFAULT 0
 );
 
--- 情感实体（LOB 楼层专属，与楼层绑定）：异常实体名称 + 书页/EGO 的 JSON。
-CREATE TABLE IF NOT EXISTS emotion_entities (
+-- 异常实体（LOB 楼层专属，与楼层绑定）：名称 + 1~9 张情感书页 + EGO 的 JSON。
+CREATE TABLE IF NOT EXISTS anomaly_entities (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   floorId INTEGER DEFAULT NULL,
   code TEXT DEFAULT '',
@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS pvz_keywords (
 -- 目录页（索引）：所有"所属关系"外键列 + 术语表的 sectionId。
 -- 数据量大时避免全表扫描；IF NOT EXISTS 保证幂等。
 CREATE INDEX IF NOT EXISTS idx_librarians_floor ON librarians(floorId);
-CREATE INDEX IF NOT EXISTS idx_emotion_entities_floor ON emotion_entities(floorId);
+CREATE INDEX IF NOT EXISTS idx_anomaly_entities_floor ON anomaly_entities(floorId);
 CREATE INDEX IF NOT EXISTS idx_combat_pages_floor ON combat_pages(floorId);
 CREATE INDEX IF NOT EXISTS idx_combat_pages_owner ON combat_pages(ownerId);
 CREATE INDEX IF NOT EXISTS idx_core_pages_owner ON core_pages(ownerId);
@@ -351,7 +351,7 @@ export function migrate(db: Database.Database): void {
 export const TABLES = [
   'floors',
   'librarians',
-  'emotion_entities',
+  'anomaly_entities',
   'core_pages',
   'combat_pages',
   'books',

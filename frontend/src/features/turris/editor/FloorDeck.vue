@@ -2,8 +2,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import type { Floor, Librarian, LibrarianSheet, BattleSystemId, BattleCard, FloorTabInfo } from '@rtl/shared'
-import { BATTLE_SYSTEMS, parseSheet, parseEmotionSheet, toRoman } from '@rtl/shared'
-import type { EmotionEntity, EmotionSheet, Mechanism } from '@rtl/shared'
+import { BATTLE_SYSTEMS, parseSheet, parseAnomalySheet, toRoman } from '@rtl/shared'
+import type { AnomalyEntity, AnomalySheet, Mechanism } from '@rtl/shared'
 import { api } from '@/app/services/api'
 import { showToast } from '@/app/stores/toast'
 import cardIcon from '@/features/turris/assets/cardIcon.png'
@@ -13,13 +13,13 @@ import { formatToCss } from '@/features/turris/terms/format'
 import FloorEditorModal from './FloorEditorModal.vue'
 import AnomalyCodeLink from '@/shared/components/AnomalyCodeLink.vue'
 import LibrarianEditorModal from './LibrarianEditorModal.vue'
-import EmotionEntityEditorModal from './EmotionEntityEditorModal.vue'
+import AnomalyEntityEditorModal from './AnomalyEntityEditorModal.vue'
 import DeckPreviewModal from './DeckPreviewModal.vue'
 import StsCard from './StsCard.vue'
 
 const floors = ref<Floor[]>([])
 const librarians = ref<Librarian[]>([])
-const emotions = ref<EmotionEntity[]>([])
+const anomalyEntities = ref<AnomalyEntity[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -34,7 +34,7 @@ const libModal = ref<{ open: boolean; librarian: Librarian | null; floorId: numb
   librarian: null,
   floorId: null,
 })
-const entityModal = ref<{ open: boolean; entity: EmotionEntity | null; floorId: number | null }>({
+const entityModal = ref<{ open: boolean; entity: AnomalyEntity | null; floorId: number | null }>({
   open: false,
   entity: null,
   floorId: null,
@@ -44,13 +44,13 @@ const preview = ref<{ open: boolean; librarian: Librarian | null }>({ open: fals
 const dragFloorId = ref<number | null>(null)
 const dragLibId = ref<number | null>(null)
 
-/* 楼层展开区的二级折叠菜单：key 形如 `libs-3` / `extra-3` / `emotion-3`。 */
+/* 楼层展开区的二级折叠菜单：key 形如 `libs-3` / `extra-3` / `anom-3`。 */
 const openPanels = reactive(new Set<string>())
 function togglePanel(key: string): void {
   if (openPanels.has(key)) openPanels.delete(key)
   else openPanels.add(key)
 }
-/* 展开的情感实体行。 */
+/* 展开的异常实体行。 */
 const openEntities = reactive(new Set<number>())
 function toggleEntity(id: number): void {
   if (openEntities.has(id)) openEntities.delete(id)
@@ -101,9 +101,9 @@ const orphanLibs = computed<Librarian[]>(() =>
   librarians.value.filter((l) => l.floorId == null).sort(libSort),
 )
 
-const entitiesByFloor = computed<Map<number, EmotionEntity[]>>(() => {
-  const map = new Map<number, EmotionEntity[]>()
-  for (const e of emotions.value) {
+const entitiesByFloor = computed<Map<number, AnomalyEntity[]>>(() => {
+  const map = new Map<number, AnomalyEntity[]>()
+  for (const e of anomalyEntities.value) {
     if (e.floorId == null) continue
     const arr = map.get(e.floorId) ?? []
     arr.push(e)
@@ -136,7 +136,7 @@ interface MemoEntry<T> {
   parsed: T
 }
 const libSheetMemo = new Map<number, MemoEntry<LibrarianSheet | null>>()
-const entSheetMemo = new Map<number, MemoEntry<EmotionSheet | null>>()
+const entSheetMemo = new Map<number, MemoEntry<AnomalySheet | null>>()
 const privateTermsMemo = new Map<number, MemoEntry<PrivateTerm[]>>()
 
 function memoized<T>(store: Map<number, MemoEntry<T>>, id: number, raw: string, parse: () => T): T {
@@ -156,15 +156,15 @@ function sheetOf(row: Librarian): LibrarianSheet | null {
   return memoized(libSheetMemo, row.id, row.sheet, () => parseSheet(row.sheet))
 }
 
-function emotionSheetOf(e: EmotionEntity) {
-  return memoized(entSheetMemo, e.id, e.sheet, () => parseEmotionSheet(e.sheet))
+function anomalySheetOf(e: AnomalyEntity) {
+  return memoized(entSheetMemo, e.id, e.sheet, () => parseAnomalySheet(e.sheet))
 }
 
 /** 实体私人词典：全部书页的特殊机制名+字体格式（渲染时优先于通用词典）。 */
-function privateTermsOf(e: EmotionEntity): PrivateTerm[] {
+function privateTermsOf(e: AnomalyEntity): PrivateTerm[] {
   return memoized(privateTermsMemo, e.id, e.sheet, () => {
     const list: PrivateTerm[] = []
-    for (const p of emotionSheetOf(e)?.pages ?? []) {
+    for (const p of anomalySheetOf(e)?.pages ?? []) {
       for (const m of p.mechanisms) {
         if (m.name && m.format) list.push({ name: m.name, format: m.format })
       }
@@ -232,11 +232,11 @@ async function load(): Promise<void> {
     const [fl, lib, ent] = await Promise.all([
       api.list<Floor>('floors'),
       api.list<Librarian>('librarians'),
-      api.list<EmotionEntity>('emotion_entities'),
+      api.list<AnomalyEntity>('anomaly_entities'),
     ])
     floors.value = fl
     librarians.value = lib
-    emotions.value = ent
+    anomalyEntities.value = ent
     // 楼层 Tab 预展开：总览页塔楼横带 ?floor=<id> 跳转直达
     if (!Number.isNaN(presetFloorId) && fl.some((f) => f.id === presetFloorId)) {
       expandedId.value = presetFloorId
@@ -340,11 +340,11 @@ function openPreview(l: Librarian): void {
   preview.value = { open: true, librarian: l }
 }
 
-/* ---------- emotion entity CRUD ---------- */
+/* ---------- anomaly entity CRUD ---------- */
 function openEntityCreate(floorId: number | null): void {
   entityModal.value = { open: true, entity: null, floorId }
 }
-function openEntityEdit(e: EmotionEntity): void {
+function openEntityEdit(e: AnomalyEntity): void {
   entityModal.value = { open: true, entity: e, floorId: e.floorId }
 }
 async function saveEntity(payload: Record<string, unknown>): Promise<void> {
@@ -352,16 +352,16 @@ async function saveEntity(payload: Record<string, unknown>): Promise<void> {
   saveError.value = null
   try {
     if (entityModal.value.entity) {
-      await api.update('emotion_entities', entityModal.value.entity.id, payload)
+      await api.update('anomaly_entities', entityModal.value.entity.id, payload)
     } else {
       const floorId = payload.floorId as number | null
       const order =
         floorId != null
           ? (entitiesByFloor.value.get(floorId)?.length ?? 0)
-          : emotions.value.filter((e) => e.floorId == null).length
-      await api.create('emotion_entities', { ...payload, sortOrder: order })
+          : anomalyEntities.value.filter((e) => e.floorId == null).length
+      await api.create('anomaly_entities', { ...payload, sortOrder: order })
     }
-    showToast(entityModal.value.entity ? '情感实体已保存' : '情感实体已创建')
+    showToast(entityModal.value.entity ? '异常实体已保存' : '异常实体已创建')
     await load()
     entityModal.value = { open: false, entity: null, floorId: null }
   } catch (e) {
@@ -370,10 +370,10 @@ async function saveEntity(payload: Record<string, unknown>): Promise<void> {
     saving.value = false
   }
 }
-async function removeEntity(e: EmotionEntity): Promise<void> {
-  if (!window.confirm(`确定删除情感实体「${e.name || '未命名'}」吗？`)) return
+async function removeEntity(e: AnomalyEntity): Promise<void> {
+  if (!window.confirm(`确定删除异常实体「${e.name || '未命名'}」吗？`)) return
   try {
-    await api.remove('emotion_entities', e.id)
+    await api.remove('anomaly_entities', e.id)
     await load()
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err)
@@ -525,7 +525,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
               <span class="chip">{{ BATTLE_SYSTEMS[f.battleSystem]?.code ?? f.battleSystem }}</span>
               <span class="chip">司书 {{ regLibsByFloor.get(f.id)?.length ?? 0 }}</span>
               <span class="chip">附加单位 {{ extraLibsByFloor.get(f.id)?.length ?? 0 }}</span>
-              <span class="chip">情感实体 {{ entitiesByFloor.get(f.id)?.length ?? 0 }}</span>
+              <span class="chip">异常实体 {{ entitiesByFloor.get(f.id)?.length ?? 0 }}</span>
             </div>
             <h2 class="floor-card__name">{{ f.designation || f.name }}</h2>
             <p class="floor-card__theme">{{ f.theme || '（未填写风格）' }}</p>
@@ -548,7 +548,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
             </div>
 
             <div class="subnav">
-              <!-- 楼层子模块：按战斗系统 floorTabs 配置渲染（librarians/extras 通用，emotions=LOB，其余预留） -->
+              <!-- 楼层子模块：按战斗系统 floorTabs 配置渲染（librarians/extras 通用，abnormalEntities=LOB，其余预留） -->
               <template v-for="tab in floorTabsOf(f)" :key="tab.key + '-' + f.id">
               <!-- ===== 子模块：司书列表 ===== -->
               <div v-if="tab.key === 'librarians'" class="submenu">
@@ -665,25 +665,25 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
               </div>
 
               <!-- ===== 子模块：情感书页（LOB） ===== -->
-              <div v-else-if="tab.key === 'emotions'" class="submenu" :class="{ 'submenu--emotion': f.battleSystem === 'lob' }">
-                <button type="button" class="submenu__head" @click="togglePanel(`emotion-${f.id}`)">
+              <div v-else-if="tab.key === 'abnormalEntities'" class="submenu" :class="{ 'submenu--anomaly': f.battleSystem === 'lob' }">
+                <button type="button" class="submenu__head" @click="togglePanel(`anom-${f.id}`)">
                   <span class="submenu__icon">{{ tab.icon }}</span>
                   <span class="submenu__title">{{ tab.label }}</span>
                   <span class="submenu__count">
                     <span class="chip">{{ BATTLE_SYSTEMS[f.battleSystem]?.code ?? f.battleSystem }}</span>
                     <span class="chip">{{ entitiesByFloor.get(f.id)?.length ?? 0 }}</span>
-                    <span class="submenu__arrow">{{ openPanels.has(`emotion-${f.id}`) ? '▼' : '▶' }}</span>
+                    <span class="submenu__arrow">{{ openPanels.has(`anom-${f.id}`) ? '▼' : '▶' }}</span>
                   </span>
                 </button>
-                <div v-show="openPanels.has(`emotion-${f.id}`)" class="submenu__body">
-                  <!-- LOB：情感实体列表 -->
+                <div v-show="openPanels.has(`anom-${f.id}`)" class="submenu__body">
+                  <!-- LOB：异常实体列表 -->
                   <template v-if="f.battleSystem === 'lob'">
                     <div class="submenu__actions">
-                      <button class="btn btn--primary btn--sm" @click="openEntityCreate(f.id)">＋ 新建情感实体</button>
+                      <button class="btn btn--primary btn--sm" @click="openEntityCreate(f.id)">＋ 新建异常实体</button>
                       <span class="submenu__note">每个实体 = 异常实体名称 + 1~9 张情感书页 + EGO卡牌（含EGO被动）</span>
                     </div>
                     <div v-if="(entitiesByFloor.get(f.id)?.length ?? 0) === 0" class="empty-state empty-state--sm">
-                      <div class="empty-state__title">本楼层暂无情感实体</div>
+                      <div class="empty-state__title">本楼层暂无异常实体</div>
                     </div>
                     <div v-else class="entity-list">
                       <div v-for="e in entitiesByFloor.get(f.id)" :key="e.id" class="entity-row">
@@ -691,15 +691,15 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
                           <AnomalyCodeLink :code="e.code || 'SCL-'" />
                           <span class="entity-name">&lt;{{ e.name || '未命名' }}&gt;</span>
                           <span class="entity-summary">
-                            <span class="chip">书页 {{ emotionSheetOf(e)?.pages.length ?? 0 }}</span>
-                            <span class="chip">EGO {{ emotionSheetOf(e)?.egoCards.length ?? 0 }}</span>
+                            <span class="chip">书页 {{ anomalySheetOf(e)?.pages.length ?? 0 }}</span>
+                            <span class="chip">EGO {{ anomalySheetOf(e)?.egoCards.length ?? 0 }}</span>
                           </span>
                           <span class="entity-arrow">{{ openEntities.has(e.id) ? '▼' : '▶' }}</span>
                         </button>
                         <div v-if="openEntities.has(e.id)" class="entity-row__body">
                           <div class="entity-col">
                             <p class="entity-col__title">情感书页</p>
-                            <div v-for="(p, pi) in emotionSheetOf(e)?.pages ?? []" :key="pi" class="epage">
+                            <div v-for="(p, pi) in anomalySheetOf(e)?.pages ?? []" :key="pi" class="epage">
                               <div class="epage__head">
                                 <span class="epage__idx">{{ pi + 1 }}.</span>
                                 <span class="epage__name">{{ p.name || '未命名' }}</span>
@@ -722,7 +722,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
                               EGO卡牌
                               <button class="btn btn--sm entity-edit-btn" @click="openEntityEdit(e)">✎ 编辑实体</button>
                             </p>
-                            <div v-for="(c, ci) in emotionSheetOf(e)?.egoCards ?? []" :key="ci" class="ego-wrap">
+                            <div v-for="(c, ci) in anomalySheetOf(e)?.egoCards ?? []" :key="ci" class="ego-wrap">
                               <StsCard :card="c" :render-terms="true" :private-terms="privateTermsOf(e)" />
                               <div v-if="c.egoPassive && (c.egoPassive.name || c.egoPassive.effect)" class="ego-passive">
                                 <span class="ego-passive__label">EGO被动</span>
@@ -841,7 +841,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
       @close="libModal = { open: false, librarian: null, floorId: null }"
     />
 
-    <EmotionEntityEditorModal
+    <AnomalyEntityEditorModal
       v-if="entityModal.open"
       :entity="entityModal.entity"
       :floor-id="entityModal.floorId"
@@ -1260,13 +1260,13 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
 }
 
 /* --- 情感书页：黑 / 灰 / 黄 / 白 高对比主题（异常实体警示风） --- */
-.submenu--emotion {
+.submenu--anomaly {
   border-color: rgba(233, 221, 198, 0.22);
 }
-.submenu--emotion .submenu__head:hover {
+.submenu--anomaly .submenu__head:hover {
   background: rgba(224, 181, 100, 0.08);
 }
-.submenu--emotion .submenu__body {
+.submenu--anomaly .submenu__body {
   background: #0d0c0a;
 }
 .submenu--reserve {
@@ -1276,7 +1276,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
 .submenu--reserve .submenu__head:hover {
   background: rgba(233, 221, 198, 0.05);
 }
-.submenu--emotion .entity-list {
+.submenu--anomaly .entity-list {
   margin-top: 4px;
   display: flex;
   flex-direction: column;

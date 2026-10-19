@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive } from 'vue'
-import type { EmotionEntity, EmotionSheet, EgoCard, Mechanism, TermFormat } from '@rtl/shared'
+import type { AnomalyEntity, AnomalySheet, EgoCard, Mechanism, TermFormat } from '@rtl/shared'
 import {
-  EMOTION_PAGE_MAX,
+  ANOMALY_ENTITY_PAGE_MAX,
   emptyEgoCard,
-  emptyEmotionPage,
-  emptyEmotionSheet,
+  emptyAnomalyPage,
+  emptyAnomalySheet,
   normalizeCard,
-  parseEmotionSheet,
+  parseAnomalySheet,
   BATTLE_SYSTEMS,
 } from '@rtl/shared'
 import Modal from './Modal.vue'
@@ -20,7 +20,7 @@ import { ensureTermIndex } from '@/features/turris/terms/renderer'
 import { useTermsStore } from '@/features/turris/store/terms'
 
 const props = defineProps<{
-  entity: EmotionEntity | null
+  entity: AnomalyEntity | null
   floorId: number | null
   floorLabel?: string
   saving?: boolean
@@ -31,12 +31,12 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-function resolveSheet(entity: EmotionEntity | null): EmotionSheet {
+function resolveSheet(entity: AnomalyEntity | null): AnomalySheet {
   if (entity) {
-    const parsed = parseEmotionSheet(entity.sheet)
+    const parsed = parseAnomalySheet(entity.sheet)
     if (parsed) return parsed
   }
-  return emptyEmotionSheet()
+  return emptyAnomalySheet()
 }
 
 const form = reactive({
@@ -49,16 +49,16 @@ const saveError = reactive<{ msg: string | null }>({ msg: null })
 
 /* ---------- 情感书页（1~9 张） ---------- */
 function addPage(): void {
-  if (form.sheet.pages.length >= EMOTION_PAGE_MAX) return
-  form.sheet.pages.push(emptyEmotionPage())
+  if (form.sheet.pages.length >= ANOMALY_ENTITY_PAGE_MAX) return
+  form.sheet.pages.push(emptyAnomalyPage())
 }
 function removePage(i: number): void {
   if (form.sheet.pages.length <= 1) return
   form.sheet.pages.splice(i, 1)
 }
 function duplicatePage(i: number): void {
-  if (form.sheet.pages.length >= EMOTION_PAGE_MAX) return
-  const clone = JSON.parse(JSON.stringify(form.sheet.pages[i])) as EmotionSheet['pages'][number]
+  if (form.sheet.pages.length >= ANOMALY_ENTITY_PAGE_MAX) return
+  const clone = JSON.parse(JSON.stringify(form.sheet.pages[i])) as AnomalySheet['pages'][number]
   form.sheet.pages.splice(i + 1, 0, clone)
 }
 function movePage(i: number, dir: -1 | 1): void {
@@ -165,7 +165,7 @@ function submit(): void {
 
 <template>
   <Modal
-    :title="entity ? `编辑情感实体 · ${entity.name}` : '新建情感实体'"
+    :title="entity ? `编辑异常实体 · ${entity.name}` : '新建异常实体'"
     wide
     @close="emit('close')"
   >
@@ -181,8 +181,8 @@ function submit(): void {
     <!-- 情感书页 -->
     <div class="section">
       <div class="section__head">
-        <h3>📙 情感书页（1~{{ EMOTION_PAGE_MAX }} 张）</h3>
-        <button type="button" class="btn btn--sm" :disabled="form.sheet.pages.length >= EMOTION_PAGE_MAX" @click="addPage">
+        <h3>📙 情感书页（1~{{ ANOMALY_ENTITY_PAGE_MAX }} 张）</h3>
+        <button type="button" class="btn btn--sm" :disabled="form.sheet.pages.length >= ANOMALY_ENTITY_PAGE_MAX" @click="addPage">
           ＋ 添加书页
         </button>
       </div>

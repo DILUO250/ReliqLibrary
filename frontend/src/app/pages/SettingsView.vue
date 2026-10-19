@@ -292,6 +292,42 @@ function pickDesign(id: DesignThemeId | null): void {
   --armarium: #3e6f9e;
   --collegium: #4f8a45;
 }
+.theme-card__swatch[data-color='claude'] {
+  --color-bg: #faf9f5;
+  --color-surface: #f1efe6;
+  --color-gold: #c96442;
+  --accent: #b8542f;
+  --turris: #b04a32;
+  --armarium: #3e6fa0;
+  --collegium: #4f8a45;
+}
+.theme-card__swatch[data-color='sticker'] {
+  --color-bg: #d9d2be;
+  --color-surface: #e3dcc8;
+  --color-gold: #a8431a;
+  --accent: #e8622c;
+  --turris: #87443a;
+  --armarium: #4c6478;
+  --collegium: #546e46;
+}
+.theme-card__swatch[data-color='duotone'] {
+  --color-bg: #1f1f1f;
+  --color-surface: #2a2a2a;
+  --color-gold: #d6b0bc;
+  --accent: #9d89ff;
+  --turris: #d97a8a;
+  --armarium: #9d89ff;
+  --collegium: #9dc4a8;
+}
+.theme-card__swatch[data-color='office'] {
+  --color-bg: #ececec;
+  --color-surface: #ffffff;
+  --color-gold: #2b579a;
+  --accent: #2b579a;
+  --turris: #c0392b;
+  --armarium: #2b579a;
+  --collegium: #3e6e3e;
+}
 
 /* ---- 主题设计演示卡：边框语言迷你 demo ---- */
 .theme-card__demo {
@@ -355,5 +391,17 @@ function pickDesign(id: DesignThemeId | null): void {
   --bd-color: #3a3d42;
   --radius: 4px;
   --font-serif: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+}
+.theme-card__demo[data-design='sticker'] {
+  --bd-w: 1.5px;
+  --bd-color: #23231f;
+  --radius: 0px;
+  --font-serif: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+.theme-card__demo[data-design='office'] {
+  --bd-w: 1px;
+  --bd-color: #d6d6d6;
+  --radius: 4px;
+  --font-serif: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 </style>

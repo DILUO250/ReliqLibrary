@@ -18,7 +18,17 @@ export interface DesignThemeOption {
   desc: string
 }
 
-export type ColorThemeId = 'parchment' | 'jade' | 'fir' | 'celadon' | 'charcoal' | 'sandstone'
+export type ColorThemeId =
+  | 'parchment'
+  | 'jade'
+  | 'fir'
+  | 'celadon'
+  | 'charcoal'
+  | 'sandstone'
+  | 'claude'
+  | 'sticker'
+  | 'duotone'
+  | 'office'
 export type DesignThemeId =
   | 'woodcut'
   | 'faceted'
@@ -26,6 +36,8 @@ export type DesignThemeId =
   | 'shoji'
   | 'runic'
   | 'wrought'
+  | 'sticker'
+  | 'office'
 
 // null = 默认基线（暖色夜间 · 图书馆纸墨 / 0 号现有设计，tokens.css）
 export type ThemeSelection = ColorThemeId | null
@@ -38,6 +50,10 @@ const VALID_COLOR_IDS: readonly ColorThemeId[] = [
   'celadon',
   'charcoal',
   'sandstone',
+  'claude',
+  'sticker',
+  'duotone',
+  'office',
 ]
 
 const VALID_DESIGN_IDS: readonly DesignThemeId[] = [
@@ -47,6 +63,8 @@ const VALID_DESIGN_IDS: readonly DesignThemeId[] = [
   'shoji',
   'runic',
   'wrought',
+  'sticker',
+  'office',
 ]
 
 export const COLOR_THEMES: readonly ColorThemeOption[] = [
@@ -86,6 +104,30 @@ export const COLOR_THEMES: readonly ColorThemeOption[] = [
     mode: '亮',
     desc: '暖沙 + 朱砂 + 砂金，黄昏图书馆的温度',
   },
+  {
+    id: 'claude',
+    name: '克莱尔纸白',
+    mode: '亮',
+    desc: '暖白纸底 + 深棕墨 + 陶土橙，Claude 官网式克制',
+  },
+  {
+    id: 'sticker',
+    name: '贴纸终端',
+    mode: '亮',
+    desc: '米黄胶面 + 墨黑硬边 + 亮橙，复古贴纸面板',
+  },
+  {
+    id: 'duotone',
+    name: '墨灰双彩',
+    mode: '暗',
+    desc: '炭灰底 + 薰衣草紫 + 雾粉，极简单色盒',
+  },
+  {
+    id: 'office',
+    name: '办公文稿',
+    mode: '亮',
+    desc: '公文白纸 + Word 蓝，Office ribbon 办公感',
+  },
 ]
 
 export const DESIGN_THEMES: readonly DesignThemeOption[] = [
@@ -118,6 +160,16 @@ export const DESIGN_THEMES: readonly DesignThemeOption[] = [
     id: 'wrought',
     name: '铁艺铸铁',
     desc: '3px 粗铁线 · 黑体粗字 · 厚重投影 · 铸铁要塞',
+  },
+  {
+    id: 'sticker',
+    name: '贴纸',
+    desc: '1.5px 墨黑硬边 · 0 圆角 · 4px 偏移投影 · 复古贴纸',
+  },
+  {
+    id: 'office',
+    name: '办公',
+    desc: '1px 灰线 · 4px 小圆角 · 轻浮起投影 · Office 平面',
   },
 ]
 

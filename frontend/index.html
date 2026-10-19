@@ -19,8 +19,8 @@
       // 设置页选择即刷新，故首帧即为目标主题；非法值静默忽略 = 回落默认基线。
       ;(function () {
         try {
-          var VALID_COLOR = ['parchment', 'jade', 'fir', 'celadon', 'charcoal', 'sandstone']
-          var VALID_DESIGN = ['woodcut', 'faceted', 'copperplate', 'shoji', 'runic', 'wrought']
+          var VALID_COLOR = ['parchment', 'jade', 'fir', 'celadon', 'charcoal', 'sandstone', 'claude', 'sticker', 'duotone', 'office']
+          var VALID_DESIGN = ['woodcut', 'faceted', 'copperplate', 'shoji', 'runic', 'wrought', 'sticker', 'office']
           var c = localStorage.getItem('rtl.color-theme')
           var d = localStorage.getItem('rtl.design-theme')
           if (c && VALID_COLOR.indexOf(c) !== -1) document.documentElement.dataset.color = c

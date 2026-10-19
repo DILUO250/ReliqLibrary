@@ -161,6 +161,106 @@ html[data-color='sandstone'] {
   --on-accent: #fdf8ec;
 }
 
+/* 07 · 克莱尔纸白（亮） — 移植自 Claude Light v4 */
+html[data-color='claude'] {
+  --color-bg: #faf9f5;
+  --color-surface: #f1efe6;
+  --color-surface-2: #e8e5d9;
+  --color-ink: #28261c;
+  --color-ink-dim: #6e6455;
+  --color-ink-faint: #a89e8c;
+  --color-line: rgba(40, 38, 28, 0.12);
+  --color-gold: #c96442;
+  --color-accent: #b8542f;
+  --accent: #b8542f;
+  --color-sanity: #5b7fa6;
+  --danger: #b54a36;
+  --error: #c9604a;
+  --director: #b07a3c;
+  --turris: #b04a32;
+  --armarium: #3e6fa0;
+  --collegium: #4f8a45;
+  --glow-1: rgba(201, 100, 66, 0.08);
+  --glow-2: rgba(91, 127, 166, 0.06);
+  --nav-bg: rgba(250, 249, 245, 0.92);
+  --on-accent: #fdf8ec;
+}
+
+/* 08 · 贴纸终端（亮） — 移植自 Analog Terminal Panel */
+html[data-color='sticker'] {
+  --color-bg: #d9d2be;
+  --color-surface: #e3dcc8;
+  --color-surface-2: #ede6d2;
+  --color-ink: #23231f;
+  --color-ink-dim: #5c5648;
+  --color-ink-faint: #8a8272;
+  --color-line: #23231f;
+  --color-gold: #a8431a;
+  --color-accent: #e8622c;
+  --accent: #e8622c;
+  --color-sanity: #4c6478;
+  --danger: #87443a;
+  --error: #a85b4f;
+  --director: #82663a;
+  --turris: #87443a;
+  --armarium: #4c6478;
+  --collegium: #546e46;
+  --glow-1: rgba(232, 98, 44, 0.1);
+  --glow-2: rgba(84, 110, 70, 0.08);
+  --nav-bg: rgba(227, 220, 200, 0.94);
+  --on-accent: #1e1e1a;
+}
+
+/* 09 · 墨灰双彩（暗） — 移植自 双色盒子-深色 */
+html[data-color='duotone'] {
+  --color-bg: #1f1f1f;
+  --color-surface: #2a2a2a;
+  --color-surface-2: #333333;
+  --color-ink: #dbdbd6;
+  --color-ink-dim: #9d9d9d;
+  --color-ink-faint: #6e6e6e;
+  --color-line: rgba(219, 219, 214, 0.12);
+  --color-gold: #d6b0bc;
+  --color-accent: #9d89ff;
+  --accent: #9d89ff;
+  --color-sanity: #8fa8e8;
+  --danger: #d97a8a;
+  --error: #e8909a;
+  --director: #c9a0b8;
+  --turris: #d97a8a;
+  --armarium: #9d89ff;
+  --collegium: #9dc4a8;
+  --glow-1: rgba(157, 137, 255, 0.1);
+  --glow-2: rgba(214, 176, 188, 0.08);
+  --nav-bg: rgba(22, 22, 22, 0.92);
+  --on-accent: #1b1408;
+}
+
+/* 10 · 办公文稿（亮） — 移植自 Word文档 V2 */
+html[data-color='office'] {
+  --color-bg: #ececec;
+  --color-surface: #ffffff;
+  --color-surface-2: #f6f6f6;
+  --color-ink: #1a1a1a;
+  --color-ink-dim: #595959;
+  --color-ink-faint: #8a8a8a;
+  --color-line: #d6d6d6;
+  --color-gold: #2b579a;
+  --color-accent: #2b579a;
+  --accent: #2b579a;
+  --color-sanity: #2b579a;
+  --danger: #d13438;
+  --error: #d13438;
+  --director: #9a7b3c;
+  --turris: #c0392b;
+  --armarium: #2b579a;
+  --collegium: #3e6e3e;
+  --glow-1: rgba(43, 87, 154, 0.08);
+  --glow-2: rgba(0, 0, 0, 0.03);
+  --nav-bg: rgba(232, 232, 232, 0.94);
+  --on-accent: #ffffff;
+}
+
 /* ============================================================
  * 二、主题设计（0 基线由 tokens.css 承担，此处 A–F 六种视觉语言）
  * ============================================================ */
@@ -249,4 +349,32 @@ html[data-design='wrought'] {
   --font-kai: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
   --font-sans: 'Noto Sans SC', 'Microsoft YaHei', 'SimHei', sans-serif;
   --card-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* G · 贴纸（Sticker）：1.5px 墨黑硬边、0 圆角、4px 偏移投影 — 移植自 Analog Terminal Panel */
+html[data-design='sticker'] {
+  --bd-w: 1.5px;
+  --bd-style: solid;
+  --bd-color: #23231f;
+  --radius: 0px;
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-serif: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-kai: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-display-spacing: 0.06em;
+  --card-shadow: 4px 4px 0 #23231f;
+}
+
+/* H · 办公（Office）：1px 灰线、4px 小圆角、轻浮起投影 — 移植自 Word文档 V2 */
+html[data-design='office'] {
+  --bd-w: 1px;
+  --bd-style: solid;
+  --bd-color: #d6d6d6;
+  --radius: 4px;
+  --font-display: 'Segoe UI', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-serif: 'Segoe UI', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-kai: 'Segoe UI', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-sans: 'Segoe UI', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-display-spacing: 0.04em;
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }

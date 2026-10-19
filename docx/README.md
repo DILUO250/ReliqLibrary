@@ -139,7 +139,7 @@ backend\src\
 
 和战斗系统有关的表只有两个地方：
 - `floors.battleSystem` 列：这个楼层用哪个战斗系统（'base'/'lob'/'pkm'/'rhd'）；
-- `librarians.sheet` / `emotion_entities.sheet` 列：司书的**全部战斗数据**（属性、被动、卡组、系统专属数据）以 JSON 字符串存在这一列里。后端对这些 JSON **完全不懂也不懂装懂**，原样存取，解析是前端的事。
+- `librarians.sheet` / `anomaly_entities.sheet` 列：司书的**全部战斗数据**（属性、被动、卡组、系统专属数据）以 JSON 字符串存在这一列里。后端对这些 JSON **完全不懂也不懂装懂**，原样存取，解析是前端的事。
 
 ### 4.3 运行方式
 
@@ -188,7 +188,7 @@ frontend\
 ```
 frontend\src\features\turris\
 ├─ views\
-│  ├─ FloorsView.vue      # 楼层页：楼层/司书/情感实体的管理界面
+│  ├─ FloorsView.vue      # 楼层页：楼层/司书/异常实体的管理界面
 │  ├─ SystemsView.vue     # ★ 战斗系统页：雷达图→优劣势→开局数值→机制说明 四段式
 │  ├─ TermsView.vue       # 词典页：术语的查看与编辑
 │  └─ InvitationsView.vue # 邀请函页
@@ -200,7 +200,7 @@ frontend\src\features\turris\
 │  ├─ CardEditor.vue          # 单张卡牌的编辑器（前缀/标签/效果/骰子）
 │  ├─ StsCard.vue             # 卡牌的"卡面"渲染（就是玩家看到的卡）
 │  ├─ DeckPreviewModal.vue    # 司书预览弹窗（编辑完看效果）
-│  ├─ EmotionEntityEditorModal.vue # LOB 楼层专属：情感实体（情感书页+EGO）
+│  ├─ AnomalyEntityEditorModal.vue # LOB 楼层专属：异常实体（情感书页+EGO）
 │  ├─ Modal.vue               # 全站唯一的弹窗容器（新弹窗必须复用它）
 │  └─ TermInserter.vue        # "插入术语"面板（往文本框里塞带颜色的词）
 ├─ terms\                 # 术语渲染系统

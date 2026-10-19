@@ -150,11 +150,11 @@ export interface MindBuff {
 /* ============================================================
  * 情感书页（LOB 系统楼层专属，与楼层绑定）
  * 结构：<异常实体> → 1~9 张情感书页 → EGO卡牌（含 EGO被动）
- * 书页/EGO 以 JSON 存于 emotion_entities.sheet 列（见 CONVENTIONS §1.3）。
+ * 书页/EGO 以 JSON 存于 anomaly_entities.sheet 列（见 CONVENTIONS §1.3）。
  * ========================================================== */
 
 /** 一张情感书页。cost 为自由文本（如「正面Ⅰ」「负面Ⅱ」「正面Ⅱ/负面Ⅱ」）。 */
-export interface EmotionPage {
+export interface AnomalyPage {
   name: string
   cost: string
   effect: string
@@ -173,14 +173,14 @@ export interface EgoCard extends BattleCard {
   egoPassive?: EgoPassive
 }
 
-export interface EmotionSheet {
-  pages: EmotionPage[]
+export interface AnomalySheet {
+  pages: AnomalyPage[]
   egoCards: EgoCard[]
 }
 
-export const EMOTION_PAGE_MAX = 9
+export const ANOMALY_ENTITY_PAGE_MAX = 9
 
-export function emptyEmotionSheet(): EmotionSheet {
+export function emptyAnomalySheet(): AnomalySheet {
   return {
     pages: [{ name: '', cost: '', effect: '', mechanisms: [] }],
     egoCards: [
@@ -197,7 +197,7 @@ export function emptyEmotionSheet(): EmotionSheet {
   }
 }
 
-export function emptyEmotionPage(): EmotionPage {
+export function emptyAnomalyPage(): AnomalyPage {
   return { name: '', cost: '', effect: '', mechanisms: [] }
 }
 
@@ -213,13 +213,13 @@ export function emptyEgoCard(): EgoCard {
   }
 }
 
-/** 容错解析 emotion_entities.sheet JSON；空/坏数据返回 null。 */
-export function parseEmotionSheet(raw?: string | null): EmotionSheet | null {
+/** 容错解析 anomaly_entities.sheet JSON；空/坏数据返回 null。 */
+export function parseAnomalySheet(raw?: string | null): AnomalySheet | null {
   if (!raw) return null
   try {
-    const s = JSON.parse(raw) as Partial<EmotionSheet>
+    const s = JSON.parse(raw) as Partial<AnomalySheet>
     const pages = (Array.isArray(s.pages) ? s.pages : []).map(
-      (p): EmotionPage => ({
+      (p): AnomalyPage => ({
         name: p?.name ?? '',
         cost: p?.cost ?? '',
         effect: p?.effect ?? '',
@@ -252,12 +252,12 @@ export function parseEmotionSheet(raw?: string | null): EmotionSheet | null {
 }
 
 /** 情感书页数量标签（如「书页 3 · EGO 1」用）。 */
-export function emotionPageCount(entity: { sheet: string }): number {
-  return parseEmotionSheet(entity.sheet)?.pages.length ?? 0
+export function anomalyPageCount(entity: { sheet: string }): number {
+  return parseAnomalySheet(entity.sheet)?.pages.length ?? 0
 }
 
-export function emotionEgoCount(entity: { sheet: string }): number {
-  return parseEmotionSheet(entity.sheet)?.egoCards.length ?? 0
+export function anomalyEgoCount(entity: { sheet: string }): number {
+  return parseAnomalySheet(entity.sheet)?.egoCards.length ?? 0
 }
 
 export interface LibrarianSystemData {
@@ -504,8 +504,8 @@ export interface DeckZoneInfo {
   hint?: string
 }
 
-/** 楼层子模块 id：librarians/extras 为通用区，emotions 为 LOB 专属，reserved 为预留占位。 */
-export type FloorTabId = 'librarians' | 'extras' | 'emotions' | 'reserved'
+/** 楼层子模块 id：librarians/extras 为通用区，abnormalEntities 为 LOB 专属，reserved 为预留占位。 */
+export type FloorTabId = 'librarians' | 'extras' | 'abnormalEntities' | 'reserved'
 
 /** 楼层子模块配置：FloorDeck 按各系统的 floorTabs 渲染楼层卡下的二级菜单。 */
 export interface FloorTabInfo {
@@ -575,7 +575,7 @@ export interface BattleSystemInfo {
   teamCapacity?: string
   /** 卡组区配置：编辑器/预览按此渲染（combat+special 为通用区，其余系统专属）。 */
   deckZones: DeckZoneInfo[]
-  /** 楼层子模块配置：楼层卡下的二级菜单按此渲染（librarians/extras 通用，emotions=LOB，其余系统预留）。 */
+  /** 楼层子模块配置：楼层卡下的二级菜单按此渲染（librarians/extras 通用，abnormalEntities=LOB，其余系统预留）。 */
   floorTabs: FloorTabInfo[]
   /** 卡牌前缀白名单（cardPrefixes 的 name）。 */
   cardPrefixes: string[]
@@ -621,19 +621,19 @@ export interface Floor {
   description: string
   sortOrder: number
   artwork: string
-  /** 最近编辑时间（ISO 字符串；楼层自身及所属司书/情感实体的增删改由后端盖章，排序不盖章）；'' = 从未编辑。 */
+  /** 最近编辑时间（ISO 字符串；楼层自身及所属司书/异常实体的增删改由后端盖章，排序不盖章）；'' = 从未编辑。 */
   updatedAt: string
 }
 
-/** 情感实体：异常实体名称 + 书页/EGO（JSON）+ 实体编号，隶属楼层。 */
-export interface EmotionEntity {
+/** LOB 楼层的异常实体：名称 + 1~9 张情感书页/EGO（JSON）+ 实体编号，隶属楼层。 */
+export interface AnomalyEntity {
   id: number
   floorId: number | null
   /** 实体编号，如 SCL-88889（可留空）。 */
   code: string
   /** 异常实体名称，如 欢乐泰迪。 */
   name: string
-  /** EmotionSheet 的 JSON 字符串。 */
+  /** AnomalySheet 的 JSON 字符串。 */
   sheet: string
   sortOrder: number
 }
@@ -1405,7 +1405,7 @@ export const BATTLE_SYSTEMS: Record<BattleSystemId, BattleSystemInfo> = {
     floorTabs: [
       { key: 'librarians', label: '司书列表', icon: '📖' },
       { key: 'extras', label: '附加单位', icon: '⭐' },
-      { key: 'emotions', label: '情感书页', icon: '📙', hint: 'LOB 专属：情感实体 = 异常实体名称 + 1~9 张情感书页 + EGO卡牌' },
+      { key: 'abnormalEntities', label: '情感书页', icon: '📙', hint: 'LOB 专属：异常实体 = 名称 + 1~9 张情感书页 + EGO卡牌' },
     ],
     cardPrefixes: ['V.', 'GX.', 'DEF.', 'EGO.', 'DST.', 'SHM.'],
     statTables: [
