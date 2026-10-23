@@ -58,7 +58,7 @@ onUnmounted(() => {
   right: 1.25rem;
   z-index: 9999;
   color: var(--color-ink);
-  background: rgba(24, 19, 13, 0.94);
+  background: var(--color-surface-2);
   border: var(--bd-w) var(--bd-style) var(--accent);
   border-radius: 8px;
   padding: 0.5rem 1rem;

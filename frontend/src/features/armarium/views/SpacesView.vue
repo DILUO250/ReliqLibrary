@@ -261,7 +261,7 @@ function createSpace(): void {
 
 .spaces__create:hover {
   background: var(--accent);
-  color: #1b1408;
+  color: var(--on-accent);
 }
 
 .spaces__hint {
@@ -276,7 +276,7 @@ function createSpace(): void {
 }
 
 .spaces__input {
-  background: rgba(13, 10, 7, 0.6);
+  background: var(--color-surface-2);
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
@@ -298,7 +298,7 @@ function createSpace(): void {
 }
 
 .spaces__select {
-  background: rgba(13, 10, 7, 0.6);
+  background: var(--color-surface-2);
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
@@ -309,7 +309,7 @@ function createSpace(): void {
 }
 
 .spaces__select option {
-  background: #1b1408;
+  background: var(--color-surface-2);
   color: var(--color-ink);
 }
 
@@ -360,7 +360,7 @@ function createSpace(): void {
 }
 
 .space-card__thumb {
-  background: #0d0a07;
+  background: var(--color-surface-2);
   border: 1px solid var(--color-line);
   border-radius: 6px;
   cursor: pointer;
@@ -463,7 +463,7 @@ function createSpace(): void {
 
 .space-card__btn:hover {
   background: var(--accent);
-  color: #1b1408;
+  color: var(--on-accent);
 }
 
 .space-card__btn--edit {

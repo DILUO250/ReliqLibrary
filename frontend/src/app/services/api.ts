@@ -36,6 +36,14 @@ export const api = {
   // 批量拖拽排序：单请求单事务，禁止前端循环发 N 次 PUT（CONVENTIONS §2.2）。
   reorder: <T>(resource: string, items: Array<{ id: number | string; sortOrder: number }>) =>
     request<T>(`/${resource}/reorder`, { method: 'POST', body: JSON.stringify(items) }),
+  // 域外书架（features/launcher/）：开馆（拉起启动脚本）/ 在馆探测 / 启动路径校验。
+  // launch 与 validate 是 POST，自动过 x-rtl-key 门；status 是 GET 不设防。
+  launcherLaunch: (id: number | string) =>
+    request<{ ok: boolean; name: string }>(`/launcher/launch/${id}`, { method: 'POST' }),
+  launcherStatus: (id: number | string) =>
+    request<import('@rtl/shared').LauncherStatus>(`/launcher/status/${id}`),
+  launcherValidate: (path: string) =>
+    request<{ exists: boolean }>('/launcher/validate', { method: 'POST', body: JSON.stringify({ path }) }),
   uploadImage: async (
     file: File,
     kind: 'portrait' | 'preview' | 'floor',

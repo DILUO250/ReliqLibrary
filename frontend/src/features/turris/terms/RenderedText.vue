@@ -49,10 +49,11 @@ onUnmounted(() => window.clearTimeout(retryTimer))
 
 <style scoped>
 .rt-term {
-  color: var(--color-ink);
+  /* 未带格式的词条兜底色：优先消费卡面本地墨色（StsCard 注入 --c-ink*），卡外回落全局 token */
+  color: var(--c-ink, var(--color-ink));
 }
 .rt-unknown {
-  color: var(--color-ink-faint);
+  color: var(--c-ink-faint, var(--color-ink-faint));
   text-decoration: underline dotted;
   text-underline-offset: 2px;
 }

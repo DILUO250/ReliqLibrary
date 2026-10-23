@@ -10,6 +10,7 @@ import { registerAnomalyExportRoutes } from '../features/armarium/exportRoutes.j
 import { registerSpaceArtRoutes } from '../features/armarium/spaceArtRoutes.js'
 import { registerSpaceExportRoutes } from '../features/armarium/spaceExportRoutes.js'
 import { registerArmariumOverviewRoutes } from '../features/armarium/overviewRoutes.js'
+import { registerLauncherRoutes } from '../features/launcher/launcherRoutes.js'
 import { registerTurrisArtRoutes } from '../features/turris/artRoutes.js'
 
 type IdParams = { id: string }
@@ -241,6 +242,7 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await registerSpaceArtRoutes(app)
   await registerSpaceExportRoutes(app)
   await registerArmariumOverviewRoutes(app)
+  await registerLauncherRoutes(app)
 
   for (const table of TABLES) {
     const route = `/api/${table}`

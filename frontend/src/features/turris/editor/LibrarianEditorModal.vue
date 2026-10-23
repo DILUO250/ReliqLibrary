@@ -407,7 +407,8 @@ select:focus {
   padding: 1px 7px;
   border-radius: 999px;
   background: rgba(16, 13, 9, 0.7);
-  color: var(--color-ink);
+  /* 角标叠在写死的立绘图上：底与字都固定，不随主题墨色走 */
+  color: #f2ecdc;
 }
 .btn {
   padding: 8px 16px;

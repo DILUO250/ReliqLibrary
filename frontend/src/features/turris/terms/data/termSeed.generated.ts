@@ -7056,6 +7056,19 @@ export const generatedVisibleSections = [
               "underline": "double"
             },
             "desc": "碎裂骰子被修复前无法投掷，将按照使用顺序置于使用者的碎裂池子中；使用者调用修复效果时，将从池子底部顺次投掷碎裂骰子对随机敌方单位进行单方面攻击；每回合结束时碎裂池子清空"
+          },
+          {
+            "name": "截除",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#3FA129",
+              "bold": false,
+              "italic": false,
+              "underline": "double"
+            },
+            "desc": "能够无效化“不可摧毁”骰子"
           }
         ]
       }
@@ -7781,7 +7794,7 @@ export const generatedHiddenSections = [
               "italic": false,
               "underline": "none"
             },
-            "desc": ""
+            "desc": "攻击体力条的直接伤害，无法被招架、减伤或闪避"
           },
           {
             "name": "情感点数",

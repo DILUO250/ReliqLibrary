@@ -891,7 +891,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
 }
 .btn--primary {
   background: var(--accent);
-  color: #1b1408;
+  color: var(--on-accent);
   border-color: var(--accent);
   font-weight: 600;
 }
@@ -995,7 +995,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
   transition: background 0.15s ease;
 }
 .floor-card:hover {
-  background: rgba(233, 221, 198, 0.05);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 .floor-card__art {
   position: relative;
@@ -1108,7 +1108,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
 .floor-detail {
   border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   padding: 16px 18px 20px;
-  background: rgba(16, 13, 9, 0.3);
+  background: var(--color-surface-2);
 }
 .floor-actions {
   display: flex;
@@ -1167,7 +1167,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
 .submenu__body {
   border-top: var(--bd-w) var(--bd-style) var(--bd-color);
   padding: 14px;
-  background: rgba(16, 13, 9, 0.22);
+  background: var(--color-surface-2);
 }
 .submenu__actions {
   display: flex;
@@ -1298,7 +1298,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
   border: none;
   cursor: pointer;
   text-align: left;
-  color: var(--color-ink);
+  color: #f5f1e6;
   font-family: var(--font-serif);
   font-size: 14px;
 }
@@ -1322,7 +1322,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
 }
 .entity-arrow {
   margin-left: auto;
-  color: var(--color-ink-faint);
+  color: rgba(245, 241, 230, 0.55);
   font-size: 11px;
 }
 .entity-row__body {
@@ -1434,7 +1434,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
   font-family: var(--font-kai);
 }
 .epage__mech .sq {
-  color: var(--accent);
+  color: #f0c75e;
   margin-right: 4px;
 }
 .epage__mech .mech-name {

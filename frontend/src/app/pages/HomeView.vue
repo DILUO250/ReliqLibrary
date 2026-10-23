@@ -1,126 +1,162 @@
 <script setup lang="ts">
 import LibraryTree from '@/shared/components/LibraryTree.vue'
+import RecentRail from '@/shared/components/RecentRail.vue'
+import OuterShelf from '@/features/director/components/OuterShelf.vue'
+
+/**
+ * 主页 / 馆务面板（草稿 4.1 落地）：面板头横贯页首（标题 + 副标同行基线），
+ * 下方 1240px 居中容器——左馆树（视觉主体，虚线框）+ 右 400px 窄栏连续纸面。
+ * 结构与 dashboard-mockup.html 一一对应，颜色全部走 token。
+ */
 </script>
 
 <template>
   <main class="home">
-    <aside class="home-side">
-      <header class="home-header">
-        <div class="home-eyebrow latin">Reliquiarum to Library</div>
-        <h1 class="home-title">遗迹图书馆</h1>
-      </header>
-
-      <div class="home-intro">
-        <p>一座藏身于金牛星系啮合域之内的超阈限实体，以追寻宇宙至高奥秘为目标。</p>
-        <p>其内部是存放着记载无穷无尽知识的无限图书馆。</p>
-        <p>三大部门各司其职，共同维护着图书馆的知识与秩序的边界。</p>
+    <header class="panel-head">
+      <div class="panel-eyebrow latin">Reliquiarum to Library</div>
+      <div class="panel-title-row">
+        <h1 class="panel-title">馆务面板</h1>
+        <p class="panel-sub kai">一座藏身于金牛星系啮合域之内的超阈限实体，以追寻宇宙至高奥秘为目标。</p>
       </div>
+    </header>
 
-      <p class="home-hint kai">悬停树区查看所属部门数据 · 点击前往对应页面</p>
-    </aside>
+    <div class="layout">
+      <section class="tree-slot">
+        <LibraryTree />
+      </section>
 
-    <section class="home-tree">
-      <LibraryTree />
-    </section>
+      <aside class="rail">
+        <section class="rail-section">
+          <div class="rail-title">
+            <span class="zh">域外书架</span>
+            <span class="latin">Outer Shelf</span>
+            <span class="rule"></span>
+          </div>
+          <OuterShelf />
+        </section>
+
+        <section class="rail-section">
+          <div class="rail-title">
+            <span class="zh">最近足迹</span>
+            <span class="latin">Recent Pages</span>
+            <span class="rule"></span>
+          </div>
+          <RecentRail />
+        </section>
+      </aside>
+    </div>
   </main>
 </template>
 
 <style scoped>
 .home {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: 40px;
-  align-items: center;
-  min-height: calc(100vh - var(--header-h));
-  width: 100vw;
-  margin-inline: calc(50% - 50vw);
-  padding: 40px 4vw 40px;
-  box-sizing: border-box;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 0 60px;
 }
 
-.home-side {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-  justify-self: center;
-  align-self: center;
-  width: 100%;
-  max-width: 520px;
-  padding: 44px 40px 38px;
-  background: linear-gradient(180deg, rgba(46, 37, 26, 0.55), rgba(34, 27, 20, 0.28));
-  border: var(--bd-w) var(--bd-style) var(--bd-color);
-  border-radius: calc(var(--radius) * 2);
+/* ---- 面板头：横贯页首，标题 + 副标同行基线 ---- */
+.panel-head {
+  margin: 0 auto 26px;
 }
 
-.home-header {
-  margin-bottom: 16px;
-}
-
-.home-eyebrow {
+.panel-eyebrow {
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.26em;
   text-transform: uppercase;
   color: var(--color-gold);
-  margin-bottom: 10px;
+  margin-bottom: 2px;
 }
 
-.home-title {
-  font-size: 40px;
+.panel-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.panel-title {
+  font-size: 26px;
   font-weight: 700;
   margin: 0;
-  line-height: 1.25;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--color-ink);
 }
 
-.home-intro {
-  font-family: var(--font-kai);
-  font-size: 15px;
-  line-height: 2;
-  color: var(--color-ink-dim);
-  border-left: 2px solid var(--color-gold);
-  padding-left: 16px;
-  margin: 0 0 22px;
-}
-
-.home-intro p {
-  margin: 0 0 10px;
-}
-
-.home-intro p:last-child {
-  margin-bottom: 0;
-}
-
-.home-hint {
+.panel-sub {
   margin: 0;
   font-size: 13px;
   color: var(--color-ink-faint);
 }
 
-.home-tree {
+/* ---- 主区：左馆树 + 右 400px 窄栏 ---- */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  gap: 48px;
+  align-items: start;
+}
+
+.tree-slot {
+  min-height: 620px;
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 24px;
   min-width: 0;
 }
 
-@media (max-width: 860px) {
-  .home {
+/* ---- 右栏：连续纸面，无卡片 ---- */
+.rail-section {
+  padding: 4px 0 22px;
+}
+
+.rail-section + .rail-section {
+  border-top: 1px solid var(--color-line);
+  padding-top: 20px;
+}
+
+.rail-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.rail-title .zh {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  letter-spacing: 0.18em;
+  color: var(--color-ink);
+}
+
+.rail-title .latin {
+  font-family: var(--font-serif);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--color-ink-faint);
+  text-transform: uppercase;
+}
+
+.rail-title .rule {
+  flex: 1;
+  height: 1px;
+  background: var(--color-line);
+}
+
+@media (max-width: 1020px) {
+  .layout {
     grid-template-columns: 1fr;
-    gap: 0;
-    padding: 24px 5vw 32px;
   }
 
-  .home-side {
-    text-align: center;
-    justify-self: center;
-    align-self: center;
-    padding: 32px 24px 26px;
-  }
-
-  .home-title {
-    font-size: 34px;
+  .rail {
+    max-width: 480px;
+    margin: 0 auto;
+    width: 100%;
   }
 }
 </style>

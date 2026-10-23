@@ -427,7 +427,7 @@ export function parseSheet(raw?: string | null): LibrarianSheet | null {
     }
     s.systemData = s.systemData ?? {}
     if (s.systemData.mind != null && typeof s.systemData.mind === 'string') {
-      s.systemData.mind = { name: '心-[未命名]', effect: s.systemData.mind }
+      s.systemData.mind = { name: '心::[未命名]', effect: s.systemData.mind }
     }
     return s
   } catch {
@@ -1318,6 +1318,29 @@ export interface PvzKeyword {
   id: string
   name: string
   description: string
+}
+
+/**
+ * 域外书架条目（馆长层 / 草稿 4.1 主页仪表盘化）：
+ * 登记一个馆外的本地项目（如 SillyTavern），供主页书架「开馆 / 入馆」。
+ * launchPath 与 url 至少填一项——只读不启动的纯网页项目可以只填 url；
+ * 只有本地界面没有网页的项目可以只填 launchPath（此时在馆探测不可用）。
+ * spineColor 为空 = 前端按收录顺序从预设皮革色循环分配（展示层职责）。
+ * enabled 对应 SQLite INTEGER（1 上架 / 0 下架），与 guests.isUninvited 同惯例。
+ */
+export interface ExternalProject {
+  id: number
+  name: string
+  description: string
+  launchPath: string
+  url: string
+  spineColor: string
+  enabled: number
+  sortOrder: number
+}
+
+export interface LauncherStatus {
+  running: boolean | null
 }
 
 export interface OverviewStats {

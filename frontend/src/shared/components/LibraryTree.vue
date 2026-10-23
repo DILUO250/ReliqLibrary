@@ -172,10 +172,37 @@ const geo = computed<Record<string, PanelGeo>>(() => {
   return m
 })
 
+/* ---- SVG 长文本自动省略：SVG <text> 没有原生 ellipsis，用 canvas 按实际主题字体量宽截断加「…」 ---- */
+let measureCtx: CanvasRenderingContext2D | null = null
+
+function familyOf(varName: string, fallback: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback
+}
+
+function truncateFor(text: string, maxWidth: number, family: string, fontSize: number, spacingEm: number): string {
+  if (!text) return text
+  measureCtx ??= document.createElement('canvas').getContext('2d')
+  const ctx = measureCtx
+  if (!ctx) return text
+  ctx.font = `${fontSize}px ${family}`
+  const spacing = fontSize * spacingEm
+  const widthOf = (s: string): number => ctx.measureText(s).width + spacing * s.length
+  if (widthOf(text) <= maxWidth) return text
+  let keep = 0
+  let hi = text.length - 1
+  while (keep < hi) {
+    const mid = Math.ceil((keep + hi) / 2)
+    if (widthOf(`${text.slice(0, mid)}…`) <= maxWidth) keep = mid
+    else hi = mid - 1
+  }
+  return `${text.slice(0, keep).trimEnd()}…`
+}
+
 const panels = computed(() =>
   zones.map((z) => {
     const g = geo.value[z.id]!
     const pad = PAD_GAP
+    const textMax = g.w - pad * 2
     const rows = z.stats.map((s, i) => ({
       label: s.label,
       value: overview.stats ? formatValue(overview.stats[s.key]) : '—',
@@ -188,6 +215,8 @@ const panels = computed(() =>
       ...g,
       rows,
       pad,
+      latin: truncateFor(z.latin, textMax, familyOf('--font-display', 'Georgia, serif'), 13, 0.07),
+      desc: truncateFor(z.desc, textMax, familyOf('--font-kai', 'KaiTi, serif'), 15, 0),
       titleY: g.y + 44,
       latinY: g.y + 70,
       ruleY: g.y + 86,
@@ -342,7 +371,7 @@ onMounted(() => {
       >
         <rect :x="p.x" :y="p.y" :width="p.w" :height="p.h" rx="0" class="panel-rect" />
         <text :x="p.x + p.pad" :y="p.titleY" class="panel-title">{{ p.zone.zh }}</text>
-        <text :x="p.x + p.pad" :y="p.latinY" class="panel-latin">{{ p.zone.latin }}</text>
+        <text :x="p.x + p.pad" :y="p.latinY" class="panel-latin">{{ p.latin }}</text>
         <line
           :x1="p.x + p.pad"
           :y1="p.ruleY"
@@ -354,7 +383,7 @@ onMounted(() => {
           <text :x="r.labelX" :y="r.y" class="panel-label">{{ r.label }}</text>
           <text :x="r.valueX" :y="r.y" class="panel-value" text-anchor="end">{{ r.value }}</text>
         </template>
-        <text :x="p.x + p.pad" :y="p.descY" class="panel-desc">{{ p.zone.desc }}</text>
+        <text :x="p.x + p.pad" :y="p.descY" class="panel-desc">{{ p.desc }}</text>
       </g>
     </svg>
   </div>
@@ -491,7 +520,7 @@ onMounted(() => {
 }
 
 .panel-rect {
-  fill: rgba(24, 19, 13, 0.94);
+  fill: var(--color-surface-2);
   stroke: var(--zone-accent);
   stroke-width: 2;
   transition:

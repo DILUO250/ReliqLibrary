@@ -15,7 +15,7 @@ import { toast } from '@/app/stores/toast'
   left: 50%;
   z-index: 9999;
   color: var(--color-ink);
-  background: rgba(24, 19, 13, 0.94);
+  background: var(--color-surface-2);
   border: var(--bd-w) var(--bd-style) var(--accent);
   border-radius: 8px;
   padding: 0.65rem 1.4rem;

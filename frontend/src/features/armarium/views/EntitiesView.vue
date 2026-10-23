@@ -260,7 +260,7 @@ function createEntity(): void {
 
 .entities__create:hover {
   background: var(--accent);
-  color: #1b1408;
+  color: var(--on-accent);
 }
 
 .entities__hint {
@@ -275,7 +275,7 @@ function createEntity(): void {
 }
 
 .entities__input {
-  background: rgba(13, 10, 7, 0.6);
+  background: var(--color-surface-2);
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
@@ -297,7 +297,7 @@ function createEntity(): void {
 }
 
 .entities__select {
-  background: rgba(13, 10, 7, 0.6);
+  background: var(--color-surface-2);
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   color: var(--color-ink);
@@ -308,7 +308,7 @@ function createEntity(): void {
 }
 
 .entities__select option {
-  background: #1b1408;
+  background: var(--color-surface-2);
   color: var(--color-ink);
 }
 
@@ -360,7 +360,7 @@ function createEntity(): void {
 }
 
 .entity-card__thumb {
-  background: #0d0a07;
+  background: var(--color-surface-2);
   border: 1px solid var(--color-line);
   border-radius: 6px;
   cursor: pointer;
@@ -463,7 +463,7 @@ function createEntity(): void {
 
 .entity-card__btn:hover {
   background: var(--accent);
-  color: #1b1408;
+  color: var(--on-accent);
 }
 
 .entity-card__btn--edit {

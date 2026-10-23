@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
+import { setupRecentPageTracking } from '@/app/services/recentPages'
 
 export type ModuleId = 'armarium' | 'turris' | 'collegium'
 
@@ -199,5 +200,8 @@ const router = createRouter({
     return { top: 0 }
   },
 })
+
+// 最近足迹（主页右栏）：localStorage 记录，见 app/services/recentPages.ts
+setupRecentPageTracking(router)
 
 export default router

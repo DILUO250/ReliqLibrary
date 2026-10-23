@@ -81,6 +81,33 @@ const prefix = computed(() => props.card.prefix?.trim() ?? '')
 const theme = computed(() => PREFIX_THEME[prefix.value] ?? null)
 const isLight = computed(() => !!theme.value?.light)
 
+/**
+ * 卡面墨色机制：前缀主题的卡面背景是写死的渐变，不随全局换肤变化，
+ * 所以卡面上的文字/线条配色也必须跟卡面主题走，而不是跟全局主题走——
+ * 否则全局切到浅色主题后，全局的深色文字会落进写死的深色卡面里（2026-10 实测事故）。
+ * 无前缀主题的默认卡面，背景用的就是全局 surface token，墨色继续跟全局 token 走（返回空 = 不覆盖）。
+ * 浅色卡面（SHM）配深棕色墨色；深色卡面配暖白墨色 + 半透明白线条 + 深色画面区。
+ */
+const inkVars = computed((): Record<string, string> => {
+  if (!theme.value) return {}
+  if (theme.value.light)
+    return {
+      '--c-ink': '#3d2c12',
+      '--c-ink-dim': '#4a3818',
+      '--c-ink-faint': '#5a441d',
+      '--c-line': 'rgba(74, 56, 24, 0.35)',
+      '--c-marker': '#7a5a1f',
+      '--c-dice-special': '#6b4c1a',
+    }
+  return {
+    '--c-ink': '#f4effa',
+    '--c-ink-dim': 'rgba(255, 255, 255, 0.85)',
+    '--c-ink-faint': 'rgba(255, 255, 255, 0.62)',
+    '--c-line': 'rgba(255, 255, 255, 0.26)',
+    '--c-art-bg': 'rgba(0, 0, 0, 0.28)',
+  }
+})
+
 const fullName = computed(
   () => `${props.card.prefix ? props.card.prefix + ' ' : ''}${props.card.name}`,
 )
@@ -94,8 +121,8 @@ const hasEffects = computed(
 <template>
   <article
     class="sts-card"
-    :class="{ 'is-light-theme': isLight }"
     :style="{
+      ...inkVars,
       '--acc': accent,
       '--glow': theme ? theme.glow : accent,
       '--bg-from': theme ? theme.from : 'var(--color-surface-2)',
@@ -176,6 +203,14 @@ const hasEffects = computed(
   --card-border: var(--color-line);
   --frame-tint: rgba(201, 165, 60, 0.08);
   --card-h: auto;
+  /* 卡面本地墨色（默认跟随全局主题 token；有前缀主题时由 inkVars 内联覆盖） */
+  --c-ink: var(--color-ink);
+  --c-ink-dim: var(--color-ink-dim);
+  --c-ink-faint: var(--color-ink-faint);
+  --c-line: var(--color-line);
+  --c-art-bg: var(--color-bg);
+  --c-marker: var(--glow);
+  --c-dice-special: var(--glow);
   width: 200px;
   box-sizing: border-box;
 }
@@ -232,7 +267,7 @@ const hasEffects = computed(
   font-family: var(--font-serif);
   font-weight: 600;
   font-size: 13px;
-  color: var(--color-ink);
+  color: var(--c-ink);
   line-height: 1.2;
   overflow: hidden;
   display: -webkit-box;
@@ -250,8 +285,8 @@ const hasEffects = computed(
   gap: 6px;
   background:
     radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--glow) 40%, transparent), transparent 70%),
-    var(--color-bg);
-  border: 1px solid var(--color-line);
+    var(--c-art-bg);
+  border: 1px solid var(--c-line);
 }
 .sts-card__art-type {
   font-family: var(--font-kai);
@@ -278,8 +313,8 @@ const hasEffects = computed(
 .tag-chip {
   font-style: normal;
   font-size: 10px;
-  color: var(--color-ink-dim);
-  border: 1px solid var(--color-line);
+  color: var(--c-ink-dim);
+  border: 1px solid var(--c-line);
   border-radius: 999px;
   padding: 1px 6px;
   white-space: nowrap;
@@ -290,7 +325,7 @@ const hasEffects = computed(
   gap: 6px;
   font-size: 11px;
   line-height: 1.45;
-  color: var(--color-ink-dim);
+  color: var(--c-ink-dim);
 }
 .sts-card__effects {
   margin: 0;
@@ -300,7 +335,7 @@ const hasEffects = computed(
   white-space: pre-wrap;
 }
 .sts-card__effects li::marker {
-  color: var(--glow);
+  color: var(--c-marker);
 }
 .shi-hop {
   display: block;
@@ -327,7 +362,7 @@ const hasEffects = computed(
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border: 1px dashed var(--color-line);
+  border: 1px dashed var(--c-line);
   border-radius: 6px;
   padding: 4px 6px;
 }
@@ -339,16 +374,16 @@ const hasEffects = computed(
 }
 .dice-base {
   font-weight: 700;
-  color: var(--color-ink);
+  color: var(--c-ink);
 }
 .dice-special {
-  color: var(--glow);
+  color: var(--c-dice-special);
   text-decoration: underline;
   text-decoration-style: dotted;
 }
 .dice-range {
   font-family: var(--font-display);
-  color: var(--color-ink);
+  color: var(--c-ink);
 }
 .dice-effects {
   display: flex;
@@ -359,43 +394,20 @@ const hasEffects = computed(
   display: block;
 }
 .dice-effect {
-  color: var(--color-ink-faint);
+  color: var(--c-ink-faint);
 }
 .sts-card__footer {
   margin-top: 10px;
   padding-top: 6px;
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--c-line);
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 10px;
-  color: var(--color-ink-faint);
+  color: var(--c-ink-faint);
 }
 .sts-card__footer-type {
   color: var(--glow);
   font-weight: 600;
-}
-
-/* 浅底主题（SHM 金黄卡面）：正文/骰子文字改为深色以保证可读（词条字色由 onLight 处理）。 */
-.is-light-theme .sts-card__body {
-  color: #3d2c12;
-}
-.is-light-theme .tag-chip {
-  color: #4a3818;
-  border-color: rgba(74, 56, 24, 0.35);
-}
-.is-light-theme .dice-base,
-.is-light-theme .dice-range {
-  color: #3d2c12;
-}
-.is-light-theme .dice-special {
-  color: #6b4c1a;
-  text-decoration-color: #6b4c1a;
-}
-.is-light-theme .dice-effect {
-  color: #5a441d;
-}
-.is-light-theme .sts-card__effects li::marker {
-  color: #7a5a1f;
 }
 </style>

@@ -284,6 +284,20 @@ CREATE TABLE IF NOT EXISTS pvz_keywords (
   description TEXT DEFAULT ''
 );
 
+-- 域外书架（馆长层 / 主页面板）：登记馆外本地项目（如 SillyTavern），
+-- 主页书架据此渲染书脊并「开馆」（features/launcher/ 拉起 launchPath）/「入馆」（开 url）。
+-- launchPath 与 url 至少填一项；enabled INTEGER 1/0（下架 = 书脊取走、记录保留）。
+CREATE TABLE IF NOT EXISTS external_projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT DEFAULT '',
+  launchPath TEXT DEFAULT '',
+  url TEXT DEFAULT '',
+  spineColor TEXT DEFAULT '',
+  enabled INTEGER DEFAULT 1,
+  sortOrder INTEGER DEFAULT 0
+);
+
 -- 目录页（索引）：所有"所属关系"外键列 + 术语表的 sectionId。
 -- 数据量大时避免全表扫描；IF NOT EXISTS 保证幂等。
 CREATE INDEX IF NOT EXISTS idx_librarians_floor ON librarians(floorId);
@@ -373,6 +387,7 @@ export const TABLES = [
   'term_entries',
   'pvz_plants',
   'pvz_keywords',
+  'external_projects',
 ] as const
 
 export type TableName = (typeof TABLES)[number]

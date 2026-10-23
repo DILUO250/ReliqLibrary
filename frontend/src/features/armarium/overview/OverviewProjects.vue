@@ -136,7 +136,7 @@ const countText = computed(() => `${props.projects.length} 项目`)
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: 10px;
   padding: 14px 16px;
-  background: rgba(32, 26, 20, 0.45);
+  background: var(--color-surface-2);
   transition: border-color 0.2s;
 }
 

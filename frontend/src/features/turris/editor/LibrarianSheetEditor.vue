@@ -266,7 +266,7 @@ watch(
       const d = sysData()
       if (!d.mind || typeof d.mind === 'string') {
         d.mind = {
-          name: '心-',
+          name: '心::',
           effect: typeof d.mind === 'string' ? d.mind : '',
           format: { color: '#e6c15a', bold: false, italic: false, underline: 'none' },
         }
@@ -280,7 +280,7 @@ function mindFormat(): TermFormat {
   const d = sysData()
   if (!d.mind) {
     d.mind = {
-      name: '心-',
+      name: '心::',
       effect: '',
       format: { color: '#e6c15a', bold: false, italic: false, underline: 'none' },
     }
@@ -586,7 +586,7 @@ const privateTerms = computed<PrivateTerm[]>(() => {
               <label>分类</label>
               <input :value="'心'" disabled />
               <label>Buff 名称</label>
-              <input v-model="sheet.systemData!.mind!.name" placeholder="心-xxx" />
+              <input v-model="sheet.systemData!.mind!.name" placeholder="心::xxx" />
             </div>
             <div class="panic-stage">
               <label>效果</label>
@@ -602,7 +602,7 @@ const privateTerms = computed<PrivateTerm[]>(() => {
             <div class="panic-stage">
               <label>字体格式</label>
               <div class="mech-format">
-                <span class="mech-preview" :style="formatToCss(mindFormat())">{{ sheet.systemData!.mind!.name || '心-xxx' }}</span>
+                <span class="mech-preview" :style="formatToCss(mindFormat())">{{ sheet.systemData!.mind!.name || '心::xxx' }}</span>
                 <FormatEditor :format="mindFormat()" />
               </div>
             </div>
@@ -717,7 +717,7 @@ const privateTerms = computed<PrivateTerm[]>(() => {
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
   padding: 16px;
-  background: rgba(32, 26, 20, 0.3);
+  background: var(--color-surface-2);
 }
 .sec h3 {
   margin: 0 0 12px;

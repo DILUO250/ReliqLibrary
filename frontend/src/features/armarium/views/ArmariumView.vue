@@ -203,7 +203,7 @@ function openProject(project: ArmariumProject): void {
 }
 
 .project-card {
-  background: linear-gradient(135deg, rgba(55, 45, 32, 0.9), rgba(34, 27, 20, 0.92));
+  background: var(--color-surface-2);
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: calc(var(--radius) * 2);
   display: grid;
@@ -219,7 +219,7 @@ function openProject(project: ArmariumProject): void {
 }
 
 .project-card__cover {
-  background: #24351f;
+  background: var(--color-surface-2);
   min-height: 245px;
   overflow: hidden;
   position: relative;
@@ -316,7 +316,7 @@ function openProject(project: ArmariumProject): void {
 
 .project-card__open:hover {
   background: var(--accent);
-  color: #1b1408;
+  color: var(--on-accent);
 }
 
 @media (max-width: 600px) {

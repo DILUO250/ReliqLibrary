@@ -384,11 +384,14 @@ function enterFloor(f: Floor): void {
   gap: 14px;
   padding: 0 16px;
 }
+/* 楼层横带的背景 = 写死的实景图 + 写死的深色遮罩（不随主题变化），
+ * 所以其上的文字也必须写死浅色——与 StsCard 特殊卡面同一原则，
+ * 否则浅色主题下全局深色墨色会落进深色横带里（2026-10 实测事故）。 */
 .tfloor__code {
   font-family: var(--font-display);
   font-size: 13px;
   letter-spacing: 0.12em;
-  color: var(--turris);
+  color: #e5947f;
   min-width: 52px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
@@ -396,16 +399,17 @@ function enterFloor(f: Floor): void {
   font-family: var(--font-serif);
   font-size: 19px;
   font-weight: 700;
+  color: #f2ecdc;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .tfloor__theme {
   font-size: 12px;
-  color: var(--color-ink-dim);
+  color: rgba(242, 236, 220, 0.75);
   font-family: var(--font-kai);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .tfloor__theme--empty {
-  color: var(--color-ink-faint);
+  color: rgba(242, 236, 220, 0.45);
 }
 .tfloor__sys {
   font-family: var(--font-display);
@@ -421,23 +425,23 @@ function enterFloor(f: Floor): void {
   margin-left: auto;
   font-family: var(--font-kai);
   font-size: 12px;
-  color: var(--color-ink-dim);
+  color: rgba(242, 236, 220, 0.72);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 .tfloor__count b {
   font-family: var(--font-display);
   font-size: 16px;
-  color: var(--color-ink);
+  color: #f2ecdc;
 }
 .tfloor__arrow {
-  color: var(--color-ink-faint);
+  color: rgba(242, 236, 220, 0.5);
   font-size: 14px;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
 }
 /* 加载占位横条（形状与楼层横带一致） */
 .tfloor--skel {
   height: 104px;
-  background: rgba(32, 26, 20, 0.6);
+  background: var(--color-surface-2);
 }
 /* 最近编辑之外的余层提示行 */
 .tower-rest {
@@ -548,7 +552,7 @@ function enterFloor(f: Floor): void {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  border-top: var(--bd-w) dashed rgba(233, 221, 198, 0.2);
+  border-top: var(--bd-w) dashed var(--color-line);
   padding-top: 14px;
 }
 .cstat {
@@ -687,7 +691,7 @@ function enterFloor(f: Floor): void {
   padding: 8px 12px;
   border: var(--bd-w) var(--bd-style) var(--bd-color);
   border-radius: var(--radius);
-  background: rgba(20, 16, 11, 0.5);
+  background: var(--color-surface-2);
   margin-bottom: 8px;
 }
 .terms-row:last-child {
