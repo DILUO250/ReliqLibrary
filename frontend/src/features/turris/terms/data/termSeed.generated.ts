@@ -2853,7 +2853,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "thick"
             },
-            "desc": "特殊震颤；受到 震颤引爆 时将X%的混乱上限转化为体力上限并将该层数减至2/3，并额外受到(自身的震颤与烧伤层数之和/2)点烧伤伤害，同时自身的烧伤层数减至2/3"
+            "desc": "特殊“震颤”；受到 “震颤引爆” 时将X%的混乱上限转化为体力上限并将该层数减至2/3，并额外受到 (自身的“震颤”与“烧伤”层数之和/2) 点“烧伤”伤害，同时自身的“烧伤”层数减至2/3"
           },
           {
             "name": "震颤-大出血 X层",
@@ -4527,7 +4527,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "thick"
             },
-            "desc": "受到攻击时额外受到X点伤害并将该层数减至2/3"
+            "desc": "受到攻击时额外受到X点“真实伤害”并将该层数减至2/3"
           },
           {
             "name": "咒杀",
@@ -4743,7 +4743,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "thick"
             },
-            "desc": "咒杀3: 持有者的\"破裂\"被触发 -> 受到 (持有者\"破裂\"层数) 点真实伤害"
+            "desc": "咒杀3: 持有者的\"破裂\"被触发 -> 受到 (持有者\"破裂\"层数) 点“真实伤害”"
           },
           {
             "name": "草种 X层",
@@ -7029,7 +7029,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "double"
             },
-            "desc": "不可摧毁骰子拼点失败时，将强行以最小值命中目标"
+            "desc": "“不可摧毁”骰子拼点失败时，将强行以最小值命中目标"
           },
           {
             "name": "重复使用",
@@ -7068,7 +7068,7 @@ export const generatedVisibleSections = [
               "italic": false,
               "underline": "double"
             },
-            "desc": "能够无效化“不可摧毁”骰子"
+            "desc": "“截除”骰子拼点失败时，敌方骰子的攻击将变为给目标恢复体力"
           }
         ]
       }
@@ -7886,6 +7886,708 @@ export const generatedHiddenSections = [
               "underline": "none"
             },
             "desc": "法术类型伤害"
+          },
+          {
+            "name": "一般",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#9FA19F",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "一般属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#9FA19F",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "一般属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#9FA19F",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "格斗",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#FF8000",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "格斗属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#FF8000",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "格斗属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#FF8000",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "飞行",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#81B9EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "飞行属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#81B9EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "飞行属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#81B9EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "毒",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#9141CB",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "毒属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#9141CB",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "毒属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#9141CB",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "地面",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#915121",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "地面属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#915121",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "地面属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#915121",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "岩石",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#AFA981",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "岩石属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#AFA981",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "岩石属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#AFA981",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "虫",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#91A119",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "虫属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#91A119",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "虫属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#91A119",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "幽灵",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#704170",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "幽灵属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#704170",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "幽灵属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#704170",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "钢",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#60A1B8",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "钢属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#60A1B8",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "钢属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#60A1B8",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "火",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#E62829",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "火属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#E62829",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "火属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#E62829",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "水",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#2980EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "水属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#2980EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "水属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#2980EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "草",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#3FA129",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "草属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#3FA129",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "草属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#3FA129",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "电",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#FAC000",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "电属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#FAC000",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "电属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#FAC000",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "超能",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#EF4179",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "超能属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#EF4179",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "超能属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#EF4179",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "冰",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#3FD8FF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "冰属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#3FD8FF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "冰属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#3FD8FF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "龙",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#5060E1",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "龙属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#5060E1",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "龙属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#5060E1",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "恶",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#50413F",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "恶属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#50413F",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "恶属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#50413F",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "妖精",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#EF70EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "妖精属性",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#EF70EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
+          },
+          {
+            "name": "妖精属性异常状态",
+            "tags": [],
+            "tagColors": [],
+            "tagFormats": [],
+            "format": {
+              "color": "#EF70EF",
+              "bold": true,
+              "italic": false,
+              "underline": "none"
+            },
+            "desc": ""
           }
         ]
       }

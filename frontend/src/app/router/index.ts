@@ -1,14 +1,42 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { setupRecentPageTracking } from '@/app/services/recentPages'
+import { loadUiVersion } from '@/app/theme'
 
 export type ModuleId = 'armarium' | 'turris' | 'collegium'
+
+// 界面版本在模块加载时读一次（切版本会整页 reload，路由表随之重新生成）。
+// 迎书楼按版本选外壳与子组件：旧版 = ModuleLayout + views/ 旧组件，新版 = MoltenLayout + molten/ 新组件。
+const isLegacyUi = loadUiVersion() === 'legacy'
+
+const turrisLayout = isLegacyUi
+  ? () => import('@/shared/components/ModuleLayout.vue')
+  : () => import('@/features/turris/molten/MoltenLayout.vue')
+const turrisOverview = isLegacyUi
+  ? () => import('@/features/turris/views/TurrisOverviewView.vue')
+  : () => import('@/features/turris/molten/MoltenOverviewView.vue')
+const turrisFloors = isLegacyUi
+  ? () => import('@/features/turris/views/FloorsView.vue')
+  : () => import('@/features/turris/molten/MoltenFloorsView.vue')
+const turrisTerms = isLegacyUi
+  ? () => import('@/features/turris/views/TermsView.vue')
+  : () => import('@/features/turris/molten/MoltenTermsView.vue')
+const turrisSystems = isLegacyUi
+  ? () => import('@/features/turris/views/SystemsView.vue')
+  : () => import('@/features/turris/molten/MoltenSystemsView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
     component: () => import('@/app/pages/HomeView.vue'),
+  },
+  {
+    // 旧版仪表盘（界面版本开关切到「旧版」时首页跳转到此）：
+    // 与新版 HomeView.vue 并列，挂旧版 HomeViewV1 + 旧版子组件，供开发对照与回退。
+    path: '/home-v1',
+    name: 'home-v1',
+    component: () => import('@/app/pages/HomeViewV1.vue'),
   },
   // 异常实体报告单整页（预览/编辑）：独立于 ModuleLayout——不带 page-header 与五 Tab，
   // 报告纸面与草稿双栏编辑器需要完整视口（2026-09-16 二次决议：顶栏 SiteNav 保留）。
@@ -87,8 +115,14 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: '/turris/battle',
+    name: 'turris-battle',
+    component: () => import('@/features/turris/battle/BattleSimulatorView.vue'),
+  },
+  {
     path: '/turris',
-    component: () => import('@/shared/components/ModuleLayout.vue'),
+    // 按界面版本选外壳：旧版走 ModuleLayout（旧组件），新版走 MoltenLayout（熔核战线）。
+    component: turrisLayout,
     meta: { module: 'turris' },
     children: [
       {
@@ -96,24 +130,25 @@ const routes: RouteRecordRaw[] = [
         // 原先"重定向到 /turris/floors"的旧形态已退役，楼层页独占「楼层」Tab。
         path: '',
         name: 'turris',
-        component: () => import('@/features/turris/views/TurrisOverviewView.vue'),
+        component: turrisOverview,
       },
       {
         path: 'floors',
         name: 'turris-floors',
-        component: () => import('@/features/turris/views/FloorsView.vue'),
+        component: turrisFloors,
       },
       {
         path: 'dictionary',
         name: 'turris-dictionary',
-        component: () => import('@/features/turris/views/TermsView.vue'),
+        component: turrisTerms,
       },
       {
         path: 'systems',
         name: 'turris-systems',
-        component: () => import('@/features/turris/views/SystemsView.vue'),
+        component: turrisSystems,
       },
       {
+        // 邀请函页目前新旧版共用同一组件（新版未做独立熔核版）。
         path: 'invitations',
         name: 'turris-invitations',
         component: () => import('@/features/turris/views/InvitationsView.vue'),
@@ -194,9 +229,11 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  // SPA 跳转默认回到页面顶部；浏览器前进/后退保留原滚动位置
-  scrollBehavior(_to, _from, savedPosition) {
+  // SPA 跳转默认回到页面顶部；浏览器前进/后退保留原滚动位置。
+  // 同一路径仅 query 变化（如切楼层、切 tab）不滚动，避免视窗被强制拉回顶部。
+  scrollBehavior(to, from, savedPosition) {
     if (savedPosition) return savedPosition
+    if (to.path === from.path) return false
     return { top: 0 }
   },
 })

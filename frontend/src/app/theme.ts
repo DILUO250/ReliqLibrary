@@ -4,6 +4,7 @@
 
 export const COLOR_THEME_KEY = 'rtl.color-theme'
 export const DESIGN_THEME_KEY = 'rtl.design-theme'
+export const UI_VERSION_KEY = 'rtl.ui-version'
 
 export interface ColorThemeOption {
   id: ColorThemeId
@@ -38,6 +39,7 @@ export type DesignThemeId =
   | 'wrought'
   | 'sticker'
   | 'office'
+export type UiVersionId = 'legacy' | 'modern'
 
 // null = 默认基线（暖色夜间 · 图书馆纸墨 / 0 号现有设计，tokens.css）
 export type ThemeSelection = ColorThemeId | null
@@ -66,6 +68,8 @@ const VALID_DESIGN_IDS: readonly DesignThemeId[] = [
   'sticker',
   'office',
 ]
+
+const VALID_UI_VERSION_IDS: readonly UiVersionId[] = ['legacy', 'modern']
 
 export const COLOR_THEMES: readonly ColorThemeOption[] = [
   {
@@ -212,4 +216,21 @@ export function applyColorTheme(id: ThemeSelection): void {
 export function applyDesignTheme(id: DesignSelection): void {
   write(DESIGN_THEME_KEY, id)
   location.reload()
+}
+
+/** 当前界面版本（'modern' = 新组件，'legacy' = 旧组件；默认 modern） */
+export function loadUiVersion(): UiVersionId {
+  return readValid(UI_VERSION_KEY, VALID_UI_VERSION_IDS) ?? 'modern'
+}
+
+/** 保存界面版本并刷新页面（旧版 / 新版二选一）。
+ *  切到旧版后首页跳转到旧版仪表盘 /home-v1，切回新版则回到 /。 */
+export function applyUiVersion(id: UiVersionId): void {
+  write(UI_VERSION_KEY, id)
+  const target = id === 'legacy' ? '/home-v1' : '/'
+  if (location.pathname === '/settings') {
+    location.assign(target)
+  } else {
+    location.reload()
+  }
 }

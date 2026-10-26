@@ -1,0 +1,57 @@
+/* 熔核战线：部门红 / 近黑 / 浅字是迎书楼固定识别色；其余表面随全局主题。 */
+.molten-shell {
+  --molten-red: var(--turris);
+  --molten-red-bright: color-mix(in srgb, var(--turris) 72%, #ff9a85);
+  --molten-dark: #101014;
+  --molten-panel: #17171d;
+  --molten-light: #eee9e1;
+  --molten-muted: #a49da1;
+  --molten-line: color-mix(in srgb, var(--molten-red) 34%, var(--color-line));
+  --molten-cut: 1.25rem;
+  min-height: calc(100vh - var(--header-h) + 2.5rem);
+  /* 抵消 site-main 的 2.5rem 顶部留白，紧跟全站导航。 */
+  margin: -2.5rem calc(50% - 50vw) 0;
+  padding: clamp(1rem, 2.5vw, 1.5rem) max(1rem, calc((100vw - 90rem) / 2)) clamp(3rem, 7vw, 6rem);
+  color: var(--color-ink);
+  background:
+    linear-gradient(color-mix(in srgb, var(--molten-red) 3%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--molten-red) 3%, transparent) 1px, transparent 1px),
+    var(--color-bg);
+  background-size: 3rem 3rem;
+}
+.molten-shell__inner { max-width: 90rem; margin-inline: auto; }
+.molten-hero { display: flex; align-items: center; justify-content: space-between; gap: 2rem; min-height: 8.5rem; padding: clamp(1.25rem, 3vw, 2rem); position: relative; overflow: hidden; color: var(--color-ink); background: linear-gradient(110deg, color-mix(in srgb, var(--molten-red) 13%, var(--color-surface)), var(--color-surface) 64%); border-top: 2px solid var(--molten-red); border-bottom: 1px solid var(--molten-line); }
+.molten-hero::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent 0 .3rem, color-mix(in srgb, var(--molten-red) 5%, transparent) .3rem .35rem); }
+.molten-hero::after { content: ''; position: absolute; inset: 0 auto 0 0; width: .2rem; background: var(--molten-red); }
+.molten-hero__copy { position: relative; }
+.molten-eyebrow { margin: 0 0 1rem; color: var(--molten-red-bright); font: .65rem var(--font-display); letter-spacing: .2em; }
+.molten-eyebrow span { color: var(--color-ink-faint); }
+.molten-hero h1 { margin: 0; font: 800 clamp(2.2rem, 4vw, 3.4rem)/1 var(--font-serif); letter-spacing: .04em; transform: skew(-5deg); transform-origin: left; }
+.molten-hero h1 small { color: var(--molten-red-bright); font: 400 1rem var(--font-display); }
+.molten-hero__copy > p:last-child { margin: .8rem 0 0; color: var(--color-ink-dim); font-size: .75rem; letter-spacing: .08em; }
+.molten-hero__sigil { position: relative; display: flex; align-items: center; gap: 1.5rem; flex: 0 0 auto; }
+.molten-hero__sigil div { display: flex; flex-direction: column; gap: .5rem; text-align: right; }
+.molten-hero__sigil strong { font: 600 .95rem var(--font-serif); letter-spacing: .14em; }
+.molten-hero__sigil span { color: var(--color-ink-faint); font: .55rem var(--font-display); letter-spacing: .13em; }
+.molten-hero__sigil svg { width: clamp(3.5rem, 5vw, 4.5rem); height: auto; color: var(--molten-red-bright); overflow: visible; }
+.molten-tabs { display: flex; align-items: stretch; border-bottom: 1px solid var(--molten-line); margin-bottom: clamp(1.5rem, 3vw, 2.5rem); overflow-x: auto; }
+.molten-tabs a { position: relative; display: flex; align-items: center; gap: .6rem; padding: 1rem 1.4rem; color: var(--color-ink-faint); text-decoration: none; white-space: nowrap; font-size: .85rem; }
+.molten-tabs a span { font: .55rem var(--font-display); opacity: .7; }
+.molten-tabs a:hover { color: var(--molten-red-bright); }
+.molten-tabs a.is-active { color: var(--on-accent); background: var(--molten-red); clip-path: polygon(0 0, 100% 0, calc(100% - .65rem) 100%, 0 100%); }
+.molten-tabs__path { margin-left: auto; align-self: center; padding-inline: 1rem; color: var(--color-ink-faint); font: .65rem var(--font-display); }
+.molten-page { display: flex; flex-direction: column; gap: 1.25rem; }
+.molten-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; padding-bottom: .85rem; border-bottom: 1px solid var(--molten-line); }
+.molten-heading h2 { margin: 0; font: 600 1.25rem var(--font-serif); letter-spacing: .06em; }
+.molten-heading h2::before { content: '▲'; margin-right: .65rem; color: var(--molten-red); font-size: .65em; }
+.molten-heading p { margin: .4rem 0 0; color: var(--color-ink-faint); font-size: .75rem; }
+.molten-heading > span { color: var(--color-ink-faint); font: .6rem var(--font-display); letter-spacing: .14em; }
+.molten-panel { position: relative; border: 1px solid var(--molten-line); background: var(--color-surface); clip-path: polygon(0 0, calc(100% - var(--molten-cut)) 0, 100% var(--molten-cut), 100% 100%, 0 100%); }
+.molten-panel::before { content: ''; position: absolute; z-index: 2; top: 0; right: var(--molten-cut); width: 1px; height: calc(var(--molten-cut) * 1.4); background: var(--molten-line); transform: rotate(-45deg); transform-origin: top; pointer-events: none; }
+.molten-button { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 2.25rem; padding: .45rem .85rem; border: 1px solid var(--molten-line); background: color-mix(in srgb, var(--molten-red) 7%, var(--color-surface)); color: var(--color-ink); cursor: pointer; font: .75rem var(--font-sans); text-decoration: none; clip-path: polygon(.45rem 0, 100% 0, 100% calc(100% - .45rem), calc(100% - .45rem) 100%, 0 100%, 0 .45rem); }
+.molten-button:hover { color: var(--on-accent); background: var(--molten-red); text-decoration: none; }
+.molten-button:focus-visible, .molten-tabs a:focus-visible, .molten-shell button:focus-visible { outline: 2px solid var(--molten-red-bright); outline-offset: 3px; }
+.molten-error { padding: 1rem; border-left: .2rem solid var(--error); color: var(--error); background: color-mix(in srgb, var(--error) 8%, transparent); }
+@media (max-width: 48rem) { .molten-hero__sigil div { display: none; } .molten-tabs__path { display: none; } .molten-tabs a { padding-inline: 1rem; } }
+@media (max-width: 34rem) { .molten-shell { padding-inline: .75rem; } .molten-hero { padding: 1.5rem; } .molten-hero__sigil { display: none; } .molten-tabs a { padding: .85rem .75rem; font-size: .75rem; } .molten-tabs a span { display: none; } .molten-heading { align-items: start; flex-direction: column; } }
+@media (prefers-reduced-motion: reduce) { .molten-shell *, .molten-shell *::before, .molten-shell *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

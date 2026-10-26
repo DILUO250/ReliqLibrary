@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS librarians (
   role TEXT DEFAULT 'librarian',
   floorId INTEGER DEFAULT NULL,
   rarity TEXT DEFAULT '',
+  hostLibrarianId INTEGER DEFAULT NULL,
   coreColor TEXT DEFAULT 'neutral',
   affiliation TEXT DEFAULT '',
   status TEXT DEFAULT '在任',
@@ -348,6 +349,9 @@ export function migrate(db: Database.Database): void {
   ensureColumn(db, 'librarians', 'portraitPreview', "TEXT DEFAULT ''")
   ensureColumn(db, 'librarians', 'sortOrder', 'INTEGER DEFAULT 0')
   ensureColumn(db, 'librarians', 'rarity', "TEXT DEFAULT ''")
+  // 附加单位的正式宿主；NULL = 尚未绑定，由运营手动指定。
+  ensureColumn(db, 'librarians', 'hostLibrarianId', 'INTEGER DEFAULT NULL')
+  db.exec('CREATE INDEX IF NOT EXISTS idx_librarians_host ON librarians(hostLibrarianId)')
   ensureColumn(db, 'term_entries', 'hasParam', 'INTEGER DEFAULT 0')
   ensureColumn(db, 'anomalies', 'report', "TEXT DEFAULT ''")
   ensureColumn(db, 'supernatural_spaces', 'report', "TEXT DEFAULT ''")

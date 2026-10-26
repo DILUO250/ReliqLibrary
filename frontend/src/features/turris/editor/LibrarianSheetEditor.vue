@@ -10,6 +10,7 @@ import {
   professionLabel,
   pkmAttributeDisplay,
 } from '@rtl/shared'
+import VisualCard from '@/features/turris/card/VisualCard.vue'
 import StsCard from './StsCard.vue'
 import CardEditor from './CardEditor.vue'
 import TermInserter from './TermInserter.vue'
@@ -19,6 +20,7 @@ import type { PrivateTerm } from '@/features/turris/terms/renderer'
 import { ensureTermIndex } from '@/features/turris/terms/renderer'
 import { useTermsStore } from '@/features/turris/store/terms'
 import { formatToCss } from '@/features/turris/terms/format'
+import { loadUiVersion } from '@/app/theme'
 
 const props = defineProps<{ sheet: LibrarianSheet; readonly?: boolean }>()
 
@@ -27,6 +29,9 @@ const RESIST_VALUES: Array<{ v: ResistValue; label: string }> = [
   { v: 1.0, label: '一般' },
   { v: 1.5, label: '脆弱' },
 ]
+
+// 卡牌组件按界面版本二选一：旧版 StsCard，新版 VisualCard（props 已对齐）
+const CardComponent = computed(() => (loadUiVersion() === 'legacy' ? StsCard : VisualCard))
 
 const system = computed(() => BATTLE_SYSTEMS[props.sheet.battleSystem])
 // 机制分类下拉 = 术语词典的「状态标签」分区（SQLite 经 store 缓存，单一术语源）。
@@ -139,6 +144,14 @@ function duplicateCard(key: DeckZoneId, i: number): void {
   const list = cardsFor(key)
   const clone = JSON.parse(JSON.stringify(list[i])) as BattleCard
   list.splice(i + 1, 0, clone)
+}
+function moveCard(key: DeckZoneId, i: number, dir: -1 | 1): void {
+  const list = cardsFor(key)
+  const j = i + dir
+  if (j < 0 || j >= list.length) return
+  const tmp = list[i]!
+  list[i] = list[j]!
+  list[j] = tmp
 }
 
 function applyPassivePrefix(p: Passive, prefix: string): void {
@@ -266,7 +279,7 @@ watch(
       const d = sysData()
       if (!d.mind || typeof d.mind === 'string') {
         d.mind = {
-          name: '心::',
+          name: '心 ::',
           effect: typeof d.mind === 'string' ? d.mind : '',
           format: { color: '#e6c15a', bold: false, italic: false, underline: 'none' },
         }
@@ -280,7 +293,7 @@ function mindFormat(): TermFormat {
   const d = sysData()
   if (!d.mind) {
     d.mind = {
-      name: '心::',
+      name: '心 ::',
       effect: '',
       format: { color: '#e6c15a', bold: false, italic: false, underline: 'none' },
     }
@@ -586,7 +599,7 @@ const privateTerms = computed<PrivateTerm[]>(() => {
               <label>分类</label>
               <input :value="'心'" disabled />
               <label>Buff 名称</label>
-              <input v-model="sheet.systemData!.mind!.name" placeholder="心::xxx" />
+              <input v-model="sheet.systemData!.mind!.name" placeholder="心 :: xxx" />
             </div>
             <div class="panic-stage">
               <label>效果</label>
@@ -602,7 +615,7 @@ const privateTerms = computed<PrivateTerm[]>(() => {
             <div class="panic-stage">
               <label>字体格式</label>
               <div class="mech-format">
-                <span class="mech-preview" :style="formatToCss(mindFormat())">{{ sheet.systemData!.mind!.name || '心::xxx' }}</span>
+                <span class="mech-preview" :style="formatToCss(mindFormat())">{{ sheet.systemData!.mind!.name || '心 :: xxx' }}</span>
                 <FormatEditor :format="mindFormat()" />
               </div>
             </div>
@@ -679,8 +692,13 @@ const privateTerms = computed<PrivateTerm[]>(() => {
         :private-terms="privateTerms"
         :prefixes="cardPrefixOptions"
         :show-attr="showCardAttr"
+        :cost-label="system?.costLabel ?? '费用'"
+        :can-move-up="i > 0"
+        :can-move-down="i < cardsFor(z.key).length - 1"
         @duplicate="duplicateCard(z.key, i)"
         @remove="removeCard(z.key, i)"
+        @move-up="moveCard(z.key, i, -1)"
+        @move-down="moveCard(z.key, i, 1)"
       />
       <button type="button" class="mini" @click="addCard(z.key)">+ 添加{{ z.label.replace('卡牌', '卡') }}</button>
     </section>
@@ -693,11 +711,12 @@ const privateTerms = computed<PrivateTerm[]>(() => {
       </div>
       <div class="deck-grid">
         <template v-for="z in zones" :key="z.key + '-zone'">
-          <StsCard
+          <component
+            :is="CardComponent"
             v-for="(c, i) in cardsFor(z.key)"
             :key="z.key + '-d' + i"
             :card="c"
-            :height="260"
+            :cost-label="system?.costLabel ?? '费用'"
             render-terms
             :private-terms="privateTerms"
           />
@@ -1015,7 +1034,7 @@ textarea:focus {
 }
 .deck-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
 }
 </style>

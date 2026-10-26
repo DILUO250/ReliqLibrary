@@ -1,582 +1,194 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import type { OverviewStats } from '@rtl/shared'
-import { useOverviewStore } from '@/app/stores/overview'
-import { MODULE_LABELS } from '@/app/labels'
-import silhouette from '@/shared/assets/tree-silhouette.jpeg'
+import type { ModuleLabelKey } from '@/app/labels'
 
-const router = useRouter()
-const overview = useOverviewStore()
+/**
+ * 主页馆树：四分区线框树，点击区域只发出选择事件，路由与详情由 HomeView 统一管理。
+ * 颜色全部使用全站部门 token；树的线条是纯展示层图形，不包含领域数据。
+ */
+defineProps<{
+  selected: ModuleLabelKey | 'all'
+}>()
 
-type StatKey = keyof OverviewStats
+const emit = defineEmits<{
+  select: [dept: ModuleLabelKey]
+}>()
 
-interface Zone {
-  id: string
-  to: string
-  zh: string
-  latin: string
-  desc: string
-  stats: Array<{ key: StatKey; label: string }>
+function choose(dept: ModuleLabelKey): void {
+  emit('select', dept)
 }
-
-const zones: Zone[] = [
-  {
-    id: 'crown',
-    to: '/director',
-    zh: MODULE_LABELS.director,
-    latin: 'Director Floor',
-    desc: '申瑟 · 白石庄园 · 内务司书 · 属兽',
-    stats: [{ key: 'librarians', label: '司书总数' }],
-  },
-  {
-    id: 'trunk-left',
-    to: '/turris',
-    zh: MODULE_LABELS.turris,
-    latin: 'Turris Librorum Adventantium',
-    desc: '战斗司书 · 以战养藏 · 楼层试炼',
-    stats: [
-      { key: 'floors', label: '楼层' },
-      { key: 'guests', label: '来宾' },
-    ],
-  },
-  {
-    id: 'trunk-right',
-    to: '/armarium',
-    zh: MODULE_LABELS.armarium,
-    latin: 'Armarium Absconditorum',
-    desc: '研究司书 · SCL 协议 · 书库体系',
-    stats: [
-      { key: 'books', label: '馆藏' },
-      { key: 'anomalies', label: '异常实体' },
-      { key: 'spaces', label: '超自然空间' },
-      { key: 'repositories', label: '书库' },
-    ],
-  },
-  {
-    id: 'roots',
-    to: '/collegium',
-    zh: MODULE_LABELS.collegium,
-    latin: 'Collegium Quaerendorum Librorum',
-    desc: '探索司书 · 折射轨道 · 生木髓',
-    stats: [
-      { key: 'stations', label: '轨道站点' },
-      { key: 'energyTotal', label: '生木髓总量' },
-    ],
-  },
-]
-
-// 视图空间：920x956（近方，适应约一半宽度的导览区），树剪影按 0.6 比例置于中央，信息框骑树边四角铺开
-const VBW = 920
-const VBH = 956
-const TREE_X = 173
-const TREE_W = 574
-const TREE_H = 956
-const PW = 260
-const EDGE = 8
-const LEFT_X = EDGE
-const RIGHT_X = VBW - EDGE - PW
-const BASE_H = 160
-const ROW_STEP = 38
-const PAD_GAP = 26
-
-// 树在 920x956 中的四个区域（依据剪影实测：冠部上 37.5%，枝干中 32.5%，根系下 30%）
-const regions: Record<string, { x: number; y: number; w: number; h: number }> = {
-  crown: { x: TREE_X, y: 0, w: TREE_W, h: 358 },
-  'trunk-left': { x: TREE_X, y: 358, w: 287, h: 311 },
-  'trunk-right': { x: TREE_X + 287, y: 358, w: 287, h: 311 },
-  roots: { x: TREE_X, y: 669, w: TREE_W, h: 287 },
-}
-
-interface PanelGeo {
-  x: number
-  y: number
-  w: number
-  h: number
-  dot: { x: number; y: number }
-  line: Array<{ x: number; y: number }>
-}
-
-// 每条折线严格按导览稿各自形状：馆长层=斜抬折入右上、迎书楼/藏书阁=横出拐折、寻书社=水平-台阶-落折
-function geoFor(id: string, h: number): PanelGeo {
-  switch (id) {
-    // 馆长层 → 右上：从树冠锚点斜抬约 40° 再折成水平进框
-    case 'crown':
-      return {
-        x: RIGHT_X,
-        y: 40,
-        w: PW,
-        h,
-        dot: { x: 450, y: 250 },
-        line: [
-          { x: 450, y: 250 },
-          { x: 690, y: 110 },
-          { x: RIGHT_X, y: 110 },
-        ],
-      }
-    // 迎书楼 → 左中：从左侧枝干长水平横出，近框缘短拐折
-    case 'trunk-left':
-      return {
-        x: LEFT_X,
-        y: 400,
-        w: PW,
-        h,
-        dot: { x: 400, y: 520 },
-        line: [
-          { x: 400, y: 520 },
-          { x: LEFT_X + PW, y: 520 },
-          { x: LEFT_X + PW, y: 510 },
-        ],
-      }
-    // 藏书阁 → 右中：从右侧枝干长水平横出，近框缘短拐折
-    case 'trunk-right':
-      return {
-        x: RIGHT_X,
-        y: 360,
-        w: PW,
-        h,
-        dot: { x: 540, y: 520 },
-        line: [
-          { x: 540, y: 520 },
-          { x: RIGHT_X, y: 520 },
-          { x: RIGHT_X, y: 510 },
-        ],
-      }
-    // 寻书社 → 左下：水平 → 上抬台阶 → 水平 → 落折进框
-    case 'roots':
-      return {
-        x: LEFT_X,
-        y: 640,
-        w: PW,
-        h,
-        dot: { x: 480, y: 830 },
-        line: [
-          { x: 480, y: 830 },
-          { x: 400, y: 830 },
-          { x: 400, y: 790 },
-          { x: LEFT_X + PW, y: 790 },
-          { x: LEFT_X + PW, y: 770 },
-        ],
-      }
-    default:
-      return { x: 0, y: 0, w: PW, h, dot: { x: 0, y: 0 }, line: [] }
-  }
-}
-
-const geo = computed<Record<string, PanelGeo>>(() => {
-  const m: Record<string, PanelGeo> = {}
-  for (const z of zones) {
-    const h = BASE_H + z.stats.length * ROW_STEP
-    m[z.id] = geoFor(z.id, h)
-  }
-  return m
-})
-
-/* ---- SVG 长文本自动省略：SVG <text> 没有原生 ellipsis，用 canvas 按实际主题字体量宽截断加「…」 ---- */
-let measureCtx: CanvasRenderingContext2D | null = null
-
-function familyOf(varName: string, fallback: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim() || fallback
-}
-
-function truncateFor(text: string, maxWidth: number, family: string, fontSize: number, spacingEm: number): string {
-  if (!text) return text
-  measureCtx ??= document.createElement('canvas').getContext('2d')
-  const ctx = measureCtx
-  if (!ctx) return text
-  ctx.font = `${fontSize}px ${family}`
-  const spacing = fontSize * spacingEm
-  const widthOf = (s: string): number => ctx.measureText(s).width + spacing * s.length
-  if (widthOf(text) <= maxWidth) return text
-  let keep = 0
-  let hi = text.length - 1
-  while (keep < hi) {
-    const mid = Math.ceil((keep + hi) / 2)
-    if (widthOf(`${text.slice(0, mid)}…`) <= maxWidth) keep = mid
-    else hi = mid - 1
-  }
-  return `${text.slice(0, keep).trimEnd()}…`
-}
-
-const panels = computed(() =>
-  zones.map((z) => {
-    const g = geo.value[z.id]!
-    const pad = PAD_GAP
-    const textMax = g.w - pad * 2
-    const rows = z.stats.map((s, i) => ({
-      label: s.label,
-      value: overview.stats ? formatValue(overview.stats[s.key]) : '—',
-      labelX: g.x + pad,
-      valueX: g.x + g.w - pad,
-      y: g.y + 116 + i * ROW_STEP,
-    }))
-    return {
-      zone: z,
-      ...g,
-      rows,
-      pad,
-      latin: truncateFor(z.latin, textMax, familyOf('--font-display', 'Georgia, serif'), 13, 0.07),
-      desc: truncateFor(z.desc, textMax, familyOf('--font-kai', 'KaiTi, serif'), 15, 0),
-      titleY: g.y + 44,
-      latinY: g.y + 70,
-      ruleY: g.y + 86,
-      descY: g.y + g.h - 26,
-    }
-  }),
-)
-
-const leaders = computed(() =>
-  zones.map((z) => {
-    const g = geo.value[z.id]!
-    return {
-      id: z.id,
-      dot: g.dot,
-      points: g.line.map((p) => `${p.x},${p.y}`).join(' '),
-    }
-  }),
-)
-
-const activeId = ref<string | null>(null)
-
-function go(zone: Zone): void {
-  void router.push(zone.to)
-}
-
-function formatValue(v: number | undefined): string {
-  if (v === undefined || Number.isNaN(v)) return '—'
-  return v.toLocaleString('zh-CN')
-}
-
-onMounted(() => {
-  void overview.load()
-})
 </script>
 
 <template>
-  <div class="tree-stage">
-    <div class="tree-glow" aria-hidden="true"></div>
-
+  <div class="tree-wrap">
+    <svg class="tree-orbit" viewBox="0 0 280 370" aria-hidden="true">
+      <ellipse cx="140" cy="178" rx="127" ry="164" />
+      <ellipse cx="140" cy="178" rx="104" ry="145" />
+    </svg>
     <svg
-      class="tree-svg"
-      viewBox="0 0 920 956"
+      id="libraryTree"
+      class="library-tree"
+      viewBox="0 0 320 430"
       role="img"
-      aria-label="遗迹图书馆 · 黑色巨树剪影"
+      aria-label="馆树：树冠为馆长层，左干为迎书楼，右干为藏书阁，根系为寻书社"
     >
-      <defs>
-        <filter id="rtl-mask" x="0" y="0" width="100%" height="100%">
-          <feColorMatrix
-            type="matrix"
-            values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -0.3333 -0.3333 -0.3333 0 1"
-          />
-        </filter>
-        <mask id="rtl-tree" maskUnits="userSpaceOnUse" x="173" y="0" width="574" height="956">
-          <image
-            :href="silhouette"
-            x="173"
-            y="0"
-            width="574"
-            height="956"
-            filter="url(#rtl-mask)"
-          />
-        </mask>
-        <clipPath id="rr-crown"><rect x="173" y="0" width="574" height="358" /></clipPath>
-        <clipPath id="rr-trunk-left"><rect x="173" y="358" width="287" height="311" /></clipPath>
-        <clipPath id="rr-trunk-right"><rect x="460" y="358" width="287" height="311" /></clipPath>
-        <clipPath id="rr-roots"><rect x="173" y="669" width="574" height="287" /></clipPath>
-      </defs>
-
-      <!-- 可见树剪影：与高亮遮罩同坐标系，用 feColorMatrix 把白底变透明、黑树保留为纯色剪影 -->
-      <image
-        class="tree-silhouette"
-        :href="silhouette"
-        x="173"
-        y="0"
-        width="574"
-        height="956"
-        preserveAspectRatio="xMidYMid meet"
-        filter="url(#rtl-mask)"
-        aria-hidden="true"
-      />
-
-      <!-- 命中区（透明，捕捉悬停/点击） -->
       <g
-        v-for="zone in zones"
-        :key="'z-' + zone.id"
-        class="tree-zone"
-        :class="{ 'is-active': activeId === zone.id }"
-        :data-zone="zone.id"
+        class="tree-region tree-region--director"
+        :class="{ 'is-active': selected === 'director', 'is-dim': selected !== 'all' && selected !== 'director' }"
         tabindex="0"
         role="button"
-        :aria-label="`${zone.zh} · 点击前往`"
-        @mouseenter="activeId = zone.id"
-        @mouseleave="activeId = null"
-        @focus="activeId = zone.id"
-        @blur="activeId = null"
-        @click="go(zone)"
-        @keydown.enter="go(zone)"
-        @keydown.space.prevent="go(zone)"
+        aria-label="选择馆长层"
+        @click="choose('director')"
+        @keydown.enter="choose('director')"
+        @keydown.space.prevent="choose('director')"
       >
-        <rect
-          v-if="regions[zone.id]"
-          :x="regions[zone.id]!.x"
-          :y="regions[zone.id]!.y"
-          :width="regions[zone.id]!.w"
-          :height="regions[zone.id]!.h"
-          class="zone-hit"
-          rx="14"
-        />
+        <rect class="hit" x="42" y="0" width="236" height="165" />
+        <path class="limb" d="M160 235C157 186 143 151 112 122M160 230C169 180 190 145 218 117M151 188C127 159 92 151 67 134M174 183C200 155 235 149 257 128M160 181C160 142 158 108 163 72" />
+        <path class="crown-line" d="M68 139C37 116 50 73 82 67C82 34 123 20 147 39C168 5 213 22 217 48C254 40 278 75 259 102C282 126 252 153 224 143C205 167 174 151 160 139C139 161 112 153 101 140C88 146 77 145 68 139Z" />
+        <path class="crown-line" d="M90 112C73 93 88 68 110 72C119 48 147 50 158 66C179 41 210 56 208 79C234 77 246 101 229 118C205 112 190 124 177 139M103 132C122 116 140 114 160 139M145 39C142 62 150 82 160 99M217 48C201 69 189 83 174 96" />
+        <circle class="crown-line" cx="84" cy="86" r="31" />
+        <circle class="crown-line" cx="132" cy="62" r="36" />
+        <circle class="crown-line" cx="190" cy="60" r="38" />
+        <circle class="crown-line" cx="236" cy="96" r="31" />
       </g>
-
-      <!-- 高亮（贴合树的实际像素形状：区域内 + 用剪影做遮罩） -->
       <g
-        v-for="zone in zones"
-        :key="'hl-' + zone.id"
-        class="zone-hl"
-        :class="{ 'is-active': activeId === zone.id }"
-        :data-zone="zone.id"
-        :clip-path="`url(#rr-${zone.id})`"
-      >
-        <rect x="173" y="0" width="574" height="956" class="zone-hl-bg" />
-        <rect x="173" y="0" width="574" height="956" class="zone-hl-tree" mask="url(#rtl-tree)" />
-      </g>
-
-      <g
-        v-for="l in leaders"
-        :key="'lead-' + l.id"
-        class="tree-leader"
-        :class="{ 'is-active': activeId === l.id }"
-        :data-zone="l.id"
-      >
-        <polyline :points="l.points" class="leader-line" />
-        <circle :cx="l.dot.x" :cy="l.dot.y" r="4.4" class="leader-dot-halo" />
-        <circle :cx="l.dot.x" :cy="l.dot.y" r="4.4" class="leader-dot" />
-      </g>
-
-      <g
-        v-for="p in panels"
-        :key="'p-' + p.zone.id"
-        class="tree-panel"
-        :class="{ 'is-active': activeId === p.zone.id }"
-        :data-zone="p.zone.id"
+        class="tree-region tree-region--turris"
+        :class="{ 'is-active': selected === 'turris', 'is-dim': selected !== 'all' && selected !== 'turris' }"
         tabindex="0"
         role="button"
-        :aria-label="`${p.zone.zh} · 点击前往`"
-        @mouseenter="activeId = p.zone.id"
-        @mouseleave="activeId = null"
-        @focus="activeId = p.zone.id"
-        @blur="activeId = null"
-        @click="go(p.zone)"
-        @keydown.enter="go(p.zone)"
-        @keydown.space.prevent="go(p.zone)"
+        aria-label="选择迎书楼"
+        @click="choose('turris')"
+        @keydown.enter="choose('turris')"
+        @keydown.space.prevent="choose('turris')"
       >
-        <rect :x="p.x" :y="p.y" :width="p.w" :height="p.h" rx="0" class="panel-rect" />
-        <text :x="p.x + p.pad" :y="p.titleY" class="panel-title">{{ p.zone.zh }}</text>
-        <text :x="p.x + p.pad" :y="p.latinY" class="panel-latin">{{ p.latin }}</text>
-        <line
-          :x1="p.x + p.pad"
-          :y1="p.ruleY"
-          :x2="p.x + p.w - p.pad"
-          :y2="p.ruleY"
-          class="panel-rule"
-        />
-        <template v-for="r in p.rows" :key="r.label">
-          <text :x="r.labelX" :y="r.y" class="panel-label">{{ r.label }}</text>
-          <text :x="r.valueX" :y="r.y" class="panel-value" text-anchor="end">{{ r.value }}</text>
-        </template>
-        <text :x="p.x + p.pad" :y="p.descY" class="panel-desc">{{ p.desc }}</text>
+        <rect class="hit" x="68" y="145" width="94" height="160" />
+        <path class="limb" d="M157 178C148 218 145 260 147 310L133 349M151 206C132 181 111 171 84 166M149 233C125 213 105 205 77 205M148 260C124 248 104 247 84 253M143 285C127 277 112 280 98 289" />
+        <path class="limb" d="M153 187C151 225 153 270 155 316M146 309C143 327 139 339 133 349" />
+        <path class="crown-line" d="M84 166C70 161 60 151 54 139M77 205C61 202 51 193 43 181M84 253C69 256 56 253 44 246" />
+      </g>
+      <g
+        class="tree-region tree-region--armarium"
+        :class="{ 'is-active': selected === 'armarium', 'is-dim': selected !== 'all' && selected !== 'armarium' }"
+        tabindex="0"
+        role="button"
+        aria-label="选择藏书阁"
+        @click="choose('armarium')"
+        @keydown.enter="choose('armarium')"
+        @keydown.space.prevent="choose('armarium')"
+      >
+        <rect class="hit" x="158" y="145" width="104" height="160" />
+        <path class="limb" d="M164 176C174 217 178 260 173 310L187 349M169 204C188 181 213 170 239 161M173 232C197 211 220 202 246 201M174 260C199 246 220 245 241 251M178 285C197 275 214 278 228 289" />
+        <path class="limb" d="M167 186C170 225 167 270 165 316M174 309C177 327 181 339 187 349" />
+        <path class="crown-line" d="M239 161C254 155 264 145 270 132M246 201C260 198 272 189 279 177M241 251C256 254 268 250 279 242" />
+      </g>
+      <g
+        class="tree-region tree-region--collegium"
+        :class="{ 'is-active': selected === 'collegium', 'is-dim': selected !== 'all' && selected !== 'collegium' }"
+        tabindex="0"
+        role="button"
+        aria-label="选择寻书社"
+        @click="choose('collegium')"
+        @keydown.enter="choose('collegium')"
+        @keydown.space.prevent="choose('collegium')"
+      >
+        <rect class="hit" x="25" y="303" width="270" height="127" />
+        <path class="limb" d="M133 335C113 348 93 356 59 358C87 365 106 369 122 385M187 335C207 348 228 356 261 358C234 365 214 370 198 385M150 329C143 354 139 378 121 407M170 329C177 354 181 378 199 407M160 333V420" />
+        <path class="limb" d="M104 355C88 377 66 384 43 383M79 360C61 367 45 367 29 362M122 385C105 391 94 402 86 416M216 355C232 377 254 384 277 383M241 360C259 367 275 367 291 362M198 385C215 391 226 402 234 416M139 378C128 382 116 382 105 379M181 378C192 382 204 382 215 379" />
+        <path class="crown-line" d="M65 353C104 323 216 323 256 353M84 366C120 346 200 346 236 366" />
+        <path class="tree-door" d="M148 363V342C148 326 172 326 172 342V363M143 363H177" />
+        <circle class="tree-heart" cx="160" cy="345" r="2.2" />
       </g>
     </svg>
   </div>
 </template>
 
 <style scoped>
-.tree-stage {
+.tree-wrap {
   position: relative;
-  height: clamp(600px, 78vh, 940px);
-  max-width: 100%;
-  aspect-ratio: 920 / 956;
-  margin: 0 auto;
+  width: 330px;
+  height: 450px;
+  margin: 6px auto 0;
 }
-
-.tree-glow {
+.tree-wrap::before {
+  content: '';
   position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(closest-side at 50% 40%, rgba(186, 201, 172, 0.16) 0%, rgba(140, 156, 124, 0.11) 48%, transparent 74%),
-    radial-gradient(closest-side at 50% 84%, rgba(120, 138, 104, 0.1), transparent 70%);
-  filter: blur(5px);
+  inset: 8% -12% 2%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--collegium) 15%, transparent), transparent 67%);
+  animation: tree-breathe 5s ease-in-out infinite;
 }
-
-.tree-silhouette {
-  display: block;
+.tree-orbit {
+  position: absolute;
+  inset: 8% -5% 5%;
+  width: 110%;
+  height: 87%;
+  opacity: 0.42;
   pointer-events: none;
 }
-
-.tree-svg {
-  position: absolute;
-  inset: 0;
+.tree-orbit ellipse {
+  fill: none;
+  stroke: var(--color-line);
+  stroke-width: 1;
+  stroke-dasharray: 2 8;
+}
+.library-tree {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: visible;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--collegium) 15%, transparent));
 }
-
-.tree-zone {
+.tree-region {
   cursor: pointer;
+  transition: opacity 0.25s, filter 0.25s;
+  color: var(--collegium);
 }
-
-.zone-hit {
-  fill: transparent;
-  pointer-events: fill;
-  stroke: transparent;
-  stroke-width: 2;
-  transition: stroke 0.2s ease;
-}
-
-.zone-hl {
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.zone-hl-bg {
-  fill: var(--zone-accent);
-  opacity: 0.04;
-}
-
-.zone-hl-tree {
-  fill: var(--zone-accent);
-  opacity: 0.45;
-}
-
-.tree-zone[data-zone='crown'],
-.tree-panel[data-zone='crown'],
-.tree-leader[data-zone='crown'],
-.zone-hl[data-zone='crown'] {
-  --zone-accent: var(--director);
-}
-
-.tree-zone[data-zone='trunk-left'],
-.tree-panel[data-zone='trunk-left'],
-.tree-leader[data-zone='trunk-left'],
-.zone-hl[data-zone='trunk-left'] {
-  --zone-accent: var(--turris);
-}
-
-.tree-zone[data-zone='trunk-right'],
-.tree-panel[data-zone='trunk-right'],
-.tree-leader[data-zone='trunk-right'],
-.zone-hl[data-zone='trunk-right'] {
-  --zone-accent: var(--armarium);
-}
-
-.tree-zone[data-zone='roots'],
-.tree-panel[data-zone='roots'],
-.tree-leader[data-zone='roots'],
-.zone-hl[data-zone='roots'] {
-  --zone-accent: var(--collegium);
-}
-
-.tree-zone:hover .zone-hit,
-.tree-zone:focus-visible .zone-hit,
-.tree-zone.is-active .zone-hit {
-  stroke: color-mix(in srgb, var(--zone-accent) 60%, transparent);
-  filter: none;
-}
-
-.zone-hl.is-active {
-  opacity: 1;
-}
-
-.tree-leader {
-  pointer-events: none;
-}
-
-.leader-line {
+.tree-region--director { color: var(--director); }
+.tree-region--turris { color: var(--turris); }
+.tree-region--armarium { color: var(--armarium); }
+.tree-region--collegium { color: var(--collegium); }
+.tree-region .limb,
+.tree-region .crown-line {
   fill: none;
-  stroke: var(--zone-accent);
-  stroke-width: 2;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
-
-.leader-dot {
-  fill: #fff;
+.tree-region .limb { stroke-width: 1.35; }
+.tree-region .crown-line { stroke-width: 0.9; opacity: 0.76; }
+.tree-region .hit { fill: transparent; stroke: none; pointer-events: all; }
+.tree-region:hover,
+.tree-region.is-active { filter: drop-shadow(0 0 5px currentColor); }
+.tree-region.is-dim { opacity: 0.16; }
+.tree-door {
+  fill: none;
+  stroke: var(--color-gold);
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 6px var(--color-gold));
 }
-
-.leader-dot-halo {
-  fill: rgba(255, 255, 255, 0.22);
+.tree-heart {
+  fill: var(--color-gold);
+  filter: drop-shadow(0 0 6px var(--color-gold));
+  animation: tree-heart 3s ease-in-out infinite;
 }
-
-.tree-leader.is-active .leader-line {
-  stroke: var(--zone-accent);
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--zone-accent) 70%, transparent));
+@keyframes tree-breathe {
+  50% { transform: scale(1.06); opacity: 0.7; }
 }
-
-.tree-leader.is-active .leader-dot {
-  filter: drop-shadow(0 0 4px #fff);
+@keyframes tree-heart {
+  50% { opacity: 0.45; }
 }
-
-.tree-panel {
-  cursor: pointer;
-  transition: opacity 0.2s ease;
+@media (max-width: 1320px) {
+  .tree-wrap { width: 290px; height: 410px; }
 }
-
-.panel-rect {
-  fill: var(--color-surface-2);
-  stroke: var(--zone-accent);
-  stroke-width: 2;
-  transition:
-    stroke 0.2s ease,
-    fill 0.2s ease;
+@media (max-height: 790px) and (min-width: 1081px) {
+  .tree-wrap { width: 270px; height: 370px; }
 }
-
-.panel-title {
-  fill: var(--color-ink);
-  font-size: 32px;
-  font-weight: 700;
-  font-family: var(--font-serif);
+@media (max-width: 650px) {
+  .tree-wrap { width: min(330px, 100%); height: 450px; }
+  .tree-wrap::before { inset: 8% 0 2%; }
+  .tree-orbit { inset: 8% 0 5%; width: 100%; }
 }
-
-.panel-latin {
-  fill: var(--color-ink-faint);
-  font-size: 13px;
-  font-family: var(--font-display);
-  letter-spacing: 0.07em;
-}
-
-.panel-rule {
-  stroke: var(--color-line);
-  stroke-width: 1;
-}
-
-.panel-label {
-  fill: var(--color-ink-dim);
-  font-size: 18px;
-  font-family: var(--font-sans);
-}
-
-.panel-value {
-  fill: var(--zone-accent);
-  font-size: 30px;
-  font-weight: 700;
-  font-family: var(--font-display);
-  font-variant-numeric: tabular-nums;
-}
-
-.panel-desc {
-  fill: var(--color-ink-faint);
-  font-size: 15px;
-  font-family: var(--font-kai);
-}
-
-.tree-panel:hover .panel-rect,
-.tree-panel:focus-visible .panel-rect,
-.tree-panel.is-active .panel-rect {
-  stroke: var(--zone-accent);
-}
-
-@media (max-width: 720px) {
-  .tree-stage {
-    height: auto;
-    width: 92vw;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .tree-wrap::before,
+  .tree-heart { animation: none; }
 }
 </style>

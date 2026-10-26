@@ -5,7 +5,6 @@ import { showToast } from '@/app/stores/toast'
 import { useShelfStore } from '../store/shelf'
 import type { ExternalProject } from '@rtl/shared'
 import ProjectEditorModal from './ProjectEditorModal.vue'
-
 /**
  * 域外书架（草稿 4.1）：木架 + 书脊 + 状态书签绳。
  * 状态机：闭馆（灰绳）→ 开馆中（金绳闪烁）→ 在馆（绿绳呼吸）。
@@ -14,6 +13,7 @@ import ProjectEditorModal from './ProjectEditorModal.vue'
  */
 type SpineStatus = 'off' | 'launching' | 'on'
 
+const props = withDefaults(defineProps<{ compact?: boolean }>(), { compact: false })
 const store = useShelfStore()
 
 const statuses = reactive<Record<number, SpineStatus>>({})
@@ -87,6 +87,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (pollTimer) clearInterval(pollTimer)
+  clearTimeout(slipHideTimer)
 })
 
 // ---- 开馆 / 入馆 ----
@@ -137,9 +138,43 @@ function clickBook(p: ExternalProject): void {
 }
 
 function openEditor(p: ExternalProject | null): void {
+  slipBook.value = null
   editing.value = p
   editorOpen.value = true
 }
+
+/* 悬停纸条改走 body 固定定位：右栏是滚动容器，绝对定位会被裁切（bug 修复）。 */
+const slipBook = ref<ExternalProject | null>(null)
+const slipPos = ref({ x: 0, y: 0 })
+const SLIP_WIDTH = 220
+let slipHideTimer: ReturnType<typeof setTimeout> | undefined
+
+function openSlip(p: ExternalProject, e: MouseEvent): void {
+  clearTimeout(slipHideTimer)
+  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+  const half = SLIP_WIDTH / 2
+  slipPos.value = {
+    x: Math.min(Math.max(rect.left + rect.width / 2, half + 8), window.innerWidth - half - 8),
+    y: rect.top - 12,
+  }
+  slipBook.value = p
+}
+
+function scheduleSlipHide(): void {
+  clearTimeout(slipHideTimer)
+  slipHideTimer = setTimeout(() => {
+    slipBook.value = null
+  }, 150)
+}
+
+function cancelSlipHide(): void {
+  clearTimeout(slipHideTimer)
+}
+
+const slipStyle = computed(() => ({
+  left: `${slipPos.value.x}px`,
+  top: `${slipPos.value.y}px`,
+}))
 
 async function onSaved(): Promise<void> {
   await store.reload()
@@ -148,7 +183,7 @@ async function onSaved(): Promise<void> {
 </script>
 
 <template>
-  <div class="shelf">
+  <div class="shelf" :class="{ 'shelf--compact': props.compact }">
     <div class="shelf-books">
       <div
         v-for="(p, i) in books"
@@ -157,16 +192,11 @@ async function onSaved(): Promise<void> {
         :class="heightClass(i)"
         :style="{ background: `linear-gradient(90deg, rgba(0,0,0,0.28), rgba(255,255,255,0.07) 45%, rgba(0,0,0,0.32)), ${spineColor(p, i)}` }"
         @click="clickBook(p)"
+        @mouseenter="openSlip(p, $event)"
+        @mouseleave="scheduleSlipHide"
       >
         <span class="ribbon" :class="statusOf(p)"></span>
         {{ p.name }}
-        <div class="slip" :class="{ 'slip--on': statusOf(p) === 'on' }" @click.stop>
-          <button class="slip__edit" @click="openEditor(p)">编辑</button>
-          <div class="slip__name">{{ p.name }}</div>
-          <div v-if="p.description" class="slip__desc">{{ p.description }}</div>
-          <div class="slip__status">{{ STATUS_TEXT[statusOf(p)] }}</div>
-          <div class="slip__action">{{ actionHint(p) }}</div>
-        </div>
       </div>
 
       <div class="bookend"></div>
@@ -181,6 +211,24 @@ async function onSaved(): Promise<void> {
       @close="editorOpen = false"
       @saved="onSaved"
     />
+
+    <!-- 悬停纸条：Teleport 到 body，避免被右栏滚动容器裁切 -->
+    <Teleport to="body">
+      <div
+        v-if="slipBook"
+        class="slip"
+        :class="{ 'slip--on': statusOf(slipBook) === 'on' }"
+        :style="slipStyle"
+        @mouseenter="cancelSlipHide"
+        @mouseleave="scheduleSlipHide"
+      >
+        <button class="slip__edit" @click="openEditor(slipBook)">编辑</button>
+        <div class="slip__name">{{ slipBook.name }}</div>
+        <div v-if="slipBook.description" class="slip__desc">{{ slipBook.description }}</div>
+        <div class="slip__status">{{ STATUS_TEXT[statusOf(slipBook)] }}</div>
+        <div class="slip__action">{{ actionHint(slipBook) }}</div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -191,6 +239,32 @@ async function onSaved(): Promise<void> {
   gap: 7px;
   flex-wrap: wrap;
   padding: 26px 8px 0;
+}
+/* 主页仪表盘的窄栏形态：书脊缩小但不牺牲长书名的完整显示。 */
+.shelf--compact .shelf-books {
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-height: 112px;
+  padding: 13px 7px 0;
+}
+.shelf--compact .book {
+  width: 34px;
+  height: 89px;
+  padding: 10px 0;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+}
+.shelf--compact .book.tall { height: 98px; }
+.shelf--compact .book.short { height: 82px; }
+.shelf--compact .bookend {
+  width: 8px;
+  height: 76px;
+  margin: 0 2px 0 4px;
+}
+.shelf--compact .add-slot {
+  margin: 0 0 4px 2px;
+  font-size: 10px;
+  white-space: nowrap;
 }
 .book {
   position: relative;
@@ -274,12 +348,10 @@ async function onSaved(): Promise<void> {
   }
 }
 
-/* 悬停纸条 */
+/* 悬停纸条：固定定位于视口（坐标由脚本按书脊位置计算并收拢在视口内） */
 .slip {
-  position: absolute;
-  bottom: calc(100% + 14px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
+  position: fixed;
+  transform: translate(-50%, -100%);
   width: 220px;
   writing-mode: horizontal-tb;
   background: var(--color-surface-2);
@@ -292,10 +364,7 @@ async function onSaved(): Promise<void> {
   text-align: left;
   letter-spacing: 0.02em;
   text-shadow: none;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.18s, transform 0.18s;
-  z-index: 5;
+  z-index: 150;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 .slip::after {
@@ -306,11 +375,6 @@ async function onSaved(): Promise<void> {
   margin-left: -5px;
   border: 5px solid transparent;
   border-top-color: var(--bd-color);
-}
-.book:hover .slip {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
 }
 .slip__edit {
   position: absolute;
@@ -383,5 +447,12 @@ async function onSaved(): Promise<void> {
 }
 .add-slot:hover {
   color: var(--color-gold);
+}
+@media (max-height: 790px) and (min-width: 1081px) {
+  .shelf--compact .shelf-books { min-height: 91px; padding-top: 9px; }
+  .shelf--compact .book { height: 70px; padding: 8px 0; font-size: 8px; }
+  .shelf--compact .book.tall { height: 76px; }
+  .shelf--compact .book.short { height: 65px; }
+  .shelf--compact .bookend { height: 60px; }
 }
 </style>

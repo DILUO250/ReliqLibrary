@@ -15,7 +15,10 @@ import AnomalyCodeLink from '@/shared/components/AnomalyCodeLink.vue'
 import LibrarianEditorModal from './LibrarianEditorModal.vue'
 import AnomalyEntityEditorModal from './AnomalyEntityEditorModal.vue'
 import DeckPreviewModal from './DeckPreviewModal.vue'
+import DeckPreviewModalV1 from './DeckPreviewModalV1.vue'
+import VisualCard from '@/features/turris/card/VisualCard.vue'
 import StsCard from './StsCard.vue'
+import { loadUiVersion } from '@/app/theme'
 
 const floors = ref<Floor[]>([])
 const librarians = ref<Librarian[]>([])
@@ -24,6 +27,10 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 const expandedId = ref<number | null>(null)
+const uiVersion = loadUiVersion()
+
+// 卡牌组件按界面版本二选一：旧版 StsCard，新版 VisualCard（props 已对齐）
+const CardComponent = computed(() => (uiVersion === 'legacy' ? StsCard : VisualCard))
 
 const saving = ref(false)
 const saveError = ref<string | null>(null)
@@ -240,6 +247,19 @@ async function load(): Promise<void> {
     // 楼层 Tab 预展开：总览页塔楼横带 ?floor=<id> 跳转直达
     if (!Number.isNaN(presetFloorId) && fl.some((f) => f.id === presetFloorId)) {
       expandedId.value = presetFloorId
+    }
+    // 司书预览直达：?librarian=<id>（战斗模拟器结算页「了解详情」跳转过来）。
+    // 展开该司书所属楼层并自动打开预览弹窗；参数非法时静默忽略。
+    const presetLibId = Number.parseInt(String(route.query.librarian ?? ''), 10)
+    if (!Number.isNaN(presetLibId)) {
+      const target = lib.find((l) => l.id === presetLibId)
+      if (target) {
+        if (target.floorId != null) expandedId.value = target.floorId
+        // 等下一帧（楼层展开渲染出司书列表）再打开预览，确保弹窗正常挂载
+        setTimeout(() => {
+          preview.value = { open: true, librarian: target }
+        }, 0)
+      }
     }
     // 清理已删除行的缓存项
     pruneMemos(libSheetMemo, new Set(lib.map((l) => l.id)))
@@ -723,7 +743,7 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
                               <button class="btn btn--sm entity-edit-btn" @click="openEntityEdit(e)">✎ 编辑实体</button>
                             </p>
                             <div v-for="(c, ci) in anomalySheetOf(e)?.egoCards ?? []" :key="ci" class="ego-wrap">
-                              <StsCard :card="c" :render-terms="true" :private-terms="privateTermsOf(e)" />
+                              <component :is="CardComponent" :card="c" cost-label="光芒" :render-terms="true" :private-terms="privateTermsOf(e)" />
                               <div v-if="c.egoPassive && (c.egoPassive.name || c.egoPassive.effect)" class="ego-passive">
                                 <span class="ego-passive__label">EGO被动</span>
                                 <span class="ego-passive__name">{{ c.egoPassive.name }}</span>
@@ -852,7 +872,13 @@ const presetFloorId = Number.parseInt(String(route.query.floor ?? ''), 10)
     />
 
     <DeckPreviewModal
-      v-if="preview.open && preview.librarian"
+      v-if="preview.open && preview.librarian && uiVersion === 'modern'"
+      :librarian="preview.librarian"
+      :roman="romanMap.get(preview.librarian.id) ?? ''"
+      @close="preview = { open: false, librarian: null }"
+    />
+    <DeckPreviewModalV1
+      v-else-if="preview.open && preview.librarian"
       :librarian="preview.librarian"
       :roman="romanMap.get(preview.librarian.id) ?? ''"
       @close="preview = { open: false, librarian: null }"

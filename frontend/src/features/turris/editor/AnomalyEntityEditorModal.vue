@@ -140,6 +140,14 @@ function duplicateEgo(i: number): void {
   const clone = JSON.parse(JSON.stringify(form.sheet.egoCards[i])) as EgoCard
   form.sheet.egoCards.splice(i + 1, 0, clone)
 }
+function moveEgo(i: number, dir: -1 | 1): void {
+  const list = form.sheet.egoCards
+  const j = i + dir
+  if (j < 0 || j >= list.length) return
+  const tmp = list[i]!
+  list[i] = list[j]!
+  list[j] = tmp
+}
 function insertAtEgoPassive(i: number, text: string): void {
   const c = form.sheet.egoCards[i]
   if (!c) return
@@ -256,7 +264,7 @@ function submit(): void {
         <div class="ego-block__head">
           <span class="ego-block__no">EGO {{ i + 1 }}</span>
         </div>
-        <CardEditor :card="c" :render-terms="true" :private-terms="editorPrivateTerms()" :prefixes="BATTLE_SYSTEMS.lob.cardPrefixes" @duplicate="duplicateEgo(i)" @remove="removeEgo(i)" />
+        <CardEditor :card="c" cost-label="光芒" :render-terms="true" :private-terms="editorPrivateTerms()" :prefixes="BATTLE_SYSTEMS.lob.cardPrefixes" :can-move-up="i > 0" :can-move-down="i < form.sheet.egoCards.length - 1" @duplicate="duplicateEgo(i)" @remove="removeEgo(i)" @move-up="moveEgo(i, -1)" @move-down="moveEgo(i, 1)" />
         <div class="passive-block">
           <div class="passive-grid">
             <label>EGO被动 · 名称</label>

@@ -7,15 +7,19 @@ import {
   loadDesignTheme,
   applyColorTheme,
   applyDesignTheme,
+  loadUiVersion,
+  applyUiVersion,
 } from '@/app/theme'
-import type { ColorThemeId, DesignThemeId } from '@/app/theme'
+import type { ColorThemeId, DesignThemeId, UiVersionId } from '@/app/theme'
 
 const colorSelection = ref<ColorThemeId | null>(null)
 const designSelection = ref<DesignThemeId | null>(null)
+const uiVersion = ref<UiVersionId>('modern')
 
 onMounted(() => {
   colorSelection.value = loadColorTheme()
   designSelection.value = loadDesignTheme()
+  uiVersion.value = loadUiVersion()
 })
 
 function pickColor(id: ColorThemeId | null): void {
@@ -26,6 +30,11 @@ function pickColor(id: ColorThemeId | null): void {
 function pickDesign(id: DesignThemeId | null): void {
   if (id === designSelection.value) return
   applyDesignTheme(id)
+}
+
+function pickUiVersion(id: UiVersionId): void {
+  if (id === uiVersion.value) return
+  applyUiVersion(id)
 }
 </script>
 
@@ -122,6 +131,34 @@ function pickDesign(id: DesignThemeId | null): void {
           </span>
           <span class="theme-card__name">{{ theme.name }}</span>
           <span class="theme-card__meta">{{ theme.desc }}</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="settings-group">
+      <h2 class="settings-group__title">界面版本</h2>
+      <p class="settings-group__hint">
+        切换整站的组件版本。新版采用全新视觉与布局；旧版保留早期草稿形态，供对照与回退。
+        切到旧版后首页将进入旧版仪表盘（/home-v1），切回新版则回到新版仪表盘。
+      </p>
+      <div class="settings-grid">
+        <button
+          type="button"
+          class="theme-card"
+          :class="{ 'is-active': uiVersion === 'modern' }"
+          @click="pickUiVersion('modern')"
+        >
+          <span class="theme-card__name">新版</span>
+          <span class="theme-card__meta">VisualCard 卡牌 · 馆树实况仪表盘 · 全屏司书预览 · 词条带小点</span>
+        </button>
+        <button
+          type="button"
+          class="theme-card"
+          :class="{ 'is-active': uiVersion === 'legacy' }"
+          @click="pickUiVersion('legacy')"
+        >
+          <span class="theme-card__name">旧版</span>
+          <span class="theme-card__meta">StsCard 卡牌 · 馆树剪影仪表盘 · 双栏司书预览 · 词条无小点</span>
         </button>
       </div>
     </section>

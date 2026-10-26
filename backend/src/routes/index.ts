@@ -167,6 +167,8 @@ const DELETE_NULLIFY_HOOKS: Record<string, Array<{ table: string; fk: string }>>
   librarians: [
     { table: 'core_pages', fk: 'ownerId' },
     { table: 'combat_pages', fk: 'ownerId' },
+    // 删除正式宿主不连带删除附加单位，只解除绑定并保留为未分配宿主。
+    { table: 'librarians', fk: 'hostLibrarianId' },
   ],
   invitations: [{ table: 'guests', fk: 'invitationId' }],
   books: [
@@ -210,6 +212,37 @@ function sqliteErrorReply(e: unknown, reply: FastifyReply): unknown {
     return reply.code(400).send({ error: `数据约束冲突：${err.message?.split(': ').slice(-1)[0] ?? ''}` })
   }
   throw e
+}
+
+/** 附加单位宿主约束：可空，但填写时必须指向同楼层的正式单位，且不能指向自己。 */
+function validateLibrarianHost(
+  id: number | string | null,
+  body: Record<string, unknown>,
+): string | null {
+  const db = getDb()
+  const current = id == null
+    ? undefined
+    : db.prepare('SELECT floorId, rarity FROM librarians WHERE id = ?').get(id) as
+      | { floorId: number | null; rarity: string }
+      | undefined
+  const rarity = 'rarity' in body ? body.rarity : current?.rarity ?? ''
+  if (!rarity) {
+    // 转为正式单位时同步清理旧宿主，避免隐藏关系残留。
+    body.hostLibrarianId = null
+    return null
+  }
+  if (!('hostLibrarianId' in body) || body.hostLibrarianId == null) return null
+  const hostId = body.hostLibrarianId
+  if (typeof hostId !== 'number' || !Number.isInteger(hostId)) return '宿主核心编号无效'
+  if (id != null && Number(id) === hostId) return '附加单位不能将自己设为宿主'
+  const host = db.prepare('SELECT floorId, rarity FROM librarians WHERE id = ?').get(hostId) as
+    | { floorId: number | null; rarity: string }
+    | undefined
+  if (!host) return '宿主核心不存在'
+  if (host.rarity) return '宿主必须是正式单位，不能选择其他附加单位'
+  const floorId = 'floorId' in body ? body.floorId : current?.floorId ?? null
+  if (host.floorId !== floorId) return '宿主必须与附加单位属于同一楼层'
+  return null
 }
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
@@ -261,6 +294,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
 
     app.post(route, async (req, reply) => {
       const body = (req.body ?? {}) as Record<string, unknown>
+      if (table === 'librarians') {
+        const hostError = validateLibrarianHost(null, body)
+        if (hostError) return reply.code(400).send({ error: hostError })
+      }
       if (TEXT_PK_TABLES.has(table) && (typeof body.id !== 'string' || body.id.trim() === '')) {
         return reply.code(400).send({ error: `新建 ${table} 必须显式提供 id（代号）` })
       }
@@ -285,6 +322,10 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
     app.put(`${route}/:id`, async (req, reply) => {
       const { id } = req.params as IdParams
       const body = (req.body ?? {}) as Record<string, unknown>
+      if (table === 'librarians') {
+        const hostError = validateLibrarianHost(id, body)
+        if (hostError) return reply.code(400).send({ error: hostError })
+      }
       const cols = columnsOf(table)
       const pick = insertColumns(body, cols)
       if (pick.length === 0) return reply.code(400).send({ error: 'no valid fields' })

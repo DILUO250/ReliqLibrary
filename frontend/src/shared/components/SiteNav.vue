@@ -1,21 +1,27 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { MODULE_LABELS } from '@/app/labels'
+import { loadUiVersion } from '@/app/theme'
 
 const route = useRoute()
 
-const links = [
-  { to: '/', label: '首页' },
+// 首页链接感知界面版本：旧版去 /home-v1，新版去 /。
+const homeTo = computed(() => (loadUiVersion() === 'legacy' ? '/home-v1' : '/'))
+
+const links = computed(() => [
+  { to: homeTo.value, label: '首页' },
   { to: '/armarium', label: MODULE_LABELS.armarium },
   { to: '/turris', label: MODULE_LABELS.turris },
   { to: '/collegium', label: MODULE_LABELS.collegium },
   { to: '/director', label: MODULE_LABELS.director },
   { to: '/factions', label: '相关势力' },
   { to: '/settings', label: '设置' },
-]
+])
 
 function isActive(to: string): boolean {
-  if (to === '/') return route.path === '/'
+  // 首页在旧版/新版下各有归属路径，active 判断需覆盖两者。
+  if (to === homeTo.value) return route.path === '/' || route.path === '/home-v1'
   return route.path.startsWith(to)
 }
 </script>

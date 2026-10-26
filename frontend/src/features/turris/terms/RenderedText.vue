@@ -3,7 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ensureTermIndex, termIndexReady, renderTermText, type PrivateTerm } from './renderer'
 import { formatToCss } from './format'
 
-const props = defineProps<{ text: string; privateTerms?: PrivateTerm[]; onLight?: boolean; unknownPlain?: boolean }>()
+const props = withDefaults(defineProps<{ text: string; privateTerms?: PrivateTerm[]; onLight?: boolean; unknownPlain?: boolean; termMarker?: boolean }>(), { termMarker: false })
 
 const ready = ref(termIndexReady())
 
@@ -36,7 +36,7 @@ onUnmounted(() => window.clearTimeout(retryTimer))
 <template>
   <span class="rt">
     <template v-for="(s, i) in segs" :key="i">
-      <span v-if="s.type === 'term'" class="rt-term" :style="formatToCss(s.format, onLight)">{{ s.text }}</span>
+      <span v-if="s.type === 'term'" class="rt-term" :class="{ 'rt-term--marker': termMarker }" :style="formatToCss(s.format, onLight)">{{ s.text }}</span>
       <span
         v-else-if="s.type === 'unknown' && !unknownPlain"
         class="rt-unknown"
@@ -51,6 +51,17 @@ onUnmounted(() => window.clearTimeout(retryTimer))
 .rt-term {
   /* 未带格式的词条兜底色：优先消费卡面本地墨色（StsCard 注入 --c-ink*），卡外回落全局 token */
   color: var(--c-ink, var(--color-ink));
+}
+.rt-term--marker::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 3px;
+  margin-right: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 2px;
 }
 .rt-unknown {
   color: var(--c-ink-faint, var(--color-ink-faint));

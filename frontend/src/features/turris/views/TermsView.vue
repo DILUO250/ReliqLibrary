@@ -4,7 +4,7 @@ import { useTermsStore } from '@/features/turris/store/terms'
 import { TAG_STYLES } from '@/features/turris/terms/tagStyles'
 import { readableColor, formatToCss, mergedFormat } from '@/features/turris/terms/format'
 import TermEditModal from '@/features/turris/terms/TermEditModal.vue'
-import RenderedText from '@/features/turris/terms/RenderedText.vue'
+import RenderedText from '@/features/turris/terms/RenderedTextV1.vue'
 import type { DictEntry } from '@/features/turris/store/terms'
 
 const termsStore = useTermsStore()

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { BattleCard } from '@rtl/shared'
-import { diceEffects, diceRangeLabel } from '@rtl/shared'
-import RenderedText from '@/features/turris/terms/RenderedText.vue'
+import { diceEffects, diceRangeLabel, pkmTypeColor } from '@rtl/shared'
+import RenderedText from '@/features/turris/terms/RenderedTextV1.vue'
+import { readableColor } from '@/features/turris/terms/format'
 import type { PrivateTerm } from '@/features/turris/terms/renderer'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   card: BattleCard
   height?: number
   renderTerms?: boolean
   privateTerms?: PrivateTerm[]
-}>()
+  // 与新版 VisualCard 对齐的费用标签，便于 <component :is> 按 ui-version 二选一
+  costLabel?: string
+}>(), { costLabel: '费用', renderTerms: false })
 
 const TYPE_COLOR: Record<string, string> = {
   近战: 'var(--turris)',
@@ -81,6 +84,12 @@ const prefix = computed(() => props.card.prefix?.trim() ?? '')
 const theme = computed(() => PREFIX_THEME[prefix.value] ?? null)
 const isLight = computed(() => !!theme.value?.light)
 
+// 属性标签颜色：命中 18 属性词典则用属性色（过暗自动提亮），否则沿用 --glow。
+const attrColor = computed(() => {
+  const c = pkmTypeColor(props.card.attr ?? '')
+  return c ? readableColor(c, isLight.value) : undefined
+})
+
 /**
  * 卡面墨色机制：前缀主题的卡面背景是写死的渐变，不随全局换肤变化，
  * 所以卡面上的文字/线条配色也必须跟卡面主题走，而不是跟全局主题走——
@@ -142,7 +151,7 @@ const hasEffects = computed(
 
       <div class="sts-card__art">
         <span class="sts-card__art-type">{{ card.type || '—' }}</span>
-        <span v-if="card.attr" class="sts-card__attr">{{ card.attr }}</span>
+        <span v-if="card.attr" class="sts-card__attr" :style="attrColor ? { color: attrColor, borderColor: attrColor } : {}">{{ card.attr }}</span>
         <span v-if="card.tags && card.tags.length" class="sts-card__art-tags">
           <i v-for="t in card.tags" :key="t" class="tag-chip">{{ t }}</i>
         </span>
@@ -188,7 +197,7 @@ const hasEffects = computed(
 
       <div class="sts-card__footer">
         <span class="sts-card__footer-type">{{ card.type }}</span>
-        <span class="sts-card__footer-cost">{{ card.cost }} 点</span>
+        <span class="sts-card__footer-cost">{{ card.cost }} 点 · {{ costLabel }}</span>
       </div>
     </div>
   </article>

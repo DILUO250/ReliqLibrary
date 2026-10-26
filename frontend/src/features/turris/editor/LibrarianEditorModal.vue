@@ -13,6 +13,8 @@ const props = defineProps<{
   defaultFloorId: number | null
   defaultSystem: BattleSystemId
   defaultRarity?: string
+  /** 同楼层正式单位候选；仅附加单位显示宿主选择。 */
+  librarians?: Librarian[]
   roman: string
   saving?: boolean
 }>()
@@ -46,6 +48,7 @@ const form = reactive({
   name: props.librarian?.name ?? '',
   title: props.librarian?.title ?? '',
   rarity: props.librarian?.rarity ?? props.defaultRarity ?? '',
+  hostLibrarianId: props.librarian?.hostLibrarianId ?? null,
   affiliation: props.librarian?.affiliation ?? '',
   description: props.librarian?.description ?? '',
   portrait: props.librarian?.portrait ?? '',
@@ -104,6 +107,17 @@ const systemOptions = computed(() =>
   Object.values(BATTLE_SYSTEMS).map((s) => ({ value: s.id, label: `${s.zh}(${s.code})` })),
 )
 const currentSystem = computed(() => BATTLE_SYSTEMS[form.sheet.battleSystem])
+const hostOptions = computed(() =>
+  (props.librarians ?? []).filter((l) =>
+    l.id !== props.librarian?.id && !l.rarity && l.floorId === form.floorId,
+  ),
+)
+
+watch([() => form.rarity, () => form.floorId], () => {
+  if (!form.rarity || !hostOptions.value.some((l) => l.id === form.hostLibrarianId)) {
+    form.hostLibrarianId = null
+  }
+})
 
 function resetFirstPassive(sys: BattleSystemId): void {
   const p0 = form.sheet.passives?.[0]
@@ -167,6 +181,7 @@ async function submit(): Promise<void> {
       role: 'curator',
       floorId: form.floorId,
       rarity: form.rarity,
+      hostLibrarianId: form.rarity ? form.hostLibrarianId : null,
       affiliation: form.affiliation,
       description: form.description,
       sheet: JSON.stringify(form.sheet),
@@ -246,6 +261,15 @@ function removePortrait(): void {
         <option value="">常规司书</option>
         <option v-for="r in RARITIES" :key="r" :value="r">{{ r }} · 附加单位</option>
       </select>
+      <template v-if="form.rarity">
+        <label>宿主核心</label>
+        <select v-model="form.hostLibrarianId">
+          <option :value="null">未指定宿主（保留空框）</option>
+          <option v-for="host in hostOptions" :key="host.id" :value="host.id">
+            {{ host.name }} · {{ host.title || '核心书页未填写' }}
+          </option>
+        </select>
+      </template>
       <label>战斗系统</label>
       <select v-model="form.sheet.battleSystem">
         <option v-for="s in systemOptions" :key="s.value" :value="s.value">{{ s.label }}</option>

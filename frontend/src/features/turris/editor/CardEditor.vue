@@ -3,7 +3,9 @@ import { computed, onMounted, watch } from 'vue'
 import type { BattleCard } from '@rtl/shared'
 import { normalizeCard, PKM_TYPES } from '@rtl/shared'
 import TermInserter from './TermInserter.vue'
+import VisualCard from '@/features/turris/card/VisualCard.vue'
 import StsCard from './StsCard.vue'
+import { loadUiVersion } from '@/app/theme'
 import { ensureTermIndex } from '@/features/turris/terms/renderer'
 import { useTermsStore } from '@/features/turris/store/terms'
 import type { PrivateTerm } from '@/features/turris/terms/renderer'
@@ -17,10 +19,22 @@ const props = withDefaults(
     prefixes?: string[]
     /** 是否显示卡牌属性编辑（BASE/PKM 模板开放）。 */
     showAttr?: boolean
+    costLabel?: string
+    /** 卡牌在卡组中是否可上移/下移（首尾禁用对应箭头）。 */
+    canMoveUp?: boolean
+    canMoveDown?: boolean
   }>(),
-  { prefixes: undefined, showAttr: false },
+  { prefixes: undefined, showAttr: false, costLabel: '费用' },
 )
-const emit = defineEmits<{ (e: 'duplicate'): void; (e: 'remove'): void }>()
+const emit = defineEmits<{
+  (e: 'duplicate'): void
+  (e: 'remove'): void
+  (e: 'move-up'): void
+  (e: 'move-down'): void
+}>()
+
+// 卡牌组件按界面版本二选一：旧版 StsCard，新版 VisualCard（props 已对齐）
+const CardComponent = computed(() => (loadUiVersion() === 'legacy' ? StsCard : VisualCard))
 
 // 表单选项统一从术语词典（SQLite 经 store 缓存）读取 —— 单一术语源。
 const termsStore = useTermsStore()
@@ -112,7 +126,7 @@ normalizeCard(props.card)
 <template>
   <div class="card-editor">
     <div class="card-editor__preview">
-      <StsCard :card="card" :height="320" :render-terms="renderTerms" :private-terms="privateTerms" />
+      <component :is="CardComponent" :card="card" :cost-label="costLabel" :render-terms="renderTerms" :private-terms="privateTerms" />
     </div>
 
     <div class="card-editor__form">
@@ -133,10 +147,33 @@ normalizeCard(props.card)
         <input v-model.number="card.cost" type="number" class="mw-sm" placeholder="费用" />
       </div>
 
-      <select v-model="card.type" class="mw-lg">
-        <option value="">类型</option>
-        <option v-for="t in typeNames" :key="t" :value="t">{{ t }}</option>
-      </select>
+      <div class="row">
+        <select v-model="card.type" class="mw-lg">
+          <option value="">类型</option>
+          <option v-for="t in typeNames" :key="t" :value="t">{{ t }}</option>
+        </select>
+        <!-- 卡牌排序：在卡组内上移/下移（调序不改变卡牌内容）。 -->
+        <span v-if="canMoveUp || canMoveDown" class="move-pair">
+          <button
+            type="button"
+            class="move-btn"
+            :disabled="!canMoveUp"
+            title="上移此卡"
+            @click="emit('move-up')"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            class="move-btn"
+            :disabled="!canMoveDown"
+            title="下移此卡"
+            @click="emit('move-down')"
+          >
+            ▼
+          </button>
+        </span>
+      </div>
 
       <div class="field">
         <label>标签</label>
@@ -261,6 +298,32 @@ normalizeCard(props.card)
 }
 .mw-lg {
   width: 260px;
+}
+.move-pair {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.move-btn {
+  width: 34px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--bd-w) var(--bd-style) var(--bd-color);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-ink-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+.move-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.move-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 .field {
   display: flex;

@@ -427,7 +427,7 @@ export function parseSheet(raw?: string | null): LibrarianSheet | null {
     }
     s.systemData = s.systemData ?? {}
     if (s.systemData.mind != null && typeof s.systemData.mind === 'string') {
-      s.systemData.mind = { name: '心::[未命名]', effect: s.systemData.mind }
+      s.systemData.mind = { name: '心 :: [未命名]', effect: s.systemData.mind }
     }
     return s
   } catch {
@@ -551,6 +551,34 @@ const PKM_TYPE_GROUPS: string[] = [
 /** PKM 属性选择器的 19 个选项。 */
 export const PKM_TYPES: string[] = ['无属性', ...PKM_TYPE_GROUPS]
 
+/** 18 种宝可梦属性的显示色（单一权威源：与 PKM_TYPE_GROUPS 顺序一一对应）。
+ *  既用于生成「属性/属性名/属性异常状态」词条的 format 颜色，也用于卡牌属性标签着色。 */
+export const PKM_TYPE_COLORS: Record<string, string> = {
+  一般: '#9FA19F',
+  格斗: '#FF8000',
+  飞行: '#81B9EF',
+  毒: '#9141CB',
+  地面: '#915121',
+  岩石: '#AFA981',
+  虫: '#91A119',
+  幽灵: '#704170',
+  钢: '#60A1B8',
+  火: '#E62829',
+  水: '#2980EF',
+  草: '#3FA129',
+  电: '#FAC000',
+  超能: '#EF4179',
+  冰: '#3FD8FF',
+  龙: '#5060E1',
+  恶: '#50413F',
+  妖精: '#EF70EF',
+}
+
+/** 取某属性的显示色；未知属性返回 undefined（调用方自行兜底）。 */
+export function pkmTypeColor(name: string): string | undefined {
+  return PKM_TYPE_COLORS[name]
+}
+
 /** PKM 单位属性显示规则：全无属性=训练师（隐藏属性栏）；1 有 1 无=单属性；2 有=双属性。 */
 export function pkmAttributeDisplay(attributes?: string[]): string[] {
   return (attributes ?? []).filter((t) => t && t !== '无属性')
@@ -647,6 +675,8 @@ export interface Librarian {
   floorId: number | null
   /** 附加单位稀有度前缀（'' = 常规司书）。 */
   rarity: string
+  /** 附加单位所属的正式司书 ID；null/缺省 = 尚未绑定宿主。 */
+  hostLibrarianId?: number | null
   coreColor: CorePageColor
   affiliation: string
   status: string
@@ -1613,3 +1643,7 @@ export function defaultSpeedPassive(sys: BattleSystemId): Passive {
 // 术语数据（含曾经的 LABELS 部门名映射，2026-09 判死退役）不再以任何形式存放于
 // shared：唯一权威源是 SQLite（term_sections / term_entries 等，经 generic CRUD 消费），
 // 备份由写后自动快照维护（CONVENTIONS §2.3）。部门展示名在前端 frontend/src/app/labels.ts。
+
+// 迎书楼战斗模拟器 v1：纯函数层（类型 / 适配器 / 引擎 / 随机源）。
+// 运行时战斗数据模型与编辑器侧的 LibrarianSheet 分离——这里只保留硬数值与五条例外效果。
+export * from './battleSim/index.js'
